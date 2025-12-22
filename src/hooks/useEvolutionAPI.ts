@@ -311,12 +311,14 @@ export const useEvolutionAPI = () => {
 
     setLoading(true);
     try {
-      // Formatar número (remover caracteres especiais e adicionar @s.whatsapp.net se necessário)
+      // Formatar número (remover caracteres especiais)
       let formattedPhone = phone.replace(/\D/g, '');
       
+      // Evolution API v2 formato correto
       const data = await makeRequest(`/message/sendText/${config.instanceName}`, 'POST', {
         number: formattedPhone,
         text: message,
+        delay: 1200,
       });
 
       console.log('Mensagem enviada:', data);
@@ -324,8 +326,24 @@ export const useEvolutionAPI = () => {
       return data;
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error(error.message || 'Erro ao enviar mensagem');
-      throw error;
+      
+      // Tentar formato alternativo se o primeiro falhar
+      try {
+        let formattedPhone = phone.replace(/\D/g, '');
+        const data = await makeRequest(`/message/sendText/${config.instanceName}`, 'POST', {
+          number: formattedPhone,
+          textMessage: {
+            text: message
+          },
+        });
+        console.log('Mensagem enviada (formato alternativo):', data);
+        toast.success('Mensagem enviada com sucesso!');
+        return data;
+      } catch (altError: any) {
+        console.error('Erro no formato alternativo:', altError);
+        toast.error(error.message || 'Erro ao enviar mensagem');
+        throw error;
+      }
     } finally {
       setLoading(false);
     }
