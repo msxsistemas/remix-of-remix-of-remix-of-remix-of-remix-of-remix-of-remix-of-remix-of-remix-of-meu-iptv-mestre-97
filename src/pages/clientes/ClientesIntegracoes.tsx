@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Rocket, ArrowLeft, Info, Shield, Eye, CheckCircle, XCircle, Edit, Pause, RefreshCw, Trash2, Check, Play, Key } from "lucide-react";
+import { Rocket, ArrowLeft, Info, Shield, Eye, CheckCircle, XCircle, Edit, Pause, RefreshCw, Trash2, Check, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function ClientesIntegracoes() {
@@ -55,12 +54,6 @@ export default function ClientesIntegracoes() {
     isOpen: false,
     panel: null,
   });
-
-  // kOfficePanel API state
-  const [isKOfficeModalOpen, setIsKOfficeModalOpen] = useState(false);
-  const [kOfficeEnabled, setKOfficeEnabled] = useState(false);
-  const [kOfficeApiKey, setKOfficeApiKey] = useState("");
-  const [isSavingKOffice, setIsSavingKOffice] = useState(false);
 
   useEffect(() => {
     document.title = "Clientes - Integrações | Gestor Tech Play";
@@ -463,10 +456,14 @@ const testPanel = async (panel: { id: string; nome: string; url: string; usuario
                 <div>
                   <h3 className="font-semibold text-foreground">kOfficePanel API</h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`w-2 h-2 ${kOfficeEnabled ? 'bg-green-500' : 'bg-gray-400'} rounded-full`}></span>
-                    <span className="text-sm text-muted-foreground">{kOfficeEnabled ? 'Ativo' : 'Configurar'}</span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span className="text-sm text-muted-foreground">Configurar</span>
                   </div>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span className="text-sm text-muted-foreground">Configurar</span>
               </div>
             </div>
             
@@ -475,8 +472,8 @@ const testPanel = async (panel: { id: string; nome: string; url: string; usuario
             </p>
             
             <Button 
-              onClick={() => setIsKOfficeModalOpen(true)}
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+              onClick={() => setIsConfigModalOpen(true)}
+              className="w-full bg-green-500 hover:bg-green-600 text-white"
             >
               <span className="mr-2">+</span>
               Configurar Agora
@@ -837,92 +834,6 @@ const testPanel = async (panel: { id: string; nome: string; url: string; usuario
               className={`w-full ${testResultModal.success ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
             >
               OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* kOfficePanel API Configuration Modal */}
-      <Dialog open={isKOfficeModalOpen} onOpenChange={setIsKOfficeModalOpen}>
-        <DialogContent className="max-w-lg bg-slate-900 border-slate-700">
-          <DialogHeader>
-            <DialogTitle className="text-white text-lg font-semibold">KOFFICEPANEL API</DialogTitle>
-            <DialogDescription className="sr-only">Configuração da integração kOfficePanel API</DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 pt-4">
-            {/* Ativar/Desativar Checkbox */}
-            <div className="flex items-center gap-3">
-              <Checkbox 
-                id="koffice-enabled"
-                checked={kOfficeEnabled}
-                onCheckedChange={(checked) => setKOfficeEnabled(checked === true)}
-                className="border-blue-500 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-              />
-              <Label htmlFor="koffice-enabled" className="text-white cursor-pointer">
-                Ativar/Desativar.
-              </Label>
-            </div>
-
-            {/* Chave da API */}
-            <div className="space-y-2">
-              <Label className="text-gray-300 text-sm">Chave da API.</Label>
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Key className="w-4 h-4" />
-                  </div>
-                  <Input
-                    value={kOfficeApiKey}
-                    onChange={(e) => setKOfficeApiKey(e.target.value)}
-                    placeholder="Cole sua chave da API aqui"
-                    className="bg-slate-800 border-slate-600 text-white pl-10 font-mono text-sm"
-                  />
-                </div>
-                <Button 
-                  variant="default"
-                  onClick={() => {
-                    const newKey = crypto.randomUUID().replace(/-/g, '');
-                    setKOfficeApiKey(newKey);
-                    toast({ title: "Chave resetada", description: "Uma nova chave foi gerada" });
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-                >
-                  RESETAR
-                </Button>
-              </div>
-            </div>
-
-            {/* Salvar Button */}
-            <Button 
-              onClick={async () => {
-                if (!kOfficeApiKey.trim()) {
-                  toast({ title: "Erro", description: "Informe a chave da API" });
-                  return;
-                }
-                setIsSavingKOffice(true);
-                try {
-                  // Salvar configuração no localStorage por enquanto
-                  localStorage.setItem('koffice_api_key', kOfficeApiKey);
-                  localStorage.setItem('koffice_enabled', String(kOfficeEnabled));
-                  
-                  toast({ 
-                    title: "Sucesso", 
-                    description: kOfficeEnabled 
-                      ? "kOfficePanel API configurado e ativado!" 
-                      : "Configuração salva (desativado)"
-                  });
-                  setIsKOfficeModalOpen(false);
-                } catch (error: any) {
-                  toast({ title: "Erro", description: "Não foi possível salvar a configuração" });
-                } finally {
-                  setIsSavingKOffice(false);
-                }
-              }}
-              disabled={isSavingKOffice}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-            >
-              {isSavingKOffice ? "SALVANDO..." : "SALVAR"}
             </Button>
           </div>
         </DialogContent>
