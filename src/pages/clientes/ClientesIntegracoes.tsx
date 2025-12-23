@@ -20,11 +20,13 @@ export default function ClientesIntegracoes() {
     success: boolean;
     message: string;
     details?: string;
+    type?: 'sigma' | 'koffice';
   }>({
     isOpen: false,
     success: false,
     message: "",
-    details: ""
+    details: "",
+    type: 'sigma'
   });
   const [formData, setFormData] = useState({
     nomePainel: "Painel Sigma Principal",
@@ -57,7 +59,8 @@ export default function ClientesIntegracoes() {
         isOpen: true,
         success: false,
         message: "Dados Obrigatórios Ausentes",
-        details: "❌ Preencha Link do Painel, Usuário e Chave API antes de testar."
+        details: "❌ Preencha Link do Painel, Usuário e Chave API antes de testar.",
+        type: 'koffice'
       });
       return;
     }
@@ -81,14 +84,16 @@ export default function ClientesIntegracoes() {
           isOpen: true,
           success: true,
           message: "CONEXÃO kOfficePanel BEM-SUCEDIDA!",
-          details: `✅ Servidor: ${kofficeFormData.nomeServidor || 'N/A'}\n🔗 Endpoint: ${baseUrl}/api.php\n👤 Usuário: ${kofficeFormData.usuario}\n📡 Status: OK\n\n${data?.user_data ? `Dados recebidos: ${JSON.stringify(data.user_data).slice(0, 100)}...` : 'API respondeu com sucesso!'}`
+          details: `✅ Servidor: ${kofficeFormData.nomeServidor || 'N/A'}\n🔗 Endpoint: ${baseUrl}/api.php\n👤 Usuário: ${kofficeFormData.usuario}\n📡 Status: OK\n\n${data?.user_data ? `Dados recebidos: ${JSON.stringify(data.user_data).slice(0, 100)}...` : 'API respondeu com sucesso!'}`,
+          type: 'koffice'
         });
       } else {
         setTestResultModal({
           isOpen: true,
           success: false,
           message: "FALHA NA AUTENTICAÇÃO kOfficePanel",
-          details: data?.message || data?.error || "Usuário/Chave API inválidos ou URL incorreta."
+          details: data?.message || data?.error || "Usuário/Chave API inválidos ou URL incorreta.",
+          type: 'koffice'
         });
       }
     } catch (error: any) {
@@ -96,7 +101,8 @@ export default function ClientesIntegracoes() {
         isOpen: true,
         success: false,
         message: "Erro no Teste kOfficePanel",
-        details: `Erro inesperado durante o teste: ${error.message}\n\nVerifique se a URL está correta e acessível.`
+        details: `Erro inesperado durante o teste: ${error.message}\n\nVerifique se a URL está correta e acessível.`,
+        type: 'koffice'
       });
     } finally {
       setIsTestingKoffice(false);
@@ -880,7 +886,10 @@ const testPanel = async (panel: { id: string; nome: string; url: string; usuario
             </div>
             
             <h3 className={`text-lg font-semibold mb-2 ${testResultModal.success ? 'text-green-400' : 'text-red-400'}`}>
-              {testResultModal.success ? "Teste Sigma - Sucesso" : "Teste Sigma - Erro"}
+              {testResultModal.type === 'koffice' 
+                ? (testResultModal.success ? "Teste kOfficePanel - Sucesso" : "Teste kOfficePanel - Erro")
+                : (testResultModal.success ? "Teste Sigma - Sucesso" : "Teste Sigma - Erro")
+              }
             </h3>
             
             <p className={`text-sm mb-4 ${testResultModal.success ? 'text-green-300' : 'text-red-300'}`}>
