@@ -335,7 +335,7 @@ export default function GerenciarMensagens() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-white font-semibold text-[15px]">GESTORv3</p>
+                    <p className="text-white font-semibold text-[15px]">Gestor MSX</p>
                     <p className="text-[#8696a0] text-xs">online</p>
                   </div>
                   <div className="flex items-center gap-5 text-[#8696a0]">
