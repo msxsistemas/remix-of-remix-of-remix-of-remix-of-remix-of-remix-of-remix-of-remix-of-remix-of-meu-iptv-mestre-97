@@ -89,17 +89,17 @@ export default function DashboardNewCards({
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-[hsl(142,70%,45%)]" />
             <span className="text-sm text-muted-foreground">Projeção Mensal</span>
-            <span className="text-[hsl(142,70%,45%)] font-semibold">{fmt(projecaoMensal)}</span>
+            <span className="text-foreground font-semibold">{fmt(projecaoMensal)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-[hsl(142,70%,45%)]">$</span>
             <span className="text-sm text-muted-foreground">Hoje</span>
-            <span className="text-[hsl(142,70%,45%)] font-semibold">{fmt(valoresHoje)}</span>
+            <span className="text-foreground font-semibold">{fmt(valoresHoje)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-[hsl(142,70%,45%)]">$</span>
             <span className="text-sm text-muted-foreground">Amanhã</span>
-            <span className="text-[hsl(142,70%,45%)] font-semibold">{fmt(valoresAmanha)}</span>
+            <span className="text-foreground font-semibold">{fmt(valoresAmanha)}</span>
           </div>
         </div>
       </div>
