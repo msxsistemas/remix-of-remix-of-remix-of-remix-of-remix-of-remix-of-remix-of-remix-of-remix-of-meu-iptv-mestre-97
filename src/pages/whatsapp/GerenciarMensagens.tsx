@@ -89,6 +89,8 @@ export default function GerenciarMensagens() {
       "{usuario}": "usuario123",
       "{senha}": "****",
       "{pix}": "pix@techplay.com",
+      "{valor_plano}": "R$ 40,00",
+      "{numero_fatura}": "999009900",
     };
 
     let preview = mensagens[selectedTemplate];
@@ -98,13 +100,24 @@ export default function GerenciarMensagens() {
       preview = preview.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
     });
     
-    // Replace {br} with line breaks
+    // Replace {br} with actual line breaks
     preview = preview.replace(/{br}/g, '\n');
     
-    // Format bold text (remove asterisks, we'll style differently)
-    preview = preview.replace(/\*([^*]+)\*/g, '$1');
-    
     return preview;
+  };
+
+  // Get template title
+  const getTemplateTitle = () => {
+    const titles: Record<keyof MensagensPadroes, string> = {
+      bem_vindo: "Bem Vindo",
+      fatura_criada: "Fatura Criada",
+      proximo_vencer: "Próximo de Vencer",
+      vence_hoje: "Vence Hoje",
+      vencido: "Vencido",
+      confirmacao_pagamento: "Confirmação Pagamento",
+      dados_cliente: "Dados do Cliente",
+    };
+    return titles[selectedTemplate];
   };
 
   return (
@@ -217,7 +230,7 @@ export default function GerenciarMensagens() {
 
             {/* WhatsApp Preview */}
             <div className="flex justify-center lg:sticky lg:top-6">
-              <div className="w-[300px] bg-[#111b21] rounded-2xl overflow-hidden shadow-xl">
+              <div className="w-[320px] bg-[#111b21] rounded-2xl overflow-hidden shadow-xl border border-border/30">
                 {/* Phone Status Bar */}
                 <div className="bg-[#202c33] px-4 py-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -232,12 +245,12 @@ export default function GerenciarMensagens() {
                 </div>
                 
                 {/* WhatsApp Header */}
-                <div className="bg-[#202c33] px-4 py-3 flex items-center gap-3 border-b border-[#2a3942]">
+                <div className="bg-[#202c33] px-3 py-3 flex items-center gap-3 border-b border-[#2a3942]">
                   <div className="w-10 h-10 bg-[#25d366] rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">⊙</span>
+                    <span className="text-white text-lg font-bold">G</span>
                   </div>
                   <div className="flex-1">
-                    <span className="text-white font-medium">GESTORv3</span>
+                    <span className="text-white font-semibold text-sm">GESTORv3</span>
                   </div>
                   <div className="flex items-center gap-4 text-[#8696a0]">
                     <Video className="w-5 h-5" />
@@ -245,37 +258,63 @@ export default function GerenciarMensagens() {
                   </div>
                 </div>
 
+                {/* Template indicator */}
+                <div className="bg-[#202c33]/50 px-3 py-1.5 text-center">
+                  <span className="text-xs text-muted-foreground">Preview: <span className="text-purple-400 font-medium">{getTemplateTitle()}</span></span>
+                </div>
+
                 {/* Chat Area */}
-                <div className="h-[420px] bg-[#0b141a] p-3 overflow-y-auto" 
-                     style={{ backgroundImage: "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mNkYPhfz0AEYBxVSF+FABGxAg0lKKvmAAAAAElFTkSuQmCC')", backgroundRepeat: "repeat" }}>
-                  <div className="bg-[#005c4b] rounded-lg p-3 max-w-[95%] ml-auto">
-                    <p className="text-white text-xs font-medium">Bom dia, Fulano.</p>
-                    <p className="text-white text-xs mt-2">
-                      <span className="text-yellow-300">⚠️</span> <strong>SEU VENCIMENTO É HOJE!</strong> Pra continuar aproveitando seus canais, realize o pagamento o quanto antes.
+                <div 
+                  className="h-[380px] bg-[#0b141a] p-3 overflow-y-auto" 
+                  style={{ 
+                    backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23182229\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" 
+                  }}
+                >
+                  <div className="bg-[#005c4b] rounded-lg p-3 max-w-[95%] ml-auto shadow-md">
+                    <p className="text-white text-xs whitespace-pre-wrap leading-relaxed">
+                      {renderPreview().split('\n').map((line, index) => {
+                        // Process bold text (text between asterisks)
+                        const processedLine = line.split(/\*([^*]+)\*/g).map((part, i) => 
+                          i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                        );
+                        
+                        // Check if line contains a URL
+                        const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
+                        if (urlMatch) {
+                          return (
+                            <span key={index}>
+                              {line.split(urlMatch[0]).map((part, i) => (
+                                <span key={i}>
+                                  {part}
+                                  {i === 0 && <span className="text-[#53bdeb] underline break-all">{urlMatch[0]}</span>}
+                                </span>
+                              ))}
+                              {index < renderPreview().split('\n').length - 1 && <br />}
+                            </span>
+                          );
+                        }
+                        
+                        return (
+                          <span key={index}>
+                            {processedLine}
+                            {index < renderPreview().split('\n').length - 1 && <br />}
+                          </span>
+                        );
+                      })}
                     </p>
-                    <p className="text-white text-xs mt-3 font-bold text-red-400">DADOS DA FATURA</p>
-                    <p className="text-white text-xs mt-1">◆ Vencimento: 10/10/2025</p>
-                    <p className="text-white text-xs">◆ Plano Completo de Demonstração: R$ 40,00</p>
-                    <p className="text-white text-xs">◆ Desconto: R$ 5,00</p>
-                    <p className="text-white text-xs">◆ Total a pagar: R$ 35,00</p>
-                    <p className="text-white text-xs mt-3">
-                      <span className="text-green-300">💸</span> Pagamento rápido em 1 clique:
-                    </p>
-                    <p className="text-[#53bdeb] text-xs underline break-all">
-                      https://gestorv3.com.br/central/ver_fatura?r=C999000999009900
-                    </p>
-                    <p className="text-white text-xs mt-3">
-                      Abra o link de cima, clique em "Pagar com PIX" copie o código completo gerado e cole no aplicativo do banco.
-                    </p>
+                    <div className="flex justify-end mt-1">
+                      <span className="text-[10px] text-[#8696a0]">20:00 ✓✓</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Input Area */}
-                <div className="bg-[#202c33] px-4 py-3 flex items-center gap-3">
+                <div className="bg-[#202c33] px-3 py-3 flex items-center gap-2">
                   <span className="text-[#8696a0] text-xl">+</span>
                   <div className="flex-1 bg-[#2a3942] rounded-full px-4 py-2">
                     <span className="text-[#8696a0] text-sm">Message</span>
                   </div>
+                  <span className="text-[#8696a0]">📷</span>
                   <span className="text-[#8696a0]">🎤</span>
                 </div>
               </div>
