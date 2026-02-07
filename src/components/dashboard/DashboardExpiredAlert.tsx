@@ -1,5 +1,7 @@
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   clientesVencidos: number;
@@ -9,29 +11,15 @@ export default function DashboardExpiredAlert({ clientesVencidos }: Props) {
   if (clientesVencidos === 0) return null;
 
   return (
-    <section>
-      <div className="rounded-xl bg-[hsl(0,50%,20%)] border border-[hsl(0,50%,30%)] p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-[hsl(0,72%,60%)]" />
-            <div>
-              <h3 className="font-semibold text-[hsl(0,72%,70%)]">
-                Meus Clientes Com Plano Vencido
-              </h3>
-              <p className="text-sm text-[hsl(0,30%,60%)]">
-                Informe aos seus clientes sobre o vencimento
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/clientes"
-            className="flex items-center gap-1 text-sm text-[hsl(199,89%,48%)] hover:text-[hsl(199,89%,60%)] transition-colors"
-          >
-            Ver clientes
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    </section>
+    <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Clientes com plano vencido</AlertTitle>
+      <AlertDescription className="flex items-center justify-between">
+        <span>Você tem {clientesVencidos} cliente(s) com plano vencido.</span>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/clientes">Ver clientes</Link>
+        </Button>
+      </AlertDescription>
+    </Alert>
   );
 }
