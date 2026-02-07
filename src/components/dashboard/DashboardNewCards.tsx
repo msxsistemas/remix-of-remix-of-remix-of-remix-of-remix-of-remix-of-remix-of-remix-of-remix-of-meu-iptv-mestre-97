@@ -33,13 +33,11 @@ export default function DashboardNewCards({
   return (
     <section className="grid gap-4 grid-cols-1 md:grid-cols-3">
       {/* Card 1 - Novos Clientes */}
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
-            <Users className="h-6 w-6 text-[hsl(142,70%,45%)]" />
-          </div>
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
+        <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
+          <Users className="h-6 w-6 text-[hsl(142,70%,45%)]" />
         </div>
-        <div className="relative z-10 space-y-2 pr-16">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-[hsl(142,70%,45%)]" />
             <span className="text-sm text-muted-foreground">Novos Clientes Hoje</span>
@@ -58,14 +56,11 @@ export default function DashboardNewCards({
         </div>
       </div>
 
-      {/* Card 2 - Clientes Vencendo */}
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
-            <Users className="h-6 w-6 text-[hsl(142,70%,45%)]" />
-          </div>
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
+        <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
+          <Users className="h-6 w-6 text-[hsl(142,70%,45%)]" />
         </div>
-        <div className="relative z-10 space-y-2 pr-16">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Clientes Vencendo Hoje</span>
             <span className="text-[hsl(142,70%,45%)] font-semibold">{clientesVencendoHoje}</span>
@@ -81,14 +76,11 @@ export default function DashboardNewCards({
         </div>
       </div>
 
-      {/* Card 3 - Valores a Receber */}
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
-            <TrendingUp className="h-6 w-6 text-[hsl(142,70%,45%)]" />
-          </div>
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
+        <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
+          <TrendingUp className="h-6 w-6 text-[hsl(142,70%,45%)]" />
         </div>
-        <div className="relative z-10 space-y-2 pr-16">
+        <div className="space-y-2">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[hsl(142,70%,45%)]" />
             <span className="text-sm font-semibold text-[hsl(142,70%,45%)]">Valores a Receber</span>
