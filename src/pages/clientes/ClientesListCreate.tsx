@@ -641,6 +641,75 @@ export default function ClientesListCreate() {
           observacao: data.observacao
         });
         setClientes(prev => [novoCliente, ...prev]);
+        
+        // Enviar mensagem de boas-vindas se o cliente tiver WhatsApp
+        if (novoCliente.whatsapp) {
+          try {
+            // Buscar mensagem de boas-vindas
+            const { data: user } = await supabase.auth.getUser();
+            if (user?.user?.id) {
+              const { data: mensagensPadroes } = await supabase
+                .from('mensagens_padroes')
+                .select('bem_vindo')
+                .eq('user_id', user.user.id)
+                .single();
+              
+              if (mensagensPadroes?.bem_vindo) {
+                // Buscar dados do plano para substituição de variáveis
+                const plano = planos.find(p => String(p.id) === novoCliente.plano || p.nome === novoCliente.plano);
+                const planoNome = plano?.nome || novoCliente.plano || '';
+                const valorPlano = plano?.valor || '0,00';
+                
+                // Gerar saudação baseada no horário
+                const hora = new Date().getHours();
+                let saudacao = "Bom dia";
+                if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
+                else if (hora >= 18) saudacao = "Boa noite";
+
+                // Formatar data de vencimento
+                let dataVencimento = '';
+                if (novoCliente.data_vencimento) {
+                  try {
+                    dataVencimento = format(new Date(novoCliente.data_vencimento), "dd/MM/yyyy");
+                  } catch {
+                    dataVencimento = novoCliente.data_vencimento;
+                  }
+                }
+                
+                // Substituir variáveis na mensagem
+                let mensagemFinal = mensagensPadroes.bem_vindo
+                  .replace(/{saudacao}/g, saudacao)
+                  .replace(/{nome_cliente}/g, novoCliente.nome || '')
+                  .replace(/{nome}/g, novoCliente.nome || '')
+                  .replace(/{usuario}/g, novoCliente.usuario || '')
+                  .replace(/{senha}/g, novoCliente.senha || '')
+                  .replace(/{vencimento}/g, dataVencimento)
+                  .replace(/{nome_plano}/g, planoNome)
+                  .replace(/{valor_plano}/g, valorPlano)
+                  .replace(/{email}/g, novoCliente.email || '')
+                  .replace(/{br}/g, '\n');
+                
+                // Adicionar à fila de mensagens
+                await supabase.from('whatsapp_messages').insert({
+                  user_id: user.user.id,
+                  phone: novoCliente.whatsapp,
+                  message: mensagemFinal,
+                  status: 'pending',
+                  session_id: 'welcome_' + Date.now(),
+                  sent_at: new Date().toISOString(),
+                });
+                
+                toast({
+                  title: "Mensagem de boas-vindas",
+                  description: "Mensagem adicionada à fila de envio",
+                });
+              }
+            }
+          } catch (welcomeError) {
+            console.error("Erro ao enviar mensagem de boas-vindas:", welcomeError);
+          }
+        }
+        
         setSuccessMessage("Cliente criado");
         setShowSuccessDialog(true);
       }
