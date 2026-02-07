@@ -4,7 +4,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -19,8 +18,7 @@ import {
   DollarSign,
   Wallet,
   MessageSquare,
-  ChevronDown,
-  Circle,
+  ChevronRight,
   Link2,
   LayoutGrid,
   Package,
@@ -29,9 +27,11 @@ import {
   CreditCard,
   ShoppingCart,
   Settings,
+  Play,
 } from "lucide-react";
 import { useState } from "react";
 import type { LucideProps } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Custom WhatsApp icon to match sidebar icon API
 const WhatsAppIcon = (props: LucideProps) => (
@@ -66,269 +66,238 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
 
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all ${
-      isActive 
-        ? "bg-sidebar-accent text-sidebar-primary font-medium" 
-        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-    }`;
-
-  const getSubNavCls = (active: boolean) =>
-    `flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-all ${
-      active 
-        ? "bg-sidebar-accent text-sidebar-primary font-medium" 
-        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-    }`;
-
   return (
-    <Sidebar className="border-r-0" collapsible="icon">
-      <SidebarContent className="bg-sidebar-background">
-        {/* Logo/Brand Header */}
-        <div className="h-16 px-4 flex items-center gap-3 border-b border-sidebar-border">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg">G</span>
+    <Sidebar className="border-r border-sidebar-border" collapsible="icon">
+      <SidebarContent className="bg-[hsl(220,25%,10%)]">
+        {/* Logo Header */}
+        <div className="flex justify-center py-8">
+          <div className="w-20 h-20 rounded-full bg-[hsl(var(--brand))] flex items-center justify-center shadow-[0_0_30px_hsl(var(--brand)/0.4)]">
+            <Play className="h-10 w-10 text-white fill-white ml-1" />
           </div>
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="font-bold text-sidebar-foreground text-base tracking-tight">GESTOR TP</span>
-              <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Painel Admin</span>
-            </div>
-          )}
         </div>
 
         {/* Main Navigation */}
-        <SidebarGroup className="px-3 py-4">
+        <SidebarGroup className="px-2">
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
+              {/* Dashboard */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="p-0">
+                <SidebarMenuButton asChild className="h-auto p-0">
                   <NavLink
                     to="/"
                     end
-                    className={getNavCls}
-                    aria-current={isActive("/") ? "page" : undefined}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`
+                    }
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(var(--dashboard-cyan))]/20 flex items-center justify-center">
-                      <Home className="h-4 w-4 text-[hsl(var(--dashboard-cyan))]" />
+                    <div className="flex items-center gap-3">
+                      <Home className="h-5 w-5" />
+                      {!isCollapsed && <span className="text-sm">Dashboard</span>}
                     </div>
-                    {!isCollapsed && <span>Dashboard</span>}
+                    {!isCollapsed && <ChevronRight className="h-4 w-4 opacity-50" />}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
-        {/* Gerenciamento Section */}
-        <SidebarGroup className="px-3">
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold px-3 mb-2">
-            Gerenciamento
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {/* Grupo Clientes com submenu */}
+              {/* Clientes */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setClientesOpen((o) => !o)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all w-full ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors w-full h-auto ${
                     clientesActive 
-                      ? "bg-sidebar-accent text-sidebar-primary font-medium" 
+                      ? "bg-sidebar-accent text-sidebar-foreground" 
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   }`}
-                  aria-expanded={clientesOpen}
-                  aria-controls="submenu-clientes"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[hsl(var(--dashboard-green))]/20 flex items-center justify-center">
-                    <Users className="h-4 w-4 text-[hsl(var(--dashboard-green))]" />
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5" />
+                    {!isCollapsed && <span className="text-sm">Clientes</span>}
                   </div>
                   {!isCollapsed && (
-                    <>
-                      <span className="flex-1 text-left">Clientes</span>
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${clientesOpen ? "rotate-180" : ""}`} />
-                    </>
+                    <ChevronRight className={`h-4 w-4 opacity-50 transition-transform ${clientesOpen ? "rotate-90" : ""}`} />
                   )}
                 </SidebarMenuButton>
                 {clientesOpen && !isCollapsed && (
-                  <SidebarMenuSub id="submenu-clientes" className="ml-5 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes" end className={getSubNavCls(isActive("/clientes"))}>
-                          <LayoutGrid className="h-3.5 w-3.5" />
-                          <span>Listar/Criar</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes/planos" end className={getSubNavCls(isActive("/clientes/planos"))}>
-                          <Package className="h-3.5 w-3.5" />
-                          <span>Planos</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes/produtos" end className={getSubNavCls(isActive("/clientes/produtos"))}>
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          <span>Produtos</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes/aplicativos" end className={getSubNavCls(isActive("/clientes/aplicativos"))}>
-                          <Smartphone className="h-3.5 w-3.5" />
-                          <span>Aplicativos</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes/metricas" end className={getSubNavCls(isActive("/clientes/metricas"))}>
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          <span>Métricas</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/clientes/integracoes" end className={getSubNavCls(isActive("/clientes/integracoes"))}>
-                          <Link2 className="h-3.5 w-3.5" />
-                          <span>Integrações</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                  <SidebarMenuSub className="ml-8 mt-1 space-y-0.5 border-l border-sidebar-border/50 pl-4">
+                    {[
+                      { to: "/clientes", label: "Listar/Criar", icon: LayoutGrid },
+                      { to: "/clientes/planos", label: "Planos", icon: Package },
+                      { to: "/clientes/produtos", label: "Produtos", icon: ShoppingCart },
+                      { to: "/clientes/aplicativos", label: "Aplicativos", icon: Smartphone },
+                      { to: "/clientes/metricas", label: "Métricas", icon: BarChart3 },
+                      { to: "/clientes/integracoes", label: "Integrações", icon: Link2 },
+                    ].map((item) => (
+                      <SidebarMenuSubItem key={item.to}>
+                        <SidebarMenuSubButton asChild className="h-auto p-0">
+                          <NavLink
+                            to={item.to}
+                            end
+                            className={`flex items-center gap-2 py-2 text-sm transition-colors ${
+                              isActive(item.to)
+                                ? "text-sidebar-primary"
+                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                            }`}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
                   </SidebarMenuSub>
                 )}
               </SidebarMenuItem>
 
               {/* Financeiro */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="p-0">
+                <SidebarMenuButton asChild className="h-auto p-0">
                   <NavLink
                     to="/financeiro"
                     end
-                    className={getNavCls}
-                    aria-current={isActive("/financeiro") ? "page" : undefined}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`
+                    }
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(var(--warning))]/20 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-[hsl(var(--warning))]" />
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5" />
+                      {!isCollapsed && <span className="text-sm">Financeiro</span>}
                     </div>
-                    {!isCollapsed && <span>Financeiro</span>}
+                    {!isCollapsed && <ChevronRight className="h-4 w-4 opacity-50" />}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
-        {/* Configurações Section */}
-        <SidebarGroup className="px-3 mt-2">
-          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold px-3 mb-2">
-            Configurações
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {/* Pagamentos com submenu */}
+              {/* Pagamentos */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setPagamentosOpen((o) => !o)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all w-full ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors w-full h-auto ${
                     pagamentosActive 
-                      ? "bg-sidebar-accent text-sidebar-primary font-medium" 
+                      ? "bg-sidebar-accent text-sidebar-foreground" 
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   }`}
-                  aria-expanded={pagamentosOpen}
-                  aria-controls="submenu-pagamentos"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[hsl(var(--dashboard-purple))]/20 flex items-center justify-center">
-                    <Wallet className="h-4 w-4 text-[hsl(var(--dashboard-purple))]" />
+                  <div className="flex items-center gap-3">
+                    <Wallet className="h-5 w-5" />
+                    {!isCollapsed && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Pagamentos</span>
+                        <Badge className="bg-[hsl(var(--brand))] text-white text-[10px] px-1.5 py-0 h-4">
+                          Novo
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   {!isCollapsed && (
-                    <>
-                      <span className="flex-1 text-left">Pagamentos</span>
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${pagamentosOpen ? "rotate-180" : ""}`} />
-                    </>
+                    <ChevronRight className={`h-4 w-4 opacity-50 transition-transform ${pagamentosOpen ? "rotate-90" : ""}`} />
                   )}
                 </SidebarMenuButton>
                 {pagamentosOpen && !isCollapsed && (
-                  <SidebarMenuSub id="submenu-pagamentos" className="ml-5 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/financeiro-extra/assas" end className={getSubNavCls(isActive("/financeiro-extra/assas"))}>
-                          <CreditCard className="h-3.5 w-3.5" />
-                          <span>Assas</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild className="p-0">
-                        <NavLink to="/financeiro-extra/checkout" end className={getSubNavCls(isActive("/financeiro-extra/checkout"))}>
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          <span>Checkout</span>
-                        </NavLink>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                  <SidebarMenuSub className="ml-8 mt-1 space-y-0.5 border-l border-sidebar-border/50 pl-4">
+                    {[
+                      { to: "/financeiro-extra/assas", label: "Assas", icon: CreditCard },
+                      { to: "/financeiro-extra/checkout", label: "Checkout", icon: ShoppingCart },
+                    ].map((item) => (
+                      <SidebarMenuSubItem key={item.to}>
+                        <SidebarMenuSubButton asChild className="h-auto p-0">
+                          <NavLink
+                            to={item.to}
+                            end
+                            className={`flex items-center gap-2 py-2 text-sm transition-colors ${
+                              isActive(item.to)
+                                ? "text-sidebar-primary"
+                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                            }`}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
                   </SidebarMenuSub>
                 )}
               </SidebarMenuItem>
 
               {/* WhatsApp */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="p-0">
+                <SidebarMenuButton asChild className="h-auto p-0">
                   <NavLink
                     to="/parear-whatsapp"
                     end
-                    className={getNavCls}
-                    aria-current={isActive("/parear-whatsapp") ? "page" : undefined}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`
+                    }
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#25D366]/20 flex items-center justify-center">
-                      <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+                    <div className="flex items-center gap-3">
+                      <WhatsAppIcon className="h-5 w-5" />
+                      {!isCollapsed && <span className="text-sm">WhatsApp</span>}
                     </div>
-                    {!isCollapsed && <span>WhatsApp</span>}
+                    {!isCollapsed && <ChevronRight className="h-4 w-4 opacity-50" />}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               {/* Mensagens de Cobrança */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="p-0">
+                <SidebarMenuButton asChild className="h-auto p-0">
                   <NavLink
                     to="/configuracoes/mensagens-cobranca"
                     end
-                    className={getNavCls}
-                    aria-current={isActive("/configuracoes/mensagens-cobranca") ? "page" : undefined}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`
+                    }
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(var(--dashboard-red))]/20 flex items-center justify-center">
-                      <MessageSquare className="h-4 w-4 text-[hsl(var(--dashboard-red))]" />
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-5 w-5" />
+                      {!isCollapsed && <span className="text-sm">Mensagens</span>}
                     </div>
-                    {!isCollapsed && <span>Mensagens de Cobrança</span>}
+                    {!isCollapsed && <ChevronRight className="h-4 w-4 opacity-50" />}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Configurações */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="h-auto p-0">
+                  <NavLink
+                    to="/configuracoes"
+                    end
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-foreground" 
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`
+                    }
+                  >
+                    <div className="flex items-center gap-3">
+                      <Settings className="h-5 w-5" />
+                      {!isCollapsed && <span className="text-sm">Configurações</span>}
+                    </div>
+                    {!isCollapsed && <ChevronRight className="h-4 w-4 opacity-50" />}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Spacer to push footer down */}
-        <div className="flex-1" />
-
-        {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border">
-          <NavLink
-            to="/configuracoes"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all ${
-              isActive("/configuracoes")
-                ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            }`}
-          >
-            <div className="w-8 h-8 rounded-lg bg-sidebar-accent flex items-center justify-center">
-              <Settings className="h-4 w-4 text-sidebar-foreground/70" />
-            </div>
-            {!isCollapsed && <span>Configurações</span>}
-          </NavLink>
-        </div>
       </SidebarContent>
     </Sidebar>
   );
