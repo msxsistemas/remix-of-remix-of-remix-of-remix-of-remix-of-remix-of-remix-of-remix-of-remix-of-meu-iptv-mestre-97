@@ -18,13 +18,79 @@ interface MensagensPadroes {
 }
 
 const defaultMensagens: MensagensPadroes = {
-  bem_vindo: `{saudacao} *{nome_cliente}*. {br}{br}🎉 Seja bem-vindo(a) à *Tech Play!* {br}{br}Aqui você tem acesso ao melhor do entretenimento: filmes, séries, canais e muito mais, tudo em alta qualidade.{br}{br} 🎬 Abaixo são os dados`,
-  fatura_criada: `{saudacao}. *{nome_cliente}*. {br}{br}* 📄 Sua fatura foi gerada com sucesso!* {br}{br} *DADOS DA FATURA*{br}--------------------------------{br} ◆ *Vencimento:* *{vencimento}*{br} ◆ {nome_plano}: *`,
-  proximo_vencer: `------------------{br} ◆ *Vencimento: *{vencimento}{br} ◆ *`,
-  vence_hoje: `{saudacao}. *{nome_cliente}*. {br}{br} ⚠️ *SEU VENCIMENTO É HOJE!* Pra continuar aproveitando seus canais, realize o pagamento o quanto antes. {br}{br} *DADOS DA FATURA*{br}----------------------------------------{br}`,
-  vencido: `{saudacao}. *{nome_cliente}*. {br}{br} 🟥 *SEU PLANO VENCEU*{br}Pra continuar aproveitando seus canais, realize o pagamento o quanto antes. {br}{br} *DADOS DA FATURA*{br}----------------------------------------{br}`,
-  confirmacao_pagamento: `Olá, *{nome_cliente}*. {br}{br} ✅ *Seu pagamento foi realizado e o seu acesso será renovado em alguns minutos!*.{br}{br}Próximo vencimento: *{vencimento}* !{br}{br}Qualquer dúvida, estamos por aqui{br}{br} *Obrigado!*`,
-  dados_cliente: `{saudacao} *{nome_cliente}*.{br}Segue suas informações abaixo:{br}{br}💜*Central do Cliente:* {area_cliente}{br}{br}Login: *{usuario}*{br}Senha: *`,
+  bem_vindo: `{saudacao} *{nome_cliente}*
+
+🎉 Seja bem-vindo(a) à *Tech Play!*
+
+Aqui você tem acesso ao melhor do entretenimento: filmes, séries, canais e muito mais, tudo em alta qualidade.
+
+🎬 Abaixo são os dados`,
+  fatura_criada: `{saudacao}. *{nome_cliente}*
+
+📄 *Sua fatura foi gerada com sucesso!*
+
+*DADOS DA FATURA*
+--------------------------------
+◆ *Vencimento:* *{vencimento}*
+◆ {nome_plano}
+◆ Desconto: {desconto}
+◆ Total a pagar: {subtotal}
+
+💸 Pagamento rápido em 1 clique:
+{link_fatura}`,
+  proximo_vencer: `{saudacao}. *{nome_cliente}*
+
+⚠️ *Passando só pra avisar que seu Plano vence amanhã!*
+
+*DADOS DA FATURA*
+------------------
+◆ *Vencimento:* {vencimento}
+◆ {nome_plano}
+
+💸 Pagamento rápido em 1 clique:
+{link_fatura}`,
+  vence_hoje: `{saudacao}. *{nome_cliente}*
+
+⚠️ *SEU VENCIMENTO É HOJE!*
+Pra continuar aproveitando seus canais, realize o pagamento o quanto antes.
+
+*DADOS DA FATURA*
+----------------------------------------
+◆ *Vencimento:* {vencimento}
+◆ {nome_plano}
+◆ Total a pagar: {subtotal}
+
+💸 Pagamento rápido em 1 clique:
+{link_fatura}`,
+  vencido: `{saudacao}. *{nome_cliente}*
+
+🟥 *SEU PLANO VENCEU*
+Pra continuar aproveitando seus canais, realize o pagamento o quanto antes.
+
+*DADOS DA FATURA*
+----------------------------------------
+◆ *Vencimento:* {vencimento}
+◆ {nome_plano}
+◆ Total a pagar: {subtotal}
+
+💸 Pagamento rápido em 1 clique:
+{link_fatura}`,
+  confirmacao_pagamento: `Olá, *{nome_cliente}*
+
+✅ *Seu pagamento foi realizado e o seu acesso será renovado em alguns minutos!*
+
+Próximo vencimento: *{vencimento}*
+
+Qualquer dúvida, estamos por aqui
+
+*Obrigado!*`,
+  dados_cliente: `{saudacao} *{nome_cliente}*
+Segue suas informações abaixo:
+
+💜 *Central do Cliente:* {area_cliente}
+
+Login: *{usuario}*
+Senha: *{senha}*`,
 };
 
 export default function GerenciarMensagens() {
@@ -150,7 +216,7 @@ export default function GerenciarMensagens() {
               Utilize <span className="text-orange-400">{"{nome_cliente_indicado}"}</span> <span className="text-orange-400">{"{valor_indicacao}"}</span> somente na mensagem de indicação.
             </p>
             <p className="text-sm text-muted-foreground">
-              Utilize <span className="text-orange-400">{"{br}"}</span> para quebra de linha.
+              Use <span className="text-green-400">Enter</span> para quebra de linha ou <span className="text-orange-400">{"{br}"}</span> para compatibilidade.
             </p>
           </div>
 
