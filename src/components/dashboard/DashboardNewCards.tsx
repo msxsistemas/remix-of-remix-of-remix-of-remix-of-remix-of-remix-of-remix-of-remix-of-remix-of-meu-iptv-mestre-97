@@ -33,7 +33,7 @@ export default function DashboardNewCards({
   return (
     <section className="grid gap-4 grid-cols-1 md:grid-cols-3">
       {/* Card 1 - Novos Clientes */}
-      <div className="relative overflow-hidden rounded-xl bg-[hsl(220,40%,13%)] border border-[hsl(220,30%,20%)] p-5 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-3">
             <Users className="h-8 w-8 text-[hsl(142,70%,45%)]" />
@@ -59,7 +59,7 @@ export default function DashboardNewCards({
       </div>
 
       {/* Card 2 - Clientes Vencendo */}
-      <div className="relative overflow-hidden rounded-xl bg-[hsl(220,40%,13%)] border border-[hsl(220,30%,20%)] p-5 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-3">
             <Users className="h-8 w-8 text-[hsl(142,70%,45%)]" />
@@ -90,7 +90,7 @@ export default function DashboardNewCards({
       </div>
 
       {/* Card 3 - Valores a Receber */}
-      <div className="relative overflow-hidden rounded-xl bg-[hsl(220,40%,13%)] border border-[hsl(220,30%,20%)] p-5 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white">
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-3">
             <TrendingUp className="h-8 w-8 text-[hsl(142,70%,45%)]" />
