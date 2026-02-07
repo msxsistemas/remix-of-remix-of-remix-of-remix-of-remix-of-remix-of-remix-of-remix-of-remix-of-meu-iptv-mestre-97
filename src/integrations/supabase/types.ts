@@ -423,6 +423,7 @@ export type Database = {
           message_id: string | null
           phone: string
           read_at: string | null
+          scheduled_for: string | null
           sent_at: string
           session_id: string
           status: string
@@ -438,6 +439,7 @@ export type Database = {
           message_id?: string | null
           phone: string
           read_at?: string | null
+          scheduled_for?: string | null
           sent_at?: string
           session_id: string
           status?: string
@@ -453,6 +455,7 @@ export type Database = {
           message_id?: string | null
           phone?: string
           read_at?: string | null
+          scheduled_for?: string | null
           sent_at?: string
           session_id?: string
           status?: string

@@ -41,7 +41,8 @@ interface Mensagem {
   whatsapp: string;
   mensagem: string;
   data_hora: string;
-  status: "enviada" | "aguardando" | "erro";
+  scheduled_for?: string;
+  status: "enviada" | "aguardando" | "erro" | "agendada";
 }
 
 export default function FilaMensagens() {
@@ -97,13 +98,20 @@ export default function FilaMensagens() {
       if (messagesData) {
         setMensagens(messagesData.map(m => {
           const phoneClean = m.phone.replace(/\D/g, '');
+          let status: "enviada" | "aguardando" | "erro" | "agendada" = 'aguardando';
+          if (m.status === 'sent') status = 'enviada';
+          else if (m.status === 'pending') status = 'aguardando';
+          else if (m.status === 'scheduled') status = 'agendada';
+          else if (m.status === 'failed') status = 'erro';
+          
           return {
             id: m.id,
             cliente: clientesMap.get(phoneClean) || m.phone,
             whatsapp: m.phone,
             mensagem: m.message,
             data_hora: m.sent_at,
-            status: m.status === 'sent' ? 'enviada' : m.status === 'pending' ? 'aguardando' : m.status === 'failed' ? 'erro' : m.status as "enviada" | "aguardando" | "erro"
+            scheduled_for: (m as any).scheduled_for,
+            status
           };
         }));
       }
@@ -117,6 +125,7 @@ export default function FilaMensagens() {
 
   const filteredMensagens = mensagens.filter(m => {
     if (filtro === "aguardando" && m.status !== "aguardando") return false;
+    if (filtro === "agendada" && m.status !== "agendada") return false;
     if (filtro === "enviadas" && m.status !== "enviada") return false;
     if (filtro === "erro" && m.status !== "erro") return false;
     if (busca && !m.cliente.toLowerCase().includes(busca.toLowerCase()) && !m.whatsapp.includes(busca)) return false;
@@ -132,6 +141,7 @@ export default function FilaMensagens() {
   const counts = {
     todas: mensagens.length,
     aguardando: mensagens.filter(m => m.status === "aguardando").length,
+    agendada: mensagens.filter(m => m.status === "agendada").length,
     enviadas: mensagens.filter(m => m.status === "enviada").length,
     erro: mensagens.filter(m => m.status === "erro").length,
   };
@@ -302,12 +312,22 @@ export default function FilaMensagens() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (msg: Mensagem) => {
+    const { status, scheduled_for } = msg;
     switch (status) {
       case "enviada":
         return <Badge className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))] text-white text-xs px-3 py-1">Mensagem Enviada</Badge>;
       case "aguardando":
         return <Badge className="bg-[hsl(var(--warning))] hover:bg-[hsl(var(--warning))] text-black text-xs px-3 py-1">Aguardando</Badge>;
+      case "agendada":
+        const scheduledTime = scheduled_for ? new Date(scheduled_for) : null;
+        const now = new Date();
+        const remaining = scheduledTime ? Math.max(0, Math.ceil((scheduledTime.getTime() - now.getTime()) / 1000)) : 0;
+        return (
+          <Badge className="bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,50%)] text-white text-xs px-3 py-1">
+            Agendada {remaining > 0 ? `(${remaining}s)` : ''}
+          </Badge>
+        );
       case "erro":
         return <Badge className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))] text-white text-xs px-3 py-1">Erro</Badge>;
       default:
@@ -384,6 +404,16 @@ export default function FilaMensagens() {
                 : "border-[hsl(300,70%,40%)] text-[hsl(300,70%,60%)] hover:bg-[hsl(300,70%,40%)]/10 rounded-full px-4"}
             >
               Aguardando Envio ({counts.aguardando})
+            </Button>
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={() => setFiltro("agendada")}
+              className={filtro === "agendada" 
+                ? "bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,45%)] text-white border-transparent rounded-full px-4" 
+                : "border-[hsl(200,70%,50%)] text-[hsl(200,70%,60%)] hover:bg-[hsl(200,70%,50%)]/10 rounded-full px-4"}
+            >
+              Agendadas ({counts.agendada})
             </Button>
             <Button 
               size="sm"
@@ -482,7 +512,7 @@ export default function FilaMensagens() {
                         <TableCell className="text-foreground text-sm whitespace-nowrap">
                           {format(new Date(msg.data_hora), "dd/MM/yyyy - HH:mm:ss")}
                         </TableCell>
-                        <TableCell>{getStatusBadge(msg.status)}</TableCell>
+                        <TableCell>{getStatusBadge(msg)}</TableCell>
                         <TableCell>
                           <div className="flex flex-col items-center gap-1">
                             <Button 

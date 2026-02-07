@@ -689,19 +689,24 @@ export default function ClientesListCreate() {
                   .replace(/{email}/g, novoCliente.email || '')
                   .replace(/{br}/g, '\n');
                 
-                // Adicionar à fila de mensagens
+                // Agendar envio para 30 segundos após a criação
+                const scheduledTime = new Date();
+                scheduledTime.setSeconds(scheduledTime.getSeconds() + 30);
+                
+                // Adicionar à fila de mensagens com agendamento
                 await supabase.from('whatsapp_messages').insert({
                   user_id: user.user.id,
                   phone: novoCliente.whatsapp,
                   message: mensagemFinal,
-                  status: 'pending',
+                  status: 'scheduled',
                   session_id: 'welcome_' + Date.now(),
                   sent_at: new Date().toISOString(),
-                });
+                  scheduled_for: scheduledTime.toISOString(),
+                } as any);
                 
                 toast({
                   title: "Mensagem de boas-vindas",
-                  description: "Mensagem adicionada à fila de envio",
+                  description: "Mensagem agendada para envio em 30 segundos",
                 });
               }
             }
