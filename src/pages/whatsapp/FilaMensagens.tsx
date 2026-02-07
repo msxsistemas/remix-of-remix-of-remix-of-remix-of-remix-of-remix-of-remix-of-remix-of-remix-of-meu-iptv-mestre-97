@@ -32,7 +32,7 @@ import { Home, Send, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useEvolutionAPI } from "@/hooks/useEvolutionAPI";
+import { useEvolutionAPISimple } from "@/hooks/useEvolutionAPISimple";
 import { format } from "date-fns";
 
 interface Mensagem {
@@ -55,7 +55,7 @@ export default function FilaMensagens() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { user } = useCurrentUser();
-  const { sendMessage, isConnected, config } = useEvolutionAPI();
+  const { sendMessage, isConnected, hydrated } = useEvolutionAPISimple();
 
   useEffect(() => {
     document.title = "Fila de Mensagens | Tech Play";
@@ -148,6 +148,10 @@ export default function FilaMensagens() {
 
   // Forçar envio de todas as mensagens aguardando e agendadas
   const handleForcarEnvio = async () => {
+    if (!hydrated) {
+      toast.info("Aguarde, verificando conexão...");
+      return;
+    }
     if (!isConnected) {
       toast.error("WhatsApp não está conectado. Conecte primeiro em 'Parear WhatsApp'");
       return;
