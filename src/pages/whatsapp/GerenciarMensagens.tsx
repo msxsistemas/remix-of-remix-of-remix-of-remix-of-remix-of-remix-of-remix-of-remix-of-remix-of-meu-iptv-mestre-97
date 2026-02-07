@@ -296,9 +296,9 @@ export default function GerenciarMensagens() {
 
             {/* WhatsApp Preview */}
             <div className="flex justify-center lg:sticky lg:top-6 self-start h-fit">
-              <div className="w-[320px] bg-[#111b21] rounded-2xl overflow-hidden shadow-xl border border-border/30">
+              <div className="w-[380px] bg-[#111b21] rounded-2xl overflow-hidden shadow-xl border border-border/30">
                 {/* Phone Status Bar */}
-                <div className="bg-[#202c33] px-4 py-2 flex items-center justify-between">
+                <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-white text-xs font-medium">TIM</span>
                     <span className="text-white text-xs">📶</span>
@@ -311,12 +311,12 @@ export default function GerenciarMensagens() {
                 </div>
                 
                 {/* WhatsApp Header */}
-                <div className="bg-[#202c33] px-3 py-3 flex items-center gap-3 border-b border-[#2a3942]">
-                  <div className="w-10 h-10 bg-[#25d366] rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg font-bold">G</span>
+                <div className="bg-[#202c33] px-4 py-3 flex items-center gap-3 border-b border-[#2a3942]">
+                  <div className="w-11 h-11 bg-[#25d366] rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl font-bold">G</span>
                   </div>
                   <div className="flex-1">
-                    <span className="text-white font-semibold text-sm">GESTORv3</span>
+                    <span className="text-white font-semibold">GESTORv3</span>
                   </div>
                   <div className="flex items-center gap-4 text-[#8696a0]">
                     <Video className="w-5 h-5" />
@@ -325,19 +325,19 @@ export default function GerenciarMensagens() {
                 </div>
 
                 {/* Template indicator */}
-                <div className="bg-[#202c33]/50 px-3 py-1.5 text-center">
-                  <span className="text-xs text-muted-foreground">Preview: <span className="text-purple-400 font-medium">{getTemplateTitle()}</span></span>
+                <div className="bg-[#202c33]/50 px-3 py-2 text-center">
+                  <span className="text-sm text-muted-foreground">Preview: <span className="text-purple-400 font-medium">{getTemplateTitle()}</span></span>
                 </div>
 
                 {/* Chat Area */}
                 <div 
-                  className="h-[380px] bg-[#0b141a] p-3 overflow-y-auto" 
+                  className="h-[450px] bg-[#0b141a] p-4 overflow-y-auto" 
                   style={{ 
                     backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23182229\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" 
                   }}
                 >
-                  <div className="bg-[#005c4b] rounded-lg p-3 max-w-[95%] ml-auto shadow-md">
-                    <p className="text-white text-xs whitespace-pre-wrap leading-relaxed">
+                  <div className="bg-[#005c4b] rounded-lg p-4 max-w-[95%] ml-auto shadow-md">
+                    <p className="text-white text-sm whitespace-pre-wrap leading-relaxed">
                       {renderPreview().split('\n').map((line, index) => {
                         // Process bold text (text between asterisks)
                         const processedLine = line.split(/\*([^*]+)\*/g).map((part, i) => 
