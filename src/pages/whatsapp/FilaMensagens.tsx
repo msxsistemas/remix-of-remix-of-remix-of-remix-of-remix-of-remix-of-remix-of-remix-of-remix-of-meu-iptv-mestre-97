@@ -222,15 +222,15 @@ export default function FilaMensagens() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={handleForcarEnvio} size="sm" className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white">
+          <Button onClick={handleForcarEnvio} size="sm" className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white rounded-full px-4">
             <Send className="h-4 w-4 mr-1" />
             Forçar Envio
           </Button>
-          <Button onClick={handleExcluirEnviadas} size="sm" className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white">
+          <Button onClick={handleExcluirEnviadas} size="sm" className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white rounded-full px-4">
             <Trash2 className="h-4 w-4 mr-1" />
             Excluir Enviadas
           </Button>
-          <Button onClick={handleExcluirTodas} size="sm" className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white">
+          <Button onClick={handleExcluirTodas} size="sm" className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white rounded-full px-4">
             <Trash2 className="h-4 w-4 mr-1" />
             Excluir Todas
           </Button>
