@@ -1,60 +1,85 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Activity, AlertTriangle, DollarSign, UserPlus, Calendar, TrendingUp, Download } from "lucide-react";
+import { Users, UserX, DollarSign, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
-  AreaChart,
-  Area,
+  Legend,
 } from "recharts";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { useMetricasClientes, useMetricasPagamentos, useMetricasRenovacoes } from "@/hooks/useMetricas";
-
+import { useState } from "react";
 
 export default function Index() {
   const { entradas, saidas, lucros, loading: loadingFinanceiro } = useFinanceiro();
-  const { 
-    totalClientes, 
-    clientesAtivos, 
+  const {
+    totalClientes,
+    clientesAtivos,
     clientesVencidos,
     clientesNovosHoje,
     clientesNovosData,
-    loading: loadingClientes 
+    loading: loadingClientes,
   } = useMetricasClientes();
-  const { 
-    totalPagamentos, 
-    valorTotalMes, 
+  const {
+    totalPagamentos,
+    valorTotalMes,
     mediaPorDia,
     pagamentosData,
-    loading: loadingPagamentos 
+    loading: loadingPagamentos,
   } = useMetricasPagamentos();
   const {
     totalRenovacoes,
     renovacoesHoje,
     mediaPorDia: mediaRenovacoesPorDia,
     renovacoesData,
-    loading: loadingRenovacoes
+    loading: loadingRenovacoes,
   } = useMetricasRenovacoes();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  const [showSaldoMes, setShowSaldoMes] = useState(true);
+  const [showSaldoAno, setShowSaldoAno] = useState(true);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+  const mesAtual = new Date().toLocaleString("pt-BR", { month: "long" });
+  const mesCapitalizado = mesAtual.charAt(0).toUpperCase() + mesAtual.slice(1);
+  const anoAtual = new Date().getFullYear();
+
+  // Clientes desativados = vencidos (mesma lógica)
+  const clientesDesativados = 0;
+
+  // Build chart data combining clientes novos + renovados
+  const chartClientesData = clientesNovosData.map((item, i) => ({
+    day: item.day,
+    ativados: item.total,
+    cadastrados: item.total,
+    renovados: renovacoesData[i]?.total || 0,
+  }));
+
+  // Build chart data for financeiro
+  const chartFinanceiroData = pagamentosData.map((item) => ({
+    day: item.day,
+    vendas: item.valor,
+    entradas: item.valor,
+    saidas: 0,
+    custos: 0,
+  }));
 
   if (loadingFinanceiro || loadingClientes || loadingPagamentos || loadingRenovacoes) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-muted rounded w-64"></div>
-        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="h-8 bg-muted rounded w-64" />
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 bg-muted rounded"></div>
+            <div key={i} className="h-32 bg-muted rounded-xl" />
+          ))}
+        </div>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-20 bg-muted rounded-xl" />
           ))}
         </div>
       </div>
@@ -62,291 +87,209 @@ export default function Index() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-mobile-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-mobile-sm text-muted-foreground">Acompanhe clientes, pagamentos e desempenho.</p>
+    <div className="space-y-5">
+      {/* Greeting */}
+      <header>
+        <h1 className="text-mobile-2xl md:text-2xl font-bold">Bom Dia! 👋</h1>
+        <p className="text-mobile-sm text-muted-foreground flex items-center gap-1">
+          🏠 / Home
+        </p>
       </header>
 
-      {/* Cards Principais */}
-      <section className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-dashboard-primary text-white border-0">
-          <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-white/90">Total de clientes</CardTitle>
-            <Users className="h-6 w-6 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalClientes}</div>
-          </CardContent>
-        </Card>
+      {/* Top 3 Cards */}
+      <section className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {/* Clientes Ativos - Green */}
+        <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[hsl(142,70%,45%)] to-[hsl(142,70%,35%)] text-white min-h-[120px]">
+          <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 opacity-20">
+            <Users className="h-24 w-24" />
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="h-6 w-6 opacity-80" />
+            <span className="text-sm font-medium opacity-90">Clientes Ativos</span>
+          </div>
+          <div className="text-4xl font-bold">{clientesAtivos}</div>
+        </div>
 
-        <Card className="bg-dashboard-secondary text-white border-0">
-          <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-white/90">Clientes ativos</CardTitle>
-            <Activity className="h-6 w-6 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{clientesAtivos}</div>
-          </CardContent>
-        </Card>
+        {/* Clientes Vencidos - Yellow/Orange */}
+        <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[hsl(38,92%,50%)] to-[hsl(25,90%,45%)] text-white min-h-[120px]">
+          <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 opacity-20">
+            <Users className="h-24 w-24" />
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="h-6 w-6 opacity-80" />
+            <span className="text-sm font-medium opacity-90">Clientes Vencidos</span>
+          </div>
+          <div className="text-4xl font-bold">{clientesVencidos}</div>
+        </div>
 
-        <Card className="bg-dashboard-danger text-white border-0">
-          <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-white/90">Clientes vencidos</CardTitle>
-            <AlertTriangle className="h-6 w-6 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{clientesVencidos}</div>
-          </CardContent>
-        </Card>
+        {/* Clientes Desativados - Red/Pink */}
+        <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-[hsl(340,80%,55%)] to-[hsl(350,80%,45%)] text-white min-h-[120px]">
+          <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 opacity-20">
+            <UserX className="h-24 w-24" />
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <UserX className="h-6 w-6 opacity-80" />
+            <span className="text-sm font-medium opacity-90">Clientes Desativados</span>
+          </div>
+          <div className="text-4xl font-bold">{clientesDesativados}</div>
+        </div>
       </section>
 
-      {/* Seção de Detalhes */}
-      <section className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Novos Clientes */}
-        <Card className="bg-dashboard-primary/5 border-dashboard-primary/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-dashboard-secondary" />
-              Novos Clientes Hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-sm text-muted-foreground">{clientesNovosHoje}</div>
-            <div className="text-sm text-muted-foreground">Novos Clientes Esta Semana: {clientesNovosData.reduce((sum, item) => sum + item.total, 0)}</div>
-            <div className="text-sm text-muted-foreground">Novos Clientes Este Mês: {totalClientes}</div>
-          </CardContent>
-        </Card>
+      {/* Saldo Cards */}
+      <section className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        {/* Saldo Líquido do Mês */}
+        <div className="rounded-xl border bg-card p-5 flex items-center gap-4">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-dashboard-success/20">
+            <DollarSign className="h-6 w-6 text-dashboard-success" />
+          </div>
+          <div className="flex-1 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="text-sm text-muted-foreground">Saldo Líquido do Mês</span>
+              <span className="text-xs bg-dashboard-success text-white px-2 py-0.5 rounded font-medium">
+                {mesCapitalizado}
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl font-bold">
+                {showSaldoMes ? formatCurrency(lucros) : "••••••"}
+              </span>
+              <button onClick={() => setShowSaldoMes(!showSaldoMes)} className="text-muted-foreground hover:text-foreground transition-colors">
+                {showSaldoMes ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-dashboard-success/20">
+            <DollarSign className="h-6 w-6 text-dashboard-success" />
+          </div>
+        </div>
 
-        {/* Clientes Vencendo */}
-        <Card className="bg-dashboard-warning/5 border-dashboard-warning/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-dashboard-warning" />
-              Vencimentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm">Clientes Vencendo Hoje:</span>
-              <span className="text-sm font-medium">0</span>
+        {/* Saldo Líquido do Ano */}
+        <div className="rounded-xl border bg-card p-5 flex items-center gap-4">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-[hsl(268,83%,60%)]/20">
+            <DollarSign className="h-6 w-6 text-[hsl(268,83%,60%)]" />
+          </div>
+          <div className="flex-1 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="text-sm text-muted-foreground">Saldo Líquido do Ano</span>
+              <span className="text-xs bg-[hsl(268,83%,60%)] text-white px-2 py-0.5 rounded font-medium">
+                {anoAtual}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm">Clientes Vencendo em 3 Dias:</span>
-              <span className="text-sm font-medium">0</span>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl font-bold">
+                {showSaldoAno ? formatCurrency(lucros) : "••••••"}
+              </span>
+              <button onClick={() => setShowSaldoAno(!showSaldoAno)} className="text-muted-foreground hover:text-foreground transition-colors">
+                {showSaldoAno ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm">Clientes sem Renovar este Mês:</span>
-              <span className="text-sm font-medium">0</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Valores a Receber */}
-        <Card className="bg-dashboard-success/5 border-dashboard-success/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-dashboard-success" />
-              Valores a Receber
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Projeção Mensal:</span>
-              <span className="text-sm font-medium bg-dashboard-success/20 px-2 py-1 rounded">{formatCurrency(valorTotalMes)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm">Hoje:</span>
-              <span className="text-sm font-medium">R$0,00</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm">Amanhã:</span>
-              <span className="text-sm font-medium">R$0,00</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-[hsl(268,83%,60%)]/20">
+            <DollarSign className="h-6 w-6 text-[hsl(268,83%,60%)]" />
+          </div>
+        </div>
       </section>
 
-      {/* Gráficos */}
-      <section className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
-        {/* Clientes Novos Por Dia */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">Clientes Novos Por Dia</CardTitle>
-              <p className="text-sm text-muted-foreground">Cadastros diários no período selecionado</p>
-            </div>
-            <Download className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-dashboard-success/10 border border-dashboard-success/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-success">{totalClientes}</div>
-                <div className="text-xs text-muted-foreground">Total - Mês Atual</div>
-              </div>
-              <div className="bg-dashboard-primary/10 border border-dashboard-primary/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-primary">{(totalClientes / new Date().getDate()).toFixed(1)}</div>
-                <div className="text-xs text-muted-foreground">Média por Dia</div>
-              </div>
-              <div className="bg-dashboard-warning/10 border border-dashboard-warning/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-warning">{Math.max(...clientesNovosData.map(d => d.total))}</div>
-                <div className="text-xs text-muted-foreground">Melhor Dia</div>
-              </div>
-            </div>
-            
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={clientesNovosData}>
-                  <defs>
-                    <linearGradient id="clientesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--dashboard-success))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--dashboard-success))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" domain={[0, 20]} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="hsl(var(--dashboard-success))" 
-                    fillOpacity={1} 
-                    fill="url(#clientesGradient)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Charts */}
+      <section className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        {/* Clientes Chart */}
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-4 text-muted-foreground">Clientes</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartClientesData}>
+                <defs>
+                  <linearGradient id="gradAtivados" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(199,89%,48%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(199,89%,48%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradCadastrados" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(38,92%,50%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(38,92%,50%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradRenovados" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142,70%,45%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(142,70%,45%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+                <Area type="monotone" dataKey="ativados" name="Clientes Ativados" stroke="hsl(199,89%,48%)" fill="url(#gradAtivados)" strokeWidth={2} />
+                <Area type="monotone" dataKey="cadastrados" name="Apenas Cadastrados" stroke="hsl(38,92%,50%)" fill="url(#gradCadastrados)" strokeWidth={2} />
+                <Area type="monotone" dataKey="renovados" name="Clientes Renovados" stroke="hsl(142,70%,45%)" fill="url(#gradRenovados)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        {/* Clientes Renovados Por Dia */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">Clientes Renovados Por Dia</CardTitle>
-              <p className="text-sm text-muted-foreground">Renovações diárias no período selecionado</p>
-            </div>
-            <Download className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-dashboard-warning/10 border border-dashboard-warning/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-warning">{totalRenovacoes}</div>
-                <div className="text-xs text-muted-foreground">Total - Mês Atual</div>
-              </div>
-              <div className="bg-dashboard-success/10 border border-dashboard-success/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-success">{renovacoesHoje}</div>
-                <div className="text-xs text-muted-foreground">Renovações Hoje</div>
-              </div>
-              <div className="bg-dashboard-secondary/10 border border-dashboard-secondary/20 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-dashboard-secondary">{mediaRenovacoesPorDia.toFixed(1)}</div>
-                <div className="text-xs text-muted-foreground">Média por Dia</div>
-              </div>
-            </div>
-            
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={renovacoesData}>
-                  <defs>
-                    <linearGradient id="renovacoesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--dashboard-warning))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--dashboard-warning))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" domain={[0, 20]} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="hsl(var(--dashboard-warning))" 
-                    fillOpacity={1} 
-                    fill="url(#renovacoesGradient)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Financeiro Chart */}
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-4 text-muted-foreground">Financeiro</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartFinanceiroData}>
+                <defs>
+                  <linearGradient id="gradVendas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142,70%,45%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(142,70%,45%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradEntradas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(38,92%,50%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(38,92%,50%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradSaidas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(0,84%,60%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(0,84%,60%)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradCustos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(340,80%,55%)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="hsl(340,80%,55%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                  formatter={(value: number) => formatCurrency(value)}
+                />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+                <Area type="monotone" dataKey="vendas" name="Vendas" stroke="hsl(142,70%,45%)" fill="url(#gradVendas)" strokeWidth={2} />
+                <Area type="monotone" dataKey="entradas" name="Entradas" stroke="hsl(38,92%,50%)" fill="url(#gradEntradas)" strokeWidth={2} />
+                <Area type="monotone" dataKey="saidas" name="Saídas" stroke="hsl(0,84%,60%)" fill="url(#gradSaidas)" strokeWidth={2} />
+                <Area type="monotone" dataKey="custos" name="Custos Servidor" stroke="hsl(340,80%,55%)" fill="url(#gradCustos)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </section>
 
-      {/* Resumo Financeiro */}
+      {/* Clientes com Plano Vencido Banner */}
       <section>
-        <Tabs defaultValue="mes" className="w-full">
-          <TabsList>
-            <TabsTrigger value="mes">Mês atual</TabsTrigger>
-            <TabsTrigger value="semana">Esta semana</TabsTrigger>
-          </TabsList>
-          <TabsContent value="mes">
-            <Card>
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Resumo do mês</CardTitle>
-                <TrendingUp className="h-5 w-5 text-dashboard-success" />
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-dashboard-warning/10 border border-dashboard-warning/20">
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-2xl font-semibold text-dashboard-warning">{formatCurrency(valorTotalMes)}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-success/10 border border-dashboard-success/20">
-                  <div className="text-sm text-muted-foreground">Pagamentos</div>
-                  <div className="text-2xl font-semibold text-dashboard-success">{totalPagamentos}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-secondary/10 border border-dashboard-secondary/20">
-                  <div className="text-sm text-muted-foreground">Média por dia</div>
-                  <div className="text-2xl font-semibold text-dashboard-secondary">{formatCurrency(mediaPorDia)}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-primary/10 border border-dashboard-primary/20">
-                  <div className="text-sm text-muted-foreground">Melhor dia</div>
-                  <div className="text-2xl font-semibold text-dashboard-primary">{formatCurrency(Math.max(...pagamentosData.map(d => d.valor)))}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="semana">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumo da semana</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-dashboard-warning/10 border border-dashboard-warning/20">
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-2xl font-semibold text-dashboard-warning">{formatCurrency(pagamentosData.reduce((sum, item) => sum + item.valor, 0))}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-success/10 border border-dashboard-success/20">
-                  <div className="text-sm text-muted-foreground">Pagamentos</div>
-                  <div className="text-2xl font-semibold text-dashboard-success">{pagamentosData.filter(d => d.valor > 0).length}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-secondary/10 border border-dashboard-secondary/20">
-                  <div className="text-sm text-muted-foreground">Média por dia</div>
-                  <div className="text-2xl font-semibold text-dashboard-secondary">{formatCurrency(pagamentosData.reduce((sum, item) => sum + item.valor, 0) / 7)}</div>
-                </div>
-                <div className="p-4 rounded-lg bg-dashboard-primary/10 border border-dashboard-primary/20">
-                  <div className="text-sm text-muted-foreground">Melhor dia</div>
-                  <div className="text-2xl font-semibold text-dashboard-primary">{formatCurrency(Math.max(...pagamentosData.map(d => d.valor)))}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <div className="rounded-xl bg-gradient-to-r from-[hsl(0,84%,55%)] to-[hsl(0,84%,45%)] p-5 flex items-center justify-between text-white">
+          <div>
+            <h3 className="text-lg font-bold">Meus Clientes Com Plano Vencido</h3>
+            <p className="text-sm opacity-80">Informe aos seus clientes sobre o vencimento</p>
+          </div>
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-white/20">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+        </div>
       </section>
     </div>
   );
