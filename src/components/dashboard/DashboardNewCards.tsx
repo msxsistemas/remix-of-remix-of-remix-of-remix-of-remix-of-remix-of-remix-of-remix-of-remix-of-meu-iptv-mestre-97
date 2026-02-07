@@ -31,7 +31,7 @@ export default function DashboardNewCards({
   projecaoMensal,
 }: Props) {
   return (
-    <section className="grid gap-4 grid-cols-1 md:grid-cols-3">
+    <section className="grid gap-4 grid-cols-1 md:grid-cols-2">
       {/* Card 1 - Novos Clientes */}
       <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
         <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
@@ -56,6 +56,7 @@ export default function DashboardNewCards({
         </div>
       </div>
 
+      {/* Card 2 - Clientes Vencendo */}
       <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
         <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
           <Users className="h-6 w-6 text-[hsl(142,70%,45%)]" />
@@ -72,33 +73,6 @@ export default function DashboardNewCards({
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Clientes sem Renovar este Mês</span>
             <span className="text-[hsl(142,70%,45%)] font-semibold">{clientesSemRenovar}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative overflow-hidden rounded-xl bg-card border border-border p-5 text-white flex items-center gap-4">
-        <div className="rounded-full bg-[hsl(142,70%,45%)]/20 p-2">
-          <TrendingUp className="h-6 w-6 text-[hsl(142,70%,45%)]" />
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-[hsl(142,70%,45%)]" />
-            <span className="text-sm font-semibold text-[hsl(142,70%,45%)]">Valores a Receber</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[hsl(142,70%,45%)]">↗</span>
-            <span className="text-sm text-muted-foreground">Projeção Mensal</span>
-            <span className="text-white font-semibold">{fmt(projecaoMensal)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[hsl(45,90%,50%)]">$</span>
-            <span className="text-sm text-muted-foreground">Hoje</span>
-            <span className="text-white font-semibold">{fmt(valoresHoje)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[hsl(45,90%,50%)]">$</span>
-            <span className="text-sm text-muted-foreground">Amanhã</span>
-            <span className="text-white font-semibold">{fmt(valoresAmanha)}</span>
           </div>
         </div>
       </div>
