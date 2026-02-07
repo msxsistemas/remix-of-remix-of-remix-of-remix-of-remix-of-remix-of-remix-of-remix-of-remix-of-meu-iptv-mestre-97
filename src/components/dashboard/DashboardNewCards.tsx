@@ -65,7 +65,7 @@ export default function DashboardNewCards({
             <Users className="h-8 w-8 text-[hsl(142,70%,45%)]" />
           </div>
         </div>
-        <div className="relative z-10 space-y-1.5 pr-16">
+        <div className="relative z-10 space-y-2 pr-16">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-[hsl(142,70%,45%)]">Clientes Vencendo Hoje</span>
             <span className="text-muted-foreground">{clientesVencendoHoje}</span>
@@ -77,14 +77,6 @@ export default function DashboardNewCards({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-[hsl(142,70%,45%)]">Clientes sem Renovar este Mês</span>
             <span className="text-muted-foreground">{clientesSemRenovar}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[hsl(142,70%,45%)]">Clientes Recuperados este Mês</span>
-            <span className="text-muted-foreground">{clientesRecuperadosMes}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[hsl(142,70%,45%)]">Total de Clientes Recuperados</span>
-            <span className="text-muted-foreground">{totalClientesRecuperados}</span>
           </div>
         </div>
       </div>
