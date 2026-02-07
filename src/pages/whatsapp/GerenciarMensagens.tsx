@@ -154,7 +154,7 @@ export default function GerenciarMensagens() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             {/* Message Templates */}
             <div className="space-y-6">
               <div>
@@ -229,7 +229,7 @@ export default function GerenciarMensagens() {
             </div>
 
             {/* WhatsApp Preview */}
-            <div className="flex justify-center lg:sticky lg:top-6">
+            <div className="flex justify-center lg:sticky lg:top-6 self-start h-fit">
               <div className="w-[320px] bg-[#111b21] rounded-2xl overflow-hidden shadow-xl border border-border/30">
                 {/* Phone Status Bar */}
                 <div className="bg-[#202c33] px-4 py-2 flex items-center justify-between">
