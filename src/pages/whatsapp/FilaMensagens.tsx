@@ -91,13 +91,23 @@ export default function FilaMensagens() {
         .select("nome, whatsapp")
         .eq("user_id", user.id);
 
+      // Normalizar números: remover não-dígitos e garantir que sempre tenha 55 no início
+      const normalizePhone = (phone: string): string => {
+        const cleaned = phone.replace(/\D/g, '');
+        // Se não começar com 55, adicionar
+        if (!cleaned.startsWith('55') && cleaned.length >= 10) {
+          return '55' + cleaned;
+        }
+        return cleaned;
+      };
+
       const clientesMap = new Map(
-        clientesData?.map(c => [c.whatsapp.replace(/\D/g, ''), c.nome]) || []
+        clientesData?.map(c => [normalizePhone(c.whatsapp), c.nome]) || []
       );
 
-      if (messagesData) {
+        if (messagesData) {
         setMensagens(messagesData.map(m => {
-          const phoneClean = m.phone.replace(/\D/g, '');
+          const phoneClean = normalizePhone(m.phone);
           let status: "enviada" | "aguardando" | "erro" | "agendada" = 'aguardando';
           if (m.status === 'sent') status = 'enviada';
           else if (m.status === 'pending') status = 'aguardando';
