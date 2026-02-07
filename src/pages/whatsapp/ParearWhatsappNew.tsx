@@ -35,8 +35,8 @@ export default function ParearWhatsappNew() {
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold text-green-500 mb-3">Parear WhatsApp</h2>
           <p className="text-foreground text-sm mb-1">Aponte seu celular para o QR Code até que complete o pareamento</p>
-          <p className="text-orange-400 text-sm mb-1">Após o pareamento ficar ativo em seu aparelho celular, clique no botão Fechar</p>
-          <p className="text-muted-foreground text-sm">Se tudo ocorreu de forma correta irá aparecer que a sessão está ativa.</p>
+          <p className="text-orange-400 text-sm mb-1">Após o pareamento ficar ativo em seu aparelho celular, aguarde a confirmação automática</p>
+          <p className="text-muted-foreground text-sm">Se tudo ocorrer corretamente, a sessão será ativada automaticamente.</p>
         </CardContent>
       </Card>
 
