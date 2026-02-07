@@ -247,41 +247,34 @@ export default function FilaMensagens() {
           <div className="flex flex-wrap gap-2 mb-5">
             <Button 
               size="sm"
-              variant={filtro === "todas" ? "default" : "outline"}
               onClick={() => setFiltro("todas")}
-              className={filtro === "todas" 
-                ? "bg-[hsl(300,70%,40%)] hover:bg-[hsl(300,70%,35%)] text-white" 
-                : "border-[hsl(300,70%,40%)] text-[hsl(300,70%,60%)] hover:bg-[hsl(300,70%,40%)]/10"}
+              className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white rounded-full px-4"
             >
               Todas ({counts.todas})
             </Button>
             <Button 
               size="sm"
-              variant={filtro === "aguardando" ? "default" : "outline"}
+              variant="outline"
               onClick={() => setFiltro("aguardando")}
               className={filtro === "aguardando" 
-                ? "bg-[hsl(300,70%,40%)] hover:bg-[hsl(300,70%,35%)] text-white" 
-                : "border-[hsl(300,70%,40%)] text-[hsl(300,70%,60%)] hover:bg-[hsl(300,70%,40%)]/10"}
+                ? "bg-[hsl(300,70%,40%)] hover:bg-[hsl(300,70%,35%)] text-white border-transparent rounded-full px-4" 
+                : "border-[hsl(300,70%,40%)] text-[hsl(300,70%,60%)] hover:bg-[hsl(300,70%,40%)]/10 rounded-full px-4"}
             >
               Aguardando Envio ({counts.aguardando})
             </Button>
             <Button 
               size="sm"
-              variant={filtro === "enviadas" ? "default" : "outline"}
               onClick={() => setFiltro("enviadas")}
               className={filtro === "enviadas" 
-                ? "bg-[hsl(300,70%,40%)] hover:bg-[hsl(300,70%,35%)] text-white" 
-                : "border-[hsl(300,70%,40%)] text-[hsl(300,70%,60%)] hover:bg-[hsl(300,70%,40%)]/10"}
+                ? "bg-[hsl(300,70%,40%)] hover:bg-[hsl(300,70%,35%)] text-white rounded-full px-4" 
+                : "bg-[hsl(260,30%,30%)] hover:bg-[hsl(260,30%,35%)] text-[hsl(300,70%,70%)] rounded-full px-4"}
             >
               Mensagens Enviadas ({counts.enviadas})
             </Button>
             <Button 
               size="sm"
-              variant={filtro === "erro" ? "default" : "outline"}
               onClick={() => setFiltro("erro")}
-              className={filtro === "erro" 
-                ? "bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white" 
-                : "border-[hsl(var(--destructive))] text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/10"}
+              className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white rounded-full px-4"
             >
               Mensagens com Erro ({counts.erro})
             </Button>
@@ -289,7 +282,7 @@ export default function FilaMensagens() {
               size="sm"
               variant="outline"
               onClick={() => {}}
-              className="border-[hsl(var(--success))] text-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/10"
+              className="border-[hsl(var(--success))] text-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/10 rounded-full px-4"
             >
               <RefreshCw className="h-4 w-4 mr-1" />
               Reativar Mensagens
