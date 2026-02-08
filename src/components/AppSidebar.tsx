@@ -84,7 +84,7 @@ export function AppSidebar() {
     { to: "/clientes/produtos", icon: Package, label: "Produtos" },
     { to: "/clientes/integracoes", icon: Server, label: "Servidores" },
     { to: "/financeiro", icon: DollarSign, label: "Financeiro" },
-    { to: "/financeiro-extra/assas", icon: ArrowLeftRight, label: "Movimentações" },
+    
     { to: "/clientes/metricas", icon: Filter, label: "Relatórios" },
     { to: "/marketing", icon: Tag, label: "Tags" },
     { to: "/financeiro-extra/checkout", icon: Globe, label: "V3Pay", badge: "Novo!" },
