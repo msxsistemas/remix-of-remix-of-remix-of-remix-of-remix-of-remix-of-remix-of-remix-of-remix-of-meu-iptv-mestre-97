@@ -21,8 +21,8 @@ export default function DashboardFinanceCards({
   valorTotalMes,
   valorTotalAno = 0
 }: Props) {
-  const [showValueMes, setShowValueMes] = useState(true);
-  const [showValueAno, setShowValueAno] = useState(true);
+  const [showValueMes, setShowValueMes] = useState(false);
+  const [showValueAno, setShowValueAno] = useState(false);
   
   const currentMonth = new Date().toLocaleString('pt-BR', { month: 'long' });
   const currentYear = new Date().getFullYear();
