@@ -473,6 +473,130 @@ export default function ClientesCadastro() {
               </div>
             </div>
 
+            {/* Collapsible: Acessos Adicionais */}
+            <Collapsible defaultOpen className="mt-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Key className="h-4 w-4 text-cyan-400" />
+                  <span className="text-sm font-medium">Acessos Adicionais</span>
+                  <span className="text-xs text-muted-foreground">(Opcional)</span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4 space-y-4">
+                {acessosAdicionais.map((acesso, index) => (
+                  <div key={index} className="space-y-4 p-4 bg-muted/20 rounded-lg border border-border/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Key className="h-4 w-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-cyan-400">Credenciais de Acesso</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setAcessosAdicionais(prev => prev.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Usuário</Label>
+                        <Input 
+                          placeholder="Nome de usuário no painel" 
+                          className="bg-background border-border"
+                          value={acesso.usuario}
+                          onChange={(e) => {
+                            setAcessosAdicionais(prev => prev.map((a, i) => 
+                              i === index ? { ...a, usuario: e.target.value } : a
+                            ));
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Senha</Label>
+                        <Input 
+                          placeholder="Senha de acesso" 
+                          className="bg-background border-border"
+                          value={acesso.senha}
+                          onChange={(e) => {
+                            setAcessosAdicionais(prev => prev.map((a, i) => 
+                              i === index ? { ...a, senha: e.target.value } : a
+                            ));
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">MAC Address / Email</Label>
+                        <Input 
+                          placeholder="Ex: 00:1A:2B:3C:4D:5E ou email@clouddy.com" 
+                          className="bg-background border-border"
+                          value={acesso.mac}
+                          onChange={(e) => {
+                            setAcessosAdicionais(prev => prev.map((a, i) => 
+                              i === index ? { ...a, mac: e.target.value } : a
+                            ));
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Key / OTP</Label>
+                        <Input 
+                          placeholder="Chave de ativação ou OTP" 
+                          className="bg-background border-border"
+                          value={acesso.key}
+                          onChange={(e) => {
+                            setAcessosAdicionais(prev => prev.map((a, i) => 
+                              i === index ? { ...a, key: e.target.value } : a
+                            ));
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <Label className="text-sm font-medium">Dispositivos</Label>
+                        <Input 
+                          placeholder="Ex: Smart TV, TV Box, Celular..." 
+                          className="bg-background border-border"
+                          value={acesso.dispositivo}
+                          onChange={(e) => {
+                            setAcessosAdicionais(prev => prev.map((a, i) => 
+                              i === index ? { ...a, dispositivo: e.target.value } : a
+                            ));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    setAcessosAdicionais(prev => [...prev, {
+                      usuario: "",
+                      senha: "",
+                      mac: "",
+                      key: "",
+                      dispositivo: ""
+                    }]);
+                  }}
+                >
+                  + Adicionar Acesso
+                </Button>
+              </CollapsibleContent>
+            </Collapsible>
+
             {/* Campos de Aplicativo (sem header) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
               <div className="space-y-2">
@@ -614,129 +738,6 @@ export default function ClientesCadastro() {
               </div>
             </div>
 
-            {/* Collapsible: Acessos Adicionais */}
-            <Collapsible defaultOpen className="mt-3">
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-2">
-                  <Key className="h-4 w-4 text-cyan-400" />
-                  <span className="text-sm font-medium">Acessos Adicionais</span>
-                  <span className="text-xs text-muted-foreground">(Opcional)</span>
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4 space-y-4">
-                {acessosAdicionais.map((acesso, index) => (
-                  <div key={index} className="space-y-4 p-4 bg-muted/20 rounded-lg border border-border/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Key className="h-4 w-4 text-cyan-400" />
-                        <span className="text-sm font-medium text-cyan-400">Credenciais de Acesso</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          setAcessosAdicionais(prev => prev.filter((_, i) => i !== index));
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Usuário</Label>
-                        <Input 
-                          placeholder="Nome de usuário no painel" 
-                          className="bg-background border-border"
-                          value={acesso.usuario}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, usuario: e.target.value } : a
-                            ));
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Senha</Label>
-                        <Input 
-                          placeholder="Senha de acesso" 
-                          className="bg-background border-border"
-                          value={acesso.senha}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, senha: e.target.value } : a
-                            ));
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">MAC Address / Email</Label>
-                        <Input 
-                          placeholder="Ex: 00:1A:2B:3C:4D:5E ou email@clouddy.com" 
-                          className="bg-background border-border"
-                          value={acesso.mac}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, mac: e.target.value } : a
-                            ));
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Key / OTP</Label>
-                        <Input 
-                          placeholder="Chave de ativação ou OTP" 
-                          className="bg-background border-border"
-                          value={acesso.key}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, key: e.target.value } : a
-                            ));
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                        <Label className="text-sm font-medium">Dispositivos</Label>
-                        <Input 
-                          placeholder="Ex: Smart TV, TV Box, Celular..." 
-                          className="bg-background border-border"
-                          value={acesso.dispositivo}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, dispositivo: e.target.value } : a
-                            ));
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-primary/50 text-primary hover:bg-primary/10"
-                  onClick={() => {
-                    setAcessosAdicionais(prev => [...prev, {
-                      usuario: "",
-                      senha: "",
-                      mac: "",
-                      key: "",
-                      dispositivo: ""
-                    }]);
-                  }}
-                >
-                  + Adicionar Acesso
-                </Button>
-              </CollapsibleContent>
-            </Collapsible>
             {/* Seção: Captação e Observações */}
             <SectionHeader icon={Users} title="Captação e Observações" color="text-purple-400" />
             
