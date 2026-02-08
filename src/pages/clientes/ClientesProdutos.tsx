@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Settings, AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { Settings, AlertTriangle, Pencil, Trash2, Power } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Produto } from "@/types/database";
 
@@ -171,6 +171,18 @@ export default function ClientesProdutos() {
       console.error("Erro ao excluir produto:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleAtivo = async (produto: Produto) => {
+    const novoStatus = !(produto as any).ativo !== false;
+    try {
+      const atualizado = await atualizar(produto.id as string, { ativo: !novoStatus } as any);
+      if (atualizado) {
+        setProdutos((prev) => prev.map((p) => (p.id === produto.id ? atualizado : p)));
+      }
+    } catch (error) {
+      console.error("Erro ao alterar status:", error);
     }
   };
 
@@ -357,8 +369,8 @@ export default function ClientesProdutos() {
               <TableHead>Nome</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Créditos</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead className="w-[100px] text-right">Ações</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[120px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -375,8 +387,16 @@ export default function ClientesProdutos() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{p.creditos || "-"}</TableCell>
-                  <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                    {p.descricao || "-"}
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={(p as any).ativo !== false 
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500" 
+                        : "border-amber-500/50 bg-amber-500/10 text-amber-500"
+                      }
+                    >
+                      {(p as any).ativo !== false ? "Ativo" : "Inativo"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -387,6 +407,18 @@ export default function ClientesProdutos() {
                         className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggleAtivo(p)}
+                        className={`h-8 w-8 ${(p as any).ativo !== false 
+                          ? "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10" 
+                          : "text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                        }`}
+                        title={(p as any).ativo !== false ? "Desativar" : "Ativar"}
+                      >
+                        <Power className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"

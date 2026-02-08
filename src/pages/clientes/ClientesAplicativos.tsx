@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Power } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { Aplicativo } from "@/types/database";
 import { useAplicativos } from "@/hooks/useDatabase";
 
@@ -91,6 +92,18 @@ export default function ClientesAplicativos() {
       setShowSuccessDialog(true);
     } catch (error) {
       console.error("Erro ao excluir aplicativo:", error);
+    }
+  };
+
+  const handleToggleAtivo = async (app: Aplicativo) => {
+    const novoStatus = !(app as any).ativo !== false;
+    try {
+      const atualizado = await atualizar(app.id!, { ativo: !novoStatus } as any);
+      if (atualizado) {
+        setApps((prev) => prev.map((a) => (a.id === app.id ? atualizado : a)));
+      }
+    } catch (error) {
+      console.error("Erro ao alterar status:", error);
     }
   };
 
@@ -213,7 +226,8 @@ export default function ClientesAplicativos() {
               <TableHead className="w-24">ID</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead className="w-[100px] text-right">Ações</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[120px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -225,6 +239,17 @@ export default function ClientesAplicativos() {
                   </TableCell>
                   <TableCell className="font-medium">{a.nome}</TableCell>
                   <TableCell className="text-muted-foreground">{a.descricao || "-"}</TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={(a as any).ativo !== false 
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500" 
+                        : "border-amber-500/50 bg-amber-500/10 text-amber-500"
+                      }
+                    >
+                      {(a as any).ativo !== false ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
@@ -234,6 +259,18 @@ export default function ClientesAplicativos() {
                         className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggleAtivo(a)}
+                        className={`h-8 w-8 ${(a as any).ativo !== false 
+                          ? "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10" 
+                          : "text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                        }`}
+                        title={(a as any).ativo !== false ? "Desativar" : "Ativar"}
+                      >
+                        <Power className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -269,7 +306,7 @@ export default function ClientesAplicativos() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   Nenhum aplicativo encontrado
                 </TableCell>
               </TableRow>
