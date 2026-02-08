@@ -67,12 +67,6 @@ export default function Index() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <header className="flex items-center gap-2">
-        <span className="text-muted-foreground">🏠</span>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-muted-foreground text-sm">Home</span>
-      </header>
       
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
         {saudacao}, Tech Play!
