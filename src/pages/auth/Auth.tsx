@@ -7,7 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
-import { Eye, EyeOff, Mail, Lock, User as UserIcon, Phone, Gift, Loader2, ArrowRight, Sparkles, KeyRound, Send, X, Shield, Zap, Users } from 'lucide-react';
+import { 
+  Eye, 
+  EyeOff, 
+  Mail, 
+  Lock, 
+  User as UserIcon, 
+  Phone, 
+  Gift, 
+  Loader2, 
+  ArrowRight, 
+  Sparkles, 
+  KeyRound, 
+  Send, 
+  X,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 import logoPlay from '@/assets/logo-play.png';
 
 export default function Auth() {
@@ -22,6 +38,8 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -67,9 +85,17 @@ export default function Auth() {
     }
   }, [referralCode]);
 
+  // Clear messages when switching tabs
+  useEffect(() => {
+    setFormError(null);
+    setFormSuccess(null);
+  }, [activeTab]);
+
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
+    setFormSuccess(null);
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('signup-name') as string;
@@ -80,19 +106,19 @@ export default function Auth() {
     const refCode = formData.get('referral-code') as string;
 
     if (!name.trim()) {
-      toast.error('Por favor, informe seu nome');
+      setFormError('Por favor, informe seu nome');
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem');
+      setFormError('As senhas não coincidem');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+      setFormError('A senha deve ter pelo menos 6 caracteres');
       setLoading(false);
       return;
     }
@@ -113,15 +139,16 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes('already registered')) {
-          toast.error('Este email já está cadastrado. Tente fazer login.');
+          setFormError('Este email já está cadastrado. Tente fazer login.');
         } else {
-          toast.error(error.message);
+          setFormError(error.message);
         }
       } else {
-        toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
+        setFormSuccess('Conta criada! Verifique seu email para confirmar.');
+        toast.success('Conta criada com sucesso!');
       }
     } catch (error) {
-      toast.error('Erro ao criar conta');
+      setFormError('Erro ao criar conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -130,6 +157,8 @@ export default function Auth() {
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
+    setFormSuccess(null);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('signin-email') as string;
@@ -143,15 +172,16 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          toast.error('Email ou senha incorretos');
+          setFormError('Email ou senha incorretos');
         } else {
-          toast.error(error.message);
+          setFormError(error.message);
         }
       } else {
-        toast.success('Login realizado com sucesso!');
+        setFormSuccess('Login realizado com sucesso!');
+        toast.success('Bem-vindo de volta!');
       }
     } catch (error) {
-      toast.error('Erro ao fazer login');
+      setFormError('Erro ao fazer login. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -175,7 +205,7 @@ export default function Auth() {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+        toast.success('Email de recuperação enviado!');
         setResetDialogOpen(false);
         setResetEmail('');
       }
@@ -189,21 +219,22 @@ export default function Auth() {
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
 
     if (!newPassword.trim()) {
-      toast.error('Por favor, informe a nova senha');
+      setFormError('Por favor, informe a nova senha');
       setLoading(false);
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+      setFormError('A senha deve ter pelo menos 6 caracteres');
       setLoading(false);
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      toast.error('As senhas não coincidem');
+      setFormError('As senhas não coincidem');
       setLoading(false);
       return;
     }
@@ -220,7 +251,7 @@ export default function Auth() {
         } else if (error.message.includes('Password should be at least')) {
           errorMessage = 'A senha deve ter pelo menos 6 caracteres';
         }
-        toast.error(errorMessage);
+        setFormError(errorMessage);
       } else {
         toast.success('Senha atualizada com sucesso!');
         setIsRecovery(false);
@@ -229,7 +260,7 @@ export default function Auth() {
         navigate('/');
       }
     } catch (error) {
-      toast.error('Erro ao atualizar senha');
+      setFormError('Erro ao atualizar senha');
     } finally {
       setLoading(false);
     }
@@ -238,75 +269,104 @@ export default function Auth() {
   // Password recovery form
   if (isRecovery) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[hsl(220,25%,8%)] p-4 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] bg-[hsl(var(--brand))]/20 rounded-full blur-[150px] animate-pulse" />
-          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-[hsl(var(--brand-2))]/15 rounded-full blur-[150px] animate-pulse delay-1000" />
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0f]">
+        {/* Animated gradient orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-600/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[150px]" />
         </div>
+        
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
 
         <div className="w-full max-w-md relative z-10">
-          <div className="bg-[hsl(220,20%,12%)]/80 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl p-8">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full overflow-hidden ring-4 ring-[hsl(var(--brand))]/30 shadow-xl shadow-[hsl(var(--brand))]/30">
-                <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+          <div className="bg-[#12121a]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/50 p-8 animate-fade-in">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur-xl opacity-50" />
+                <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10">
+                  <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+                </div>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[hsl(var(--brand-2))]/10 border border-[hsl(var(--brand-2))]/20 text-[hsl(var(--brand-2))] text-xs font-medium mb-4">
-                <KeyRound className="h-3 w-3" />
-                Recuperação
-              </div>
-              <h1 className="text-2xl font-bold text-white">Redefinir Senha</h1>
-              <p className="text-white/50 text-sm mt-2">Digite sua nova senha abaixo</p>
             </div>
+
+            {/* Badge */}
+            <div className="flex justify-center mb-6">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium">
+                <KeyRound className="h-3.5 w-3.5" />
+                Recuperação de Senha
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold text-white text-center mb-2">Redefinir Senha</h1>
+            <p className="text-gray-400 text-sm text-center mb-8">Digite sua nova senha abaixo</p>
+
+            {/* Error message */}
+            {formError && (
+              <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 animate-fade-in">
+                <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+                <p className="text-red-400 text-sm">{formError}</p>
+              </div>
+            )}
 
             <form onSubmit={handleUpdatePassword} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="new-password" className="text-sm font-medium text-white/70">Nova Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
-                  <Input
-                    id="new-password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="pl-12 pr-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
+                <Label htmlFor="new-password" className="text-sm font-medium text-gray-300">Nova Senha</Label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                    <Input
+                      id="new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Mínimo 6 caracteres"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-12 pr-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="confirm-new-password" className="text-sm font-medium text-white/70">Confirmar Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
-                  <Input
-                    id="confirm-new-password"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirme sua nova senha"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="pl-12 pr-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
+                <Label htmlFor="confirm-new-password" className="text-sm font-medium text-gray-300">Confirmar Senha</Label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                    <Input
+                      id="confirm-new-password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirme sua nova senha"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="pl-12 pr-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
+
               <Button 
                 type="submit" 
-                className="w-full h-14 text-base font-semibold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] hover:opacity-90 text-white rounded-xl shadow-lg shadow-[hsl(var(--brand))]/30 border-0"
+                className="w-full h-13 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-purple-500/25 border-0 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5"
                 disabled={loading}
               >
                 {loading ? (
@@ -329,92 +389,49 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[hsl(220,25%,8%)] relative overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,hsl(var(--brand)/0.15),transparent_50%)]" />
-        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--brand-2)/0.1),transparent_50%)]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[hsl(var(--brand))]/5 rounded-full blur-[200px]" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0f]">
+      {/* Animated gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[150px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[200px]" />
       </div>
+      
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
 
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-[55%] items-center justify-center p-16 relative">
-        <div className="max-w-lg relative z-10">
-          {/* Logo with glow */}
-          <div className="relative mb-10">
-            <div className="absolute inset-0 w-32 h-32 bg-[hsl(var(--brand))]/40 rounded-full blur-3xl" />
-            <div className="relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl shadow-[hsl(var(--brand))]/40">
-              <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-          </div>
-          
-          <h1 className="text-6xl font-bold text-white mb-6 tracking-tight leading-tight">
-            Msx Gestor
-          </h1>
-          
-          <p className="text-xl text-white/60 mb-12 leading-relaxed">
-            A plataforma completa para gerenciar seus clientes, planos e cobranças de forma inteligente.
-          </p>
-
-          {/* Feature cards */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--brand))]/20 to-[hsl(var(--brand))]/5 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-[hsl(var(--brand))]" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Automação Inteligente</h3>
-                <p className="text-white/50 text-sm">Cobranças automáticas via WhatsApp</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--brand-2))]/20 to-[hsl(var(--brand-2))]/5 flex items-center justify-center">
-                <Users className="h-6 w-6 text-[hsl(var(--brand-2))]" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Gestão Completa</h3>
-                <p className="text-white/50 text-sm">Clientes, planos e produtos em um só lugar</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--success))]/20 to-[hsl(var(--success))]/5 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-[hsl(var(--success))]" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">100% Seguro</h3>
-                <p className="text-white/50 text-sm">Seus dados protegidos e criptografados</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right side - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
-        <div className="w-full max-w-[420px]">
-          {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-10">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 w-24 h-24 bg-[hsl(var(--brand))]/30 rounded-full blur-2xl" />
-              <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-white/10 shadow-xl shadow-[hsl(var(--brand))]/30">
+      <div className="w-full max-w-md relative z-10">
+        {/* Card */}
+        <div className="bg-[#12121a]/80 backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
+          {/* Logo header */}
+          <div className="pt-8 pb-4 flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur-xl opacity-50" />
+              <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10">
                 <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mt-6">Msx Gestor</h1>
           </div>
 
-          {/* Form Card */}
-          <div className="bg-[hsl(220,20%,12%)]/80 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl overflow-hidden">
-            {/* Tab Switcher */}
-            <div className="p-2 bg-black/20">
-              <div className="flex bg-white/5 rounded-2xl p-1">
+          <h1 className="text-2xl font-bold text-white text-center mb-2">Msx Gestor</h1>
+          <p className="text-gray-400 text-sm text-center mb-6">Sua plataforma de gestão inteligente</p>
+
+          {/* Tab Switcher */}
+          <div className="px-6 mb-6">
+            <div className="relative bg-white/[0.03] p-1.5 rounded-2xl border border-white/[0.05]">
+              {/* Sliding background */}
+              <div 
+                className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg transition-all duration-300 ease-out"
+                style={{ 
+                  left: activeTab === 'signin' ? '6px' : 'calc(50%)',
+                }}
+              />
+              <div className="relative flex">
                 <button
                   type="button"
                   onClick={() => setActiveTab('signin')}
-                  className={`flex-1 py-3.5 text-sm font-semibold transition-all duration-300 rounded-xl ${
-                    activeTab === 'signin'
-                      ? 'bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] text-white shadow-lg'
-                      : 'text-white/50 hover:text-white/80'
+                  className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-colors duration-300 ${
+                    activeTab === 'signin' ? 'text-white' : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
                   Entrar
@@ -422,288 +439,318 @@ export default function Auth() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('signup')}
-                  className={`flex-1 py-3.5 text-sm font-semibold transition-all duration-300 rounded-xl ${
-                    activeTab === 'signup'
-                      ? 'bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] text-white shadow-lg'
-                      : 'text-white/50 hover:text-white/80'
+                  className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-colors duration-300 ${
+                    activeTab === 'signup' ? 'text-white' : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
                   Cadastrar
                 </button>
               </div>
             </div>
+          </div>
 
-            <div className="p-6 lg:p-8">
-              {activeTab === 'signin' ? (
-                <>
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-white">Bem-vindo de volta!</h2>
-                    <p className="text-white/50 text-sm mt-2">Entre com suas credenciais para continuar</p>
-                  </div>
+          <div className="px-6 pb-8">
+            {/* Error message */}
+            {formError && (
+              <div className="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 animate-fade-in">
+                <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+                <p className="text-red-400 text-sm">{formError}</p>
+              </div>
+            )}
 
-                  <form onSubmit={handleSignIn} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email" className="text-sm font-medium text-white/70">Email</Label>
+            {/* Success message */}
+            {formSuccess && (
+              <div className="mb-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 animate-fade-in">
+                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                <p className="text-emerald-400 text-sm">{formSuccess}</p>
+              </div>
+            )}
+
+            {/* Sign In Form */}
+            <div className={`transition-all duration-300 ${activeTab === 'signin' ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'}`}>
+              {activeTab === 'signin' && (
+                <form onSubmit={handleSignIn} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email" className="text-sm font-medium text-gray-300">Email</Label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                         <Input
                           id="signin-email"
                           name="signin-email"
                           type="email"
                           placeholder="seu@email.com"
-                          className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20 transition-all"
+                          className="pl-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                           required
                         />
                       </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="signin-password" className="text-sm font-medium text-white/70">Senha</Label>
-                        <button 
-                          type="button" 
-                          onClick={() => setResetDialogOpen(true)}
-                          className="text-xs text-[hsl(var(--brand-2))] hover:text-[hsl(var(--brand))] transition-colors font-medium"
-                        >
-                          Esqueceu a senha?
-                        </button>
-                      </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signin-password" className="text-sm font-medium text-gray-300">Senha</Label>
+                      <button 
+                        type="button" 
+                        onClick={() => setResetDialogOpen(true)}
+                        className="text-xs text-purple-400 hover:text-purple-300 transition-colors font-medium"
+                      >
+                        Esqueceu a senha?
+                      </button>
+                    </div>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                         <Input
                           id="signin-password"
                           name="signin-password"
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Sua senha"
-                          className="pl-12 pr-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20 transition-all"
+                          className="pl-12 pr-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                           required
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                         >
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                     </div>
-                    
-                    <div className="pt-3">
-                      <Button 
-                        type="submit" 
-                        className="w-full h-14 text-base font-semibold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] hover:opacity-90 text-white rounded-xl shadow-lg shadow-[hsl(var(--brand))]/30 border-0 transition-all duration-300 hover:shadow-xl hover:shadow-[hsl(var(--brand))]/40"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Entrando...
-                          </>
-                        ) : (
-                          <>
-                            Entrar
-                            <ArrowRight className="ml-2 h-5 w-5" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-white">Criar conta</h2>
-                    <p className="text-white/50 text-sm mt-2">Preencha os dados para começar</p>
                   </div>
 
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name" className="text-sm font-medium text-white/70">Nome completo</Label>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-13 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-purple-500/25 border-0 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Entrando...
+                      </>
+                    ) : (
+                      <>
+                        Entrar
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+            </div>
+
+            {/* Sign Up Form */}
+            <div className={`transition-all duration-300 ${activeTab === 'signup' ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'}`}>
+              {activeTab === 'signup' && (
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name" className="text-sm font-medium text-gray-300">Nome completo</Label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                       <div className="relative">
-                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                         <Input
                           id="signup-name"
                           name="signup-name"
                           type="text"
                           placeholder="Seu nome completo"
-                          className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
+                          className="pl-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                           required
                         />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="text-sm font-medium text-white/70">Email</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email" className="text-sm font-medium text-gray-300">Email</Label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                         <Input
                           id="signup-email"
                           name="signup-email"
                           type="email"
                           placeholder="seu@email.com"
-                          className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
+                          className="pl-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                           required
                         />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-whatsapp" className="text-sm font-medium text-white/70">
-                        WhatsApp <span className="text-white/30 text-xs">(opcional)</span>
-                      </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-whatsapp" className="text-sm font-medium text-gray-300">
+                      WhatsApp <span className="text-gray-500 text-xs">(opcional)</span>
+                    </Label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                       <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                         <Input
                           id="signup-whatsapp"
                           name="signup-whatsapp"
                           type="tel"
                           placeholder="11999999999"
-                          className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
+                          className="pl-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                         />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password" className="text-sm font-medium text-white/70">Senha</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password" className="text-sm font-medium text-gray-300">Senha</Label>
+                      <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                         <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                           <Input
                             id="signup-password"
                             name="signup-password"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Mínimo 6"
-                            className="pl-12 pr-10 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
+                            className="pl-12 pr-10 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                             required
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="text-sm font-medium text-white/70">Confirmar</Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password" className="text-sm font-medium text-gray-300">Confirmar</Label>
+                      <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
                         <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                           <Input
                             id="confirm-password"
                             name="confirm-password"
                             type={showConfirmPassword ? 'text' : 'password'}
                             placeholder="Confirme"
-                            className="pl-12 pr-10 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
+                            className="pl-12 pr-10 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
                             required
                           />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                           >
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Referral Code */}
-                    <div className="space-y-2">
-                      <Label htmlFor="referral-code" className="flex items-center gap-2 text-sm font-medium text-white/70">
-                        <Gift className="h-4 w-4 text-[hsl(var(--brand))]" />
-                        Código de indicação <span className="text-white/30 text-xs">(opcional)</span>
-                      </Label>
-                      <Input
-                        id="referral-code"
-                        name="referral-code"
-                        type="text"
-                        placeholder="REF_XXXXXXXX"
-                        defaultValue={referralCode}
-                        className="h-14 font-mono bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
-                      />
-                      {referralCode && (
-                        <p className="text-xs text-[hsl(var(--brand))] flex items-center gap-1 font-medium">
-                          <Sparkles className="h-3 w-3" />
-                          Código de indicação aplicado!
-                        </p>
-                      )}
-                    </div>
+                  {/* Referral Code */}
+                  <div className="space-y-2">
+                    <Label htmlFor="referral-code" className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                      <Gift className="h-4 w-4 text-purple-400" />
+                      Código de indicação <span className="text-gray-500 text-xs">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="referral-code"
+                      name="referral-code"
+                      type="text"
+                      placeholder="REF_XXXXXXXX"
+                      defaultValue={referralCode}
+                      className="h-13 font-mono bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    />
+                    {referralCode && (
+                      <p className="text-xs text-purple-400 flex items-center gap-1.5 font-medium">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Código de indicação aplicado!
+                      </p>
+                    )}
+                  </div>
 
-                    <div className="pt-2">
-                      <Button 
-                        type="submit" 
-                        className="w-full h-14 text-base font-semibold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] hover:opacity-90 text-white rounded-xl shadow-lg shadow-[hsl(var(--brand))]/30 border-0"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Cadastrando...
-                          </>
-                        ) : (
-                          <>
-                            Criar conta
-                            <ArrowRight className="ml-2 h-5 w-5" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-13 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-purple-500/25 border-0 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Cadastrando...
+                      </>
+                    ) : (
+                      <>
+                        Criar conta
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                </form>
               )}
             </div>
           </div>
-
-          <p className="text-center text-xs text-white/40 mt-6">
-            Ao continuar, você concorda com nossos{' '}
-            <span className="text-[hsl(var(--brand-2))] hover:underline cursor-pointer">termos</span>
-            {' '}e{' '}
-            <span className="text-[hsl(var(--brand-2))] hover:underline cursor-pointer">privacidade</span>.
-          </p>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-gray-500 mt-6">
+          Ao continuar, você concorda com nossos{' '}
+          <span className="text-purple-400 hover:text-purple-300 cursor-pointer transition-colors">termos</span>
+          {' '}e{' '}
+          <span className="text-purple-400 hover:text-purple-300 cursor-pointer transition-colors">privacidade</span>.
+        </p>
       </div>
 
       {/* Password Reset Modal */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-[hsl(220,20%,12%)]/95 backdrop-blur-2xl border-white/10 p-0 overflow-hidden rounded-3xl">
-          {/* Header */}
-          <div className="relative bg-gradient-to-br from-[hsl(var(--brand))]/20 to-[hsl(var(--brand-2))]/10 p-8 text-center">
+        <DialogContent className="sm:max-w-md bg-[#12121a]/95 backdrop-blur-2xl border-white/[0.08] p-0 overflow-hidden rounded-3xl">
+          {/* Header with gradient */}
+          <div className="relative bg-gradient-to-br from-purple-600/20 via-blue-600/10 to-transparent p-8 text-center">
             <button
               onClick={() => setResetDialogOpen(false)}
-              className="absolute right-4 top-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
+              className="absolute right-4 top-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
             >
               <X className="h-4 w-4" />
             </button>
             
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[hsl(var(--brand-2))]/30 to-[hsl(var(--brand-2))]/10 flex items-center justify-center mb-4 ring-1 ring-white/10">
-              <KeyRound className="h-8 w-8 text-[hsl(var(--brand-2))]" />
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-purple-500/30 to-blue-500/20 flex items-center justify-center mb-4 ring-1 ring-white/10">
+              <KeyRound className="h-8 w-8 text-purple-400" />
             </div>
             <h2 className="text-xl font-bold text-white">Recuperar Senha</h2>
-            <p className="text-white/50 text-sm mt-2">Enviaremos um link para redefinir</p>
+            <p className="text-gray-400 text-sm mt-2">Enviaremos um link para redefinir</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handlePasswordReset} className="p-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-sm font-medium text-white/70">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="pl-12 h-14 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[hsl(var(--brand-2))] focus:ring-2 focus:ring-[hsl(var(--brand-2))]/20"
-                  required
-                />
+              <Label htmlFor="reset-email" className="text-sm font-medium text-gray-300">Email</Label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="pl-12 h-13 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-gray-500 rounded-xl focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    required
+                  />
+                </div>
               </div>
             </div>
             
             <Button 
               type="submit" 
-              className="w-full h-14 text-base font-semibold bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-2))] hover:opacity-90 text-white rounded-xl shadow-lg shadow-[hsl(var(--brand))]/30 border-0"
+              className="w-full h-13 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-purple-500/25 border-0 transition-all duration-300"
               disabled={resetLoading}
             >
               {resetLoading ? (
@@ -719,12 +766,12 @@ export default function Auth() {
               )}
             </Button>
 
-            <p className="text-center text-xs text-white/40">
+            <p className="text-center text-xs text-gray-500">
               Lembrou sua senha?{' '}
               <button 
                 type="button"
                 onClick={() => setResetDialogOpen(false)}
-                className="text-[hsl(var(--brand-2))] hover:underline font-medium"
+                className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
               >
                 Voltar ao login
               </button>
