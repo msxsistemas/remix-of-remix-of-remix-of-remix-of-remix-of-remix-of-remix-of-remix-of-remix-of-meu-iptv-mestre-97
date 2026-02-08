@@ -154,7 +154,9 @@ export default function ClientesEditar() {
     };
 
     carregarCliente();
-  }, [id, buscarPorId, form, toast, navigate]);
+    // Dependemos apenas do id da rota para evitar loop de re-render/re-fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const carregarDados = async () => {
     setLoadingData(true);
