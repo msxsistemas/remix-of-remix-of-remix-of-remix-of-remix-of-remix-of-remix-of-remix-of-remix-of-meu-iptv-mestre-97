@@ -474,6 +474,7 @@ export default function ClientesCadastro() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
+                <Label className="text-sm font-medium">Aplicativo</Label>
                 <Select 
                   value={form.watch("app")} 
                   onValueChange={(v) => form.setValue("app", v)} 
@@ -502,6 +503,8 @@ export default function ClientesCadastro() {
               </div>
             </div>
 
+            {/* Seção: Financeiro */}
+            <SectionHeader icon={DollarSign} title="Financeiro" color="text-green-400" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
