@@ -33,12 +33,12 @@ export default function ClientesCadastro() {
   const [planos, setPlanos] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [aplicativos, setAplicativos] = useState<any[]>([]);
-  const [tipoNumero, setTipoNumero] = useState("whatsapp");
+  
 
   const form = useForm({
     defaultValues: {
       nome: "",
-      sobrenome: "",
+      
       whatsapp: "",
       email: "",
       dataVenc: "",
@@ -125,7 +125,7 @@ export default function ClientesCadastro() {
     }
 
     const whatsappFormatado = formatWhatsAppNumber(data.whatsapp);
-    const nomeCompleto = data.sobrenome ? `${data.nome} ${data.sobrenome}` : data.nome;
+    const nomeCompleto = data.nome;
 
     setLoading(true);
     try {
@@ -292,28 +292,6 @@ export default function ClientesCadastro() {
               />
             </div>
 
-            {/* Sobrenome */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Sobrenome</Label>
-              <Input 
-                placeholder="Sobrenome do seu cliente" 
-                className="bg-background border-border"
-                {...form.register("sobrenome")}
-              />
-            </div>
-
-            {/* Tipo de número */}
-            <div className="flex items-center gap-2">
-              <Label className="text-sm">Qual tipo de numero deseja cadastrar?</Label>
-              <Select value={tipoNumero} onValueChange={setTipoNumero}>
-                <SelectTrigger className="w-48 h-8 bg-[hsl(200,70%,50%)] text-white border-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* WhatsApp */}
             <div className="space-y-2">
