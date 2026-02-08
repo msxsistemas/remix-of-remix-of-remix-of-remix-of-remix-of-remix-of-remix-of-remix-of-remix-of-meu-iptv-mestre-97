@@ -255,7 +255,7 @@ export default function ClientesCadastro() {
       </div>
 
       {/* Card do Formulário */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card border border-border/30">
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold text-foreground mb-1">Cadastrar Novo Cliente</h2>
           <p className="text-sm text-muted-foreground mb-6">Cadastre seu cliente agora mesmo!</p>
