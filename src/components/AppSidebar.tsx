@@ -82,6 +82,7 @@ export function AppSidebar() {
     { to: "/clientes", icon: Users, label: "Clientes", hasSubmenu: true },
     { to: "/clientes/integracoes", icon: Server, label: "Servidores" },
     { to: "/clientes/planos", icon: List, label: "Planos" },
+    { to: "/clientes/aplicativos", icon: Package, label: "Aplicativos" },
     { to: "/clientes/produtos", icon: Package, label: "Produtos" },
     { to: "/financeiro", icon: DollarSign, label: "Financeiro" },
     { to: "/financeiro-extra/assas", icon: ArrowLeftRight, label: "Movimentações" },
