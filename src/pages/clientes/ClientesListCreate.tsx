@@ -1650,20 +1650,12 @@ export default function ClientesListCreate() {
               Enviando para: <span className="font-medium text-foreground">{clienteParaWhatsapp?.nome}</span>
             </div>
 
-            {whatsappSession?.status !== 'connected' && (
-              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-sm">
-                ⚠️ WhatsApp não está conectado. <a href="/whatsapp/parear" className="underline font-medium">Conectar agora</a>
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label>Escolha um template</Label>
+              <Label>Escolha um template (opcional)</Label>
               <Select 
                 value={whatsappTemplate} 
                 onValueChange={(value) => {
                   setWhatsappTemplate(value);
-                  // Limpar mensagem se selecionar template
-                  if (value) setWhatsappMensagem("");
                 }}
                 disabled={!!whatsappMensagem.trim()}
               >
@@ -1679,37 +1671,23 @@ export default function ClientesListCreate() {
                 </SelectContent>
               </Select>
               {whatsappMensagem.trim() && (
-                <p className="text-xs text-muted-foreground">Limpe a mensagem para escolher um template</p>
+                <p className="text-xs text-muted-foreground">Limpe a mensagem para escolher outro template</p>
               )}
             </div>
 
-            <div className="flex items-center justify-center text-muted-foreground text-sm">
-              ou
-            </div>
-
             <div className="space-y-2">
-              <Label>Escrever mensagem</Label>
+              <Label>Mensagem</Label>
               <Textarea
-                placeholder="Digite sua mensagem personalizada..."
+                placeholder="Digite sua mensagem ou selecione um template acima..."
                 value={whatsappMensagem}
                 onChange={(e) => {
                   setWhatsappMensagem(e.target.value);
                   // Limpar template se digitar mensagem
                   if (e.target.value.trim()) setWhatsappTemplate("");
                 }}
-                className={`min-h-[120px] resize-none ${whatsappTemplate ? "opacity-50" : ""}`}
-                disabled={!!whatsappTemplate}
+                className="min-h-[120px] resize-none"
               />
-              {whatsappTemplate && (
-                <p className="text-xs text-muted-foreground">Desmarque o template para escrever mensagem</p>
-              )}
             </div>
-
-            {(whatsappTemplate && whatsappMensagem.trim()) && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
-                ⚠️ Escolha apenas template OU mensagem, não ambos
-              </div>
-            )}
 
             <div className="flex gap-2 pt-2">
               <Button
@@ -1727,7 +1705,7 @@ export default function ClientesListCreate() {
               <Button
                 onClick={confirmarEnvioWhatsApp}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                disabled={sendingMessage || (!whatsappTemplate && !whatsappMensagem.trim()) || (!!whatsappTemplate && !!whatsappMensagem.trim())}
+                disabled={sendingMessage || (!whatsappTemplate && !whatsappMensagem.trim())}
               >
                 <Send className="h-4 w-4 mr-2" />
                 {sendingMessage ? "Enviando..." : "Enviar Mensagem"}
