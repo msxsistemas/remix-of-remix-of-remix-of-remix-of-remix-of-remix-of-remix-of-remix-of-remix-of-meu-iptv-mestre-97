@@ -137,9 +137,13 @@ export default function ClientesPlanos() {
     }
   };
 
-  const filteredPlanos = planos.filter((p) => 
-    p.nome?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPlanos = planos.filter((p) => {
+    const matchesSearch = p.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "todos" || 
+      (statusFilter === "ativo" && (p as any).ativo !== false) || 
+      (statusFilter === "inativo" && (p as any).ativo === false);
+    return matchesSearch && matchesStatus;
+  });
 
   const getPeriodo = (plano: Plano) => {
     const qtd = plano.quantidade || "1";
@@ -185,6 +189,16 @@ export default function ClientesPlanos() {
               </Button>
             )}
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-sm text-muted-foreground">{filteredPlanos.length} registro(s)</span>
         </div>
 

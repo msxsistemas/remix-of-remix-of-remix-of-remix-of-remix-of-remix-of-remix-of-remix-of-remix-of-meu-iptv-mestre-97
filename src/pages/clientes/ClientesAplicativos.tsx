@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, X, Pencil, Trash2 } from "lucide-react";
@@ -13,6 +14,7 @@ import { useAplicativos } from "@/hooks/useDatabase";
 export default function ClientesAplicativos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [formData, setFormData] = useState({
     nome: "",
     descricao: ""
@@ -98,9 +100,13 @@ export default function ClientesAplicativos() {
     setEditingApp(null);
   };
 
-  const filteredApps = apps.filter((a) => 
-    a.nome?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredApps = apps.filter((a) => {
+    const matchesSearch = a.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "todos" || 
+      (statusFilter === "ativo" && (a as any).ativo !== false) || 
+      (statusFilter === "inativo" && (a as any).ativo === false);
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <main className="space-y-4">
@@ -180,6 +186,16 @@ export default function ClientesAplicativos() {
               </Button>
             )}
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-sm text-muted-foreground">{filteredApps.length} registro(s)</span>
         </div>
 
