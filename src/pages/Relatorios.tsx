@@ -92,21 +92,30 @@ export default function Relatorios() {
     }).format(valor);
   };
 
-  // Obter saudação baseada na hora
-  const getSaudacao = () => {
-    const hora = new Date().getHours();
-    if (hora < 12) return "Bom Dia";
-    if (hora < 18) return "Boa Tarde";
-    return "Boa Noite";
-  };
-
   return (
-    <main className="space-y-6">
+    <main className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">{getSaudacao()}, Tech Play!</h1>
-        <p className="text-sm text-muted-foreground">🏠 / Gráfico e Detalhes</p>
-      </div>
+      <header className="flex items-center justify-between p-4 rounded-lg bg-card border border-border">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Relatórios Financeiros</h1>
+          <p className="text-sm text-muted-foreground">Gráficos e detalhes das suas vendas e custos</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Ano:</span>
+          <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {anos.map((ano) => (
+                <SelectItem key={ano} value={ano}>
+                  {ano}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </header>
 
       {/* Gráfico Financeiro */}
       <Card className="bg-card border-border">
@@ -156,26 +165,9 @@ export default function Relatorios() {
       {/* Total Financeiro Detalhado */}
       <Card className="bg-card border-border">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Total Financeiro Detalhado</h2>
-              <p className="text-sm text-muted-foreground">Abaixo está o total das suas Vendas e Custos por Servidor.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Escolha o ano:</span>
-              <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {anos.map((ano) => (
-                    <SelectItem key={ano} value={ano}>
-                      {ano}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-foreground">Total Financeiro Detalhado</h2>
+            <p className="text-sm text-muted-foreground">Detalhamento mensal das suas Vendas e Custos por Servidor.</p>
           </div>
 
           {/* Grid de meses */}
