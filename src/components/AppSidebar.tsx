@@ -60,8 +60,13 @@ export function AppSidebar() {
   // Estado dos submenus
   const clientesActive = currentPath === "/clientes" || currentPath.startsWith("/clientes/");
   const whatsappActive = currentPath.startsWith("/whatsapp") || currentPath === "/parear-whatsapp";
-  const [clientesOpen, setClientesOpen] = useState(clientesActive);
-  const [whatsappOpen, setWhatsappOpen] = useState(whatsappActive);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(
+    clientesActive ? "clientes" : whatsappActive ? "whatsapp" : null
+  );
+
+  const toggleSubmenu = (menu: string) => {
+    setOpenSubmenu(prev => prev === menu ? null : menu);
+  };
 
   const isActive = (path: string) => currentPath === path;
 
@@ -128,7 +133,7 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.to}>
                       <SidebarMenuButton
-                        onClick={() => setClientesOpen((o) => !o)}
+                        onClick={() => toggleSubmenu("clientes")}
                         className={`${menuItemClass(clientesActive)} hover:bg-transparent`}
                       >
                         <div className="flex items-center gap-3">
@@ -137,11 +142,11 @@ export function AppSidebar() {
                         </div>
                         {!isCollapsed && (
                           <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${clientesOpen ? "rotate-90" : ""}`}
+                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "clientes" ? "rotate-90" : ""}`}
                           />
                         )}
                       </SidebarMenuButton>
-                      {clientesOpen && !isCollapsed && (
+                      {openSubmenu === "clientes" && !isCollapsed && (
                         <SidebarMenuSub className="ml-8 mt-2 space-y-1">
                           {clientesSubItems.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.to}>
@@ -175,7 +180,7 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.to}>
                       <SidebarMenuButton
-                        onClick={() => setWhatsappOpen((o) => !o)}
+                        onClick={() => toggleSubmenu("whatsapp")}
                         className={`h-auto p-0 hover:bg-transparent rounded-none ${whatsappActive ? "" : ""}`}
                       >
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
@@ -189,12 +194,12 @@ export function AppSidebar() {
                           </div>
                           {!isCollapsed && (
                             <ChevronDown
-                              className={`h-4 w-4 transition-transform ${whatsappOpen ? "rotate-180" : ""}`}
+                              className={`h-4 w-4 transition-transform ${openSubmenu === "whatsapp" ? "rotate-180" : ""}`}
                             />
                           )}
                         </div>
                       </SidebarMenuButton>
-                      {whatsappOpen && !isCollapsed && (
+                      {openSubmenu === "whatsapp" && !isCollapsed && (
                         <SidebarMenuSub className="ml-8 mt-2 space-y-1">
                           {whatsappSubItems.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.to}>
