@@ -530,19 +530,17 @@ export default function ClientesIntegracoes() {
       {/* Grid de Provedores */}
       <div className="flex flex-wrap gap-2">
         {filteredProvedores.map((provedor) => (
-          <Button
+          <button
             key={provedor.id}
-            variant="outline"
-            size="sm"
             onClick={() => setSelectedProvider(provedor.id)}
-            className={`h-8 text-xs font-medium transition-all ${
+            className={`px-4 py-2 text-xs font-medium rounded-md transition-all ${
               selectedProvider === provedor.id
-                ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/80 text-secondary-foreground/70 border border-border/30 hover:bg-secondary hover:text-secondary-foreground"
             }`}
           >
             {provedor.nome}
-          </Button>
+          </button>
         ))}
       </div>
 
