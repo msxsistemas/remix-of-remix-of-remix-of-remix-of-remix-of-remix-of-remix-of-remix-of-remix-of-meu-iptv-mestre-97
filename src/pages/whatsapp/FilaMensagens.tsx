@@ -54,6 +54,7 @@ export default function FilaMensagens() {
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'single' | 'enviadas' | 'todas'; id?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [autoSending, setAutoSending] = useState(false);
   const { user } = useCurrentUser();
   const { sendMessage, isConnected, hydrated } = useEvolutionAPISimple();
 
@@ -66,6 +67,61 @@ export default function FilaMensagens() {
       loadMensagens();
     }
   }, [user?.id]);
+
+  // Processador automático de mensagens
+  useEffect(() => {
+    if (!user?.id || !hydrated || !isConnected) return;
+
+    const processarMensagensPendentes = async () => {
+      if (autoSending) return; // Já está processando
+
+      // Buscar mensagens prontas para envio
+      const agora = new Date().toISOString();
+      const { data: pendentes, error } = await supabase
+        .from("whatsapp_messages")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("status", ["pending", "scheduled"])
+        .or(`scheduled_for.is.null,scheduled_for.lte.${agora}`)
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+      if (error || !pendentes || pendentes.length === 0) return;
+
+      const msg = pendentes[0];
+      
+      setAutoSending(true);
+      
+      try {
+        await sendMessage(msg.phone, msg.message);
+        
+        await supabase
+          .from("whatsapp_messages")
+          .update({ status: 'sent', scheduled_for: null })
+          .eq("id", msg.id);
+        
+        console.log(`Mensagem enviada automaticamente para ${msg.phone}`);
+      } catch (error) {
+        console.error(`Erro ao enviar para ${msg.phone}:`, error);
+        
+        await supabase
+          .from("whatsapp_messages")
+          .update({ status: 'failed', error_message: String(error), scheduled_for: null })
+          .eq("id", msg.id);
+      } finally {
+        setAutoSending(false);
+        loadMensagens();
+      }
+    };
+
+    // Verificar a cada 5 segundos
+    const interval = setInterval(processarMensagensPendentes, 5000);
+    
+    // Executar imediatamente também
+    processarMensagensPendentes();
+
+    return () => clearInterval(interval);
+  }, [user?.id, hydrated, isConnected, autoSending, sendMessage]);
 
   const loadMensagens = async () => {
     if (!user?.id) return;
