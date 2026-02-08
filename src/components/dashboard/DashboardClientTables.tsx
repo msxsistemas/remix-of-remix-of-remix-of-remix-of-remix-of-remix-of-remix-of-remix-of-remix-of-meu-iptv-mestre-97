@@ -202,6 +202,7 @@ function ClientTable({ title, subtitle, clientes, planosMap, headerColor, loadin
             size="sm"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
+            className="border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             Anterior
           </Button>
@@ -210,10 +211,14 @@ function ClientTable({ title, subtitle, clientes, planosMap, headerColor, loadin
             return (
               <Button
                 key={page}
-                variant={currentPage === page ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(page)}
-                className="w-8"
+                className={`w-8 border-border ${
+                  currentPage === page 
+                    ? "bg-white text-black hover:bg-white/90" 
+                    : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
               >
                 {page}
               </Button>
@@ -222,10 +227,14 @@ function ClientTable({ title, subtitle, clientes, planosMap, headerColor, loadin
           {totalPages > 5 && <span className="px-2 text-muted-foreground">...</span>}
           {totalPages > 5 && (
             <Button
-              variant={currentPage === totalPages ? "default" : "outline"}
+              variant="outline"
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
-              className="w-8"
+              className={`w-8 border-border ${
+                currentPage === totalPages 
+                  ? "bg-white text-black hover:bg-white/90" 
+                  : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
             >
               {totalPages}
             </Button>
@@ -234,7 +243,8 @@ function ClientTable({ title, subtitle, clientes, planosMap, headerColor, loadin
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             Próximo
           </Button>
