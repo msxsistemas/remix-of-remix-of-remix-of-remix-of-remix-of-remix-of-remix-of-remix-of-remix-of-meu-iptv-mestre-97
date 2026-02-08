@@ -45,8 +45,8 @@ export const useTemplatesMensagens = () => {
       if (data && data.length > 0) {
         setTemplates(data);
       } else {
-        // Se não houver templates, criar os padrões
-        await createDefaultTemplates();
+        // Se não houver templates, criar os padrões silenciosamente
+        await createDefaultTemplates(false);
       }
     } catch (error) {
       console.error('Erro ao carregar templates:', error);
@@ -56,7 +56,7 @@ export const useTemplatesMensagens = () => {
     }
   }, [userId]);
 
-  const createDefaultTemplates = async () => {
+  const createDefaultTemplates = async (showToast = true) => {
     if (!userId) return;
 
     try {
@@ -74,7 +74,9 @@ export const useTemplatesMensagens = () => {
       
       if (data) {
         setTemplates(data);
-        toast.success('Templates padrões criados!');
+        if (showToast) {
+          toast.success('Templates padrões criados!');
+        }
       }
     } catch (error) {
       console.error('Erro ao criar templates padrões:', error);
@@ -161,6 +163,7 @@ export const useTemplatesMensagens = () => {
     if (!userId) return;
 
     try {
+      setLoading(true);
       // Deletar todos os templates do usuário
       const { error: deleteError } = await supabase
         .from('templates_mensagens')
@@ -170,11 +173,13 @@ export const useTemplatesMensagens = () => {
       if (deleteError) throw deleteError;
 
       // Criar os templates padrões novamente
-      await createDefaultTemplates();
+      await createDefaultTemplates(true);
       toast.success('Templates restaurados para o padrão!');
     } catch (error) {
       console.error('Erro ao restaurar templates:', error);
       toast.error('Erro ao restaurar templates');
+    } finally {
+      setLoading(false);
     }
   };
 
