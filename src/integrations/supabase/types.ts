@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       aplicativos: {
         Row: {
+          ativo: boolean | null
           created_at: string | null
           descricao: string
           id: string
@@ -23,6 +24,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string | null
           descricao: string
           id?: string
@@ -30,6 +32,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string | null
           descricao?: string
           id?: string
@@ -277,6 +280,7 @@ export type Database = {
       }
       planos: {
         Row: {
+          ativo: boolean | null
           created_at: string | null
           descricao: string | null
           id: string
@@ -287,6 +291,7 @@ export type Database = {
           valor: string
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string | null
           descricao?: string | null
           id?: string
@@ -297,6 +302,7 @@ export type Database = {
           valor: string
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string | null
           descricao?: string | null
           id?: string
@@ -310,6 +316,7 @@ export type Database = {
       }
       produtos: {
         Row: {
+          ativo: boolean | null
           configuracoes_iptv: boolean | null
           created_at: string | null
           creditos: string | null
@@ -322,6 +329,7 @@ export type Database = {
           valor: string
         }
         Insert: {
+          ativo?: boolean | null
           configuracoes_iptv?: boolean | null
           created_at?: string | null
           creditos?: string | null
@@ -334,6 +342,7 @@ export type Database = {
           valor: string
         }
         Update: {
+          ativo?: boolean | null
           configuracoes_iptv?: boolean | null
           created_at?: string | null
           creditos?: string | null
