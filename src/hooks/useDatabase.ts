@@ -43,6 +43,22 @@ export const useClientes = () => {
     }
   };
 
+  const buscarPorId = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar cliente por ID:', error);
+      return null;
+    }
+  };
+
   const editar = async (id: string, cliente: Partial<Omit<Cliente, 'id' | 'created_at'>>) => {
     try {
       const { data, error } = await supabase
@@ -83,7 +99,7 @@ export const useClientes = () => {
     }
   };
 
-  return { criar, buscar, editar, deletar };
+  return { criar, buscar, buscarPorId, editar, deletar };
 };
 
 // Hook para Aplicativos

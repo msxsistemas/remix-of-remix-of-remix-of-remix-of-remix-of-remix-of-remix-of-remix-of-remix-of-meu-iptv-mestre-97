@@ -234,44 +234,8 @@ export default function ClientesListCreate() {
   // Funções para editar e deletar
   const handleEditCliente = (cliente: Cliente) => {
     if (!cliente || !cliente.id) return;
-    
-    setEditingCliente(cliente);
-    setIsEditing(true);
-    
-    // Remover o +55 do início para exibir no formulário
-    let whatsappSemPrefixo = cliente.whatsapp || "";
-    if (whatsappSemPrefixo.startsWith('55') && whatsappSemPrefixo.length > 11) {
-      whatsappSemPrefixo = whatsappSemPrefixo.substring(2);
-    }
-    
-    form.reset({
-      nome: cliente.nome || "",
-      whatsapp: whatsappSemPrefixo,
-      email: cliente.email || "",
-      dataVenc: cliente.data_vencimento ? cliente.data_vencimento.slice(0, 10) : "",
-      fixo: cliente.fixo || false,
-      usuario: cliente.usuario || "",
-      senha: cliente.senha || "",
-      produto: cliente.produto || "",
-      plano: cliente.plano || "",
-      app: cliente.app || "",
-      dataVencApp: cliente.data_venc_app || "",
-      telas: cliente.telas || 1,
-      mac: cliente.mac || "",
-      dispositivo: cliente.dispositivo || "",
-      fatura: cliente.fatura || "Pago",
-      key: cliente.key || "",
-      mensagem: cliente.mensagem || "",
-      lembretes: cliente.lembretes || false,
-      indicador: cliente.indicador || "",
-      desconto: cliente.desconto || "0,00",
-      descontoRecorrente: cliente.desconto_recorrente || false,
-      aniversario: cliente.aniversario || "",
-      observacao: cliente.observacao || "",
-    });
-    
-    setIsModalOpen(true);
-    setOpen(true);
+    // Navegar para a página de cadastro com o ID do cliente para edição
+    navigate(`/clientes/cadastro/${cliente.id}`);
   };
 
   const handleDeleteCliente = (clienteId: string) => {
