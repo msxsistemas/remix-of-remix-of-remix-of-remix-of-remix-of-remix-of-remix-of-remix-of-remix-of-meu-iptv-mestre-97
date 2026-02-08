@@ -207,6 +207,8 @@ export default function Financeiro() {
     }
   };
 
+  const currentMonth = new Date().toLocaleString('pt-BR', { month: 'long' });
+
   return (
     <main className="space-y-4">
       {/* Header */}
@@ -231,86 +233,49 @@ export default function Financeiro() {
       </header>
 
       {/* Cards de métricas */}
-      <section className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <section className="grid gap-4 grid-cols-1 md:grid-cols-3">
         <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-emerald-500/20 p-2.5">
-              <DollarSign className="h-4 w-4 text-emerald-500" />
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-emerald-500/20 p-3">
+              <DollarSign className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Lucro</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.lucros)}
+              <p className="text-sm text-muted-foreground">Lucro do Mês</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xl font-bold text-foreground">
+                  {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : formatarValor(metricasFiltradas.lucros)}
+                </p>
+                <Badge className="bg-emerald-500/20 text-emerald-500 text-xs">
+                  {currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-primary/20 p-3">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Entradas</p>
+              <p className="text-xl font-bold text-foreground">
+                {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : formatarValor(metricasFiltradas.entradas)}
               </p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-primary/20 p-2.5">
-              <TrendingUp className="h-4 w-4 text-primary" />
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-destructive/20 p-3">
+              <TrendingDown className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Entradas</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.entradas)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-destructive/20 p-2.5">
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Saídas</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.saidas)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-blue-500/20 p-2.5">
-              <DollarSign className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Proj. Semanal</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.lucros * 4)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-blue-500/20 p-2.5">
-              <DollarSign className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Proj. Mensal</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.lucros)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-blue-500/20 p-2.5">
-              <DollarSign className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Proj. Anual</p>
-              <p className="text-lg font-bold text-foreground">
-                {loading ? "..." : formatarValor(metricasFiltradas.lucros * 12)}
+              <p className="text-sm text-muted-foreground">Saídas</p>
+              <p className="text-xl font-bold text-foreground">
+                {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : formatarValor(metricasFiltradas.saidas)}
               </p>
             </div>
           </CardContent>
