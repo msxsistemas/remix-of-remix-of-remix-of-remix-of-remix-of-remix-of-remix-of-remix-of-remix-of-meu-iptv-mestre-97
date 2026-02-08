@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, X, Package, Settings, AlertTriangle, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, X, Settings, AlertTriangle, Plus, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { Produto } from "@/types/database";
 
 const formatCurrencyBRL = (value: string) => {
@@ -173,338 +173,266 @@ export default function ClientesProdutos() {
     }
   };
 
+  const filteredProdutos = produtos.filter((p) =>
+    p.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const renderFormFields = (data: typeof formData, onChange: (field: string, value: string | boolean) => void) => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Nome</Label>
+          <Input
+            value={data.nome}
+            onChange={(e) => onChange("nome", e.target.value)}
+            placeholder="Nome do produto"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Valor</Label>
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="R$ 0,00"
+            value={data.valor}
+            onChange={(e) => onChange("valor", formatCurrencyBRL(e.target.value))}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label>Créditos</Label>
+          <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+        <Input
+          value={data.creditos}
+          onChange={(e) => onChange("creditos", e.target.value)}
+          placeholder="Quantidade de créditos"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Descrição</Label>
+        <Textarea
+          value={data.descricao}
+          onChange={(e) => onChange("descricao", e.target.value)}
+          placeholder="Descrição do produto"
+          className="min-h-[80px] resize-none"
+        />
+      </div>
+
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="configIptv"
+            checked={data.configuracoesIptv}
+            onChange={(e) => onChange("configuracoesIptv", e.target.checked)}
+            className="rounded"
+          />
+          <Label htmlFor="configIptv" className="cursor-pointer">Configurações IPTV</Label>
+        </div>
+
+        {data.configuracoesIptv && (
+          <div className="space-y-3 pl-6 border-l-2 border-border">
+            <div className="space-y-2">
+              <Label>Provedor IPTV</Label>
+              <Select value={data.provedorIptv} onValueChange={(value) => onChange("provedorIptv", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="provedor1">Provedor 1</SelectItem>
+                  <SelectItem value="provedor2">Provedor 2</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Renovação Automática</Label>
+                <p className="text-xs text-muted-foreground">Renova automaticamente no servidor IPTV</p>
+              </div>
+              <Switch
+                checked={data.renovacaoAutomatica}
+                onCheckedChange={(checked) => onChange("renovacaoAutomatica", checked)}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 text-amber-500 text-sm">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Nenhum painel IPTV configurado</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <main className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Produtos</h1>
-        <p className="text-muted-foreground text-sm">Gerenciar produtos</p>
+    <main className="space-y-4">
+      {/* Header */}
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-foreground">Produtos</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-1" />
+              Novo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Novo Produto</DialogTitle>
+            </DialogHeader>
+            {renderFormFields(formData, handleInputChange)}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </header>
 
-      <section>
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-            <div className="flex items-center gap-3">
-              <Package className="h-6 w-6 text-blue-400" />
-              <div>
-                <CardTitle className="text-base text-white">Produtos dos Clientes</CardTitle>
-                <p className="text-sm text-slate-400">Gerenciar os produtos oferecidos aos seus clientes</p>
-              </div>
-            </div>
-            <div className="ml-auto">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Produto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Novo produto</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nome" className="text-white">Nome</Label>
-                      <Input
-                        id="nome"
-                        value={formData.nome}
-                        onChange={(e) => handleInputChange("nome", e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="valor" className="text-white">Valor</Label>
-                      <Input
-                        id="valor"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        placeholder="R$ 0,00"
-                        value={formData.valor}
-                        onChange={(e) => handleInputChange("valor", formatCurrencyBRL(e.target.value))}
-                        className="bg-slate-700 border-slate-600 text-white"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="creditos" className="text-white">Créditos</Label>
-                        <Settings className="h-4 w-4 text-slate-400" />
-                      </div>
-                      <Input
-                        id="creditos"
-                        value={formData.creditos}
-                        onChange={(e) => handleInputChange("creditos", e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="descricao" className="text-white">Descrição</Label>
-                      <Textarea
-                        id="descricao"
-                        value={formData.descricao}
-                        onChange={(e) => handleInputChange("descricao", e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white min-h-[120px]"
-                      />
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="configuracoesIptv"
-                          checked={formData.configuracoesIptv}
-                          onChange={(e) => handleInputChange("configuracoesIptv", e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="configuracoesIptv" className="text-white">Configurações IPTV</Label>
-                      </div>
-                      
-                      {formData.configuracoesIptv && (
-                        <div className="space-y-4 pl-6">
-                          <div className="space-y-2">
-                            <Label className="text-white">Provedor IPTV</Label>
-                            <Select value={formData.provedorIptv} onValueChange={(value) => handleInputChange("provedorIptv", value)}>
-                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                                <SelectValue placeholder="Selecione um provedor..." />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-700 border-slate-600">
-                                <SelectItem value="provedor1">Provedor 1</SelectItem>
-                                <SelectItem value="provedor2">Provedor 2</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-white">Renovação Automática IPTV</Label>
-                              <Switch
-                                checked={formData.renovacaoAutomatica}
-                                onCheckedChange={(checked) => handleInputChange("renovacaoAutomatica", checked)}
-                              />
-                            </div>
-                            <p className="text-xs text-slate-400">
-                              Quando ativado todos os clientes deste produto terão renovação automática no servidor IPTV
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 text-orange-400 text-sm">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span>Nenhum painel IPTV configurado. Configurar agora</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex gap-2 justify-end">
-                      <Button variant="outline" onClick={handleCancel} className="border-slate-600 text-white hover:bg-slate-700">
-                        Cancelar
-                      </Button>
-                      <Button 
-                        onClick={handleSave} 
-                        disabled={loading}
-                        className="bg-cyan-500 hover:bg-cyan-600 text-white"
-                      >
-                        {loading ? "Salvando..." : "Salvar"}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-        </Card>
-      </section>
-
-      <section className="bg-slate-900 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+      {/* Search & Table */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="flex items-center gap-2 p-3 border-b border-border">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Procurar..."
+              placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+              className="pl-9 h-9"
             />
             {searchTerm && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-slate-400 hover:text-white"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3" />
               </Button>
             )}
           </div>
-          <span className="text-slate-400 text-sm">{produtos.length}</span>
+          <span className="text-sm text-muted-foreground">{filteredProdutos.length} registro(s)</span>
         </div>
 
-        <div className="border border-slate-700 rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-700 hover:bg-slate-800">
-                <TableHead className="text-slate-300">id</TableHead>
-                <TableHead className="text-slate-300">Nome</TableHead>
-                <TableHead className="text-slate-300">Clientes vinculados</TableHead>
-                <TableHead className="text-slate-300">Valor</TableHead>
-                <TableHead className="text-slate-300">Créditos</TableHead>
-                <TableHead className="text-slate-300">Descrição</TableHead>
-                <TableHead className="text-slate-300">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {produtos.length ? (
-                produtos
-                  .filter((p) => p.nome?.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map((p) => (
-                    <TableRow key={p.id} className="border-slate-700">
-                      <TableCell className="text-slate-300">{p.id?.slice(0, 8)}</TableCell>
-                      <TableCell className="text-slate-300">{p.nome}</TableCell>
-                      <TableCell className="text-slate-300">0</TableCell>
-                      <TableCell className="text-slate-300">
-                        <span className="inline-flex items-center rounded-md bg-cyan-500 px-2 py-1 text-xs font-medium text-white">
-                          {typeof p.valor === "string" && p.valor.trim().startsWith("R$") ? p.valor : `R$ ${p.valor}`}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-slate-300">{p.creditos}</TableCell>
-                      <TableCell className="text-slate-300">{p.descricao}</TableCell>
-                      <TableCell className="text-slate-300">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(p)}
-                            className="text-cyan-400 hover:text-cyan-300"
-                            aria-label="Editar produto"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteTarget(p)}
-                            className="text-red-400 hover:text-red-300"
-                            aria-label="Excluir produto"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow className="border-slate-700">
-                  <TableCell colSpan={7} className="text-center text-slate-400 py-8">
-                    Nada para mostrar
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24">ID</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead>Créditos</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead className="w-[100px] text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProdutos.length ? (
+              filteredProdutos.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {p.id?.slice(0, 8)}
+                  </TableCell>
+                  <TableCell className="font-medium">{p.nome}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      {typeof p.valor === "string" && p.valor.trim().startsWith("R$") ? p.valor : `R$ ${p.valor}`}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{p.creditos || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground max-w-[200px] truncate">
+                    {p.descricao || "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(p)}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteTarget(p)}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  Nenhum produto encontrado
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-        <div className="mt-4 text-slate-400 text-sm">
-          Mostrando {produtos.length} resultado(s)
-        </div>
-      </section>
-      {/* Dialog de Sucesso */}
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white text-center">
-          <div className="flex flex-col items-center space-y-4 py-6">
-            <div className="w-16 h-16 rounded-full border-2 border-green-500 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-white">Sucesso</h2>
-            <p className="text-slate-300">{successMessage}</p>
-            <Button 
-              onClick={() => setShowSuccessDialog(false)}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white px-8"
-            >
-              OK
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Produto</DialogTitle>
+          </DialogHeader>
+          {renderFormFields(editForm, handleEditChange)}
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleUpdate} disabled={loading}>
+              {loading ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Editar Produto */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-white">Editar produto</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-nome" className="text-white">Nome</Label>
-              <Input
-                id="edit-nome"
-                value={editForm.nome}
-                onChange={(e) => handleEditChange("nome", e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-valor" className="text-white">Valor</Label>
-              <Input
-                id="edit-valor"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="R$ 0,00"
-                value={editForm.valor}
-                onChange={(e) => handleEditChange("valor", formatCurrencyBRL(e.target.value))}
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-creditos" className="text-white">Créditos</Label>
-              <Input
-                id="edit-creditos"
-                value={editForm.creditos}
-                onChange={(e) => handleEditChange("creditos", e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-descricao" className="text-white">Descrição</Label>
-              <Textarea
-                id="edit-descricao"
-                value={editForm.descricao}
-                onChange={(e) => handleEditChange("descricao", e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white min-h-[120px]"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-600 text-white hover:bg-slate-700">
-                Cancelar
-              </Button>
-              <Button onClick={handleUpdate} disabled={loading} className="bg-cyan-500 hover:bg-cyan-600 text-white">
-                {loading ? "Salvando..." : "Salvar"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Excluir Produto */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
+      {/* Delete Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir produto</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o produto "{deleteTarget?.nome}"? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir "{deleteTarget?.nome}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-slate-600 text-white hover:bg-slate-700">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">Excluir</AlertDialogAction>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <div className="flex flex-col items-center space-y-4 py-4">
+            <div className="w-12 h-12 rounded-full border-2 border-green-500 flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="font-medium">{successMessage}</p>
+            <Button onClick={() => setShowSuccessDialog(false)} size="sm">
+              OK
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
