@@ -113,17 +113,31 @@ export default function ClientesListCreate() {
     }
   };
 
-  // Contagem de clientes por produto/servidor
+  // Contagem de clientes por produto/servidor com ID para filtragem
   const produtosContagem = useMemo(() => {
-    const contagem: Record<string, number> = {};
+    const contagem: Record<string, { nome: string; id: string; count: number }> = {};
     clientes.forEach(cliente => {
       if (cliente.produto) {
         const nome = getProdutoNome(cliente.produto);
-        contagem[nome] = (contagem[nome] || 0) + 1;
+        if (!contagem[cliente.produto]) {
+          contagem[cliente.produto] = { nome, id: cliente.produto, count: 0 };
+        }
+        contagem[cliente.produto].count += 1;
       }
     });
-    return Object.entries(contagem);
+    return Object.values(contagem);
   }, [clientes, produtos]);
+
+  // Função para filtrar por servidor ao clicar no badge
+  const handleFiltrarPorServidor = (produtoId: string) => {
+    const currentValue = filtros.watch("produto");
+    if (currentValue === produtoId) {
+      // Se já está filtrado por esse servidor, remove o filtro
+      filtros.setValue("produto", "");
+    } else {
+      filtros.setValue("produto", produtoId);
+    }
+  };
 
   // Função para abrir diálogo de renovação
   const handleRenovarPlano = async (cliente: Cliente) => {
@@ -898,18 +912,26 @@ export default function ClientesListCreate() {
         </div>
       </div>
 
-      {/* Badges de Servidores com Contagem */}
+      {/* Badges de Servidores com Contagem - Clicáveis */}
       {produtosContagem.length > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {produtosContagem.map(([nome, count]) => (
-            <Badge 
-              key={nome} 
-              variant="outline" 
-              className="bg-card border-border text-foreground px-3 py-1"
-            >
-              {nome} ({count})
-            </Badge>
-          ))}
+          {produtosContagem.map((produto) => {
+            const isActive = filtros.watch("produto") === produto.id;
+            return (
+              <Badge 
+                key={produto.id} 
+                variant="outline" 
+                className={`px-3 py-1 cursor-pointer transition-colors ${
+                  isActive 
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-card border-border text-foreground hover:bg-muted"
+                }`}
+                onClick={() => handleFiltrarPorServidor(produto.id)}
+              >
+                {produto.nome} ({produto.count})
+              </Badge>
+            );
+          })}
         </div>
       )}
 
