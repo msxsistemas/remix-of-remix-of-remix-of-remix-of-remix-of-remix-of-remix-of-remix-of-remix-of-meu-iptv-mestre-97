@@ -81,6 +81,8 @@ export default function ClientesListCreate() {
   // Estados para WhatsApp e toggle
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const [clienteParaWhatsapp, setClienteParaWhatsapp] = useState<Cliente | null>(null);
+  const [whatsappTemplate, setWhatsappTemplate] = useState<string>("");
+  const [whatsappMensagem, setWhatsappMensagem] = useState<string>("");
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [clienteParaToggle, setClienteParaToggle] = useState<Cliente | null>(null);
 
@@ -296,16 +298,100 @@ export default function ClientesListCreate() {
   const handleEnviarWhatsApp = (cliente: Cliente) => {
     if (!cliente || !cliente.whatsapp) return;
     setClienteParaWhatsapp(cliente);
+    setWhatsappTemplate("");
+    setWhatsappMensagem("");
     setWhatsappDialogOpen(true);
+  };
+
+  // Função para gerar mensagem do WhatsApp a partir do template
+  const gerarMensagemWhatsApp = (templateId: string) => {
+    if (!templateId || !clienteParaWhatsapp) {
+      setWhatsappMensagem("");
+      return;
+    }
+
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    const sanitizeNumber = (val: any) => {
+      if (val === null || val === undefined) return 0;
+      const cleaned = String(val).replace(/[^0-9,.-]/g, '').replace(',', '.');
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? 0 : n;
+    };
+
+    const normalize = (s: any) => String(s ?? '').trim().toLowerCase();
+
+    const findPlano = () => {
+      const cliVal = clienteParaWhatsapp.plano;
+      let p = planos.find(pl => String(pl.id) === String(cliVal));
+      if (p) return p;
+      p = planos.find(pl => normalize(pl.nome) === normalize(cliVal));
+      if (p) return p;
+      p = planos.find(pl => normalize(pl.nome).includes(normalize(cliVal)) || normalize(cliVal).includes(normalize(pl.nome)));
+      return p;
+    };
+
+    const plano = findPlano();
+    const planoNome = plano?.nome || clienteParaWhatsapp.plano || "N/A";
+    const valorPlano = sanitizeNumber(plano?.valor);
+
+    const hora = new Date().getHours();
+    let saudacao = "Bom dia";
+    if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
+    else if (hora >= 18) saudacao = "Boa noite";
+
+    let dataVencimento = "N/A";
+    if (clienteParaWhatsapp.data_vencimento) {
+      try {
+        dataVencimento = format(new Date(clienteParaWhatsapp.data_vencimento), "dd/MM/yyyy");
+      } catch {
+        dataVencimento = String(clienteParaWhatsapp.data_vencimento);
+      }
+    }
+
+    const desconto = sanitizeNumber(clienteParaWhatsapp.desconto);
+    const total = Math.max(0, valorPlano - desconto);
+
+    let mensagemFinal = template.mensagem || "";
+    
+    const f2 = (n: number) => n.toFixed(2);
+    const normalizeKey = (s: any) => String(s ?? "").toLowerCase().replace(/[\s_-]/g, "");
+
+    const map: Record<string, string> = {
+      saudacao,
+      nome: clienteParaWhatsapp.nome || "",
+      cliente: clienteParaWhatsapp.nome || "",
+      nomecliente: clienteParaWhatsapp.nome || "",
+      plano: planoNome,
+      valor: f2(valorPlano),
+      valorplano: f2(valorPlano),
+      desconto: f2(desconto),
+      total: f2(total),
+      vencimento: dataVencimento,
+      datavencimento: dataVencimento,
+      usuario: clienteParaWhatsapp.usuario || clienteParaWhatsapp.email || "",
+      senha: clienteParaWhatsapp.senha || "",
+    };
+
+    mensagemFinal = mensagemFinal.replace(/\{([^{}]+)\}/g, (full, key) => {
+      const k = normalizeKey(key);
+      return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : full;
+    });
+
+    setWhatsappMensagem(mensagemFinal);
   };
 
   // Função para confirmar envio de WhatsApp
   const confirmarEnvioWhatsApp = () => {
     if (clienteParaWhatsapp?.whatsapp) {
-      window.open(`https://wa.me/${clienteParaWhatsapp.whatsapp.replace(/\D/g, '')}`, '_blank');
+      const mensagemCodificada = encodeURIComponent(whatsappMensagem);
+      window.open(`https://wa.me/${clienteParaWhatsapp.whatsapp.replace(/\D/g, '')}${whatsappMensagem ? `?text=${mensagemCodificada}` : ''}`, '_blank');
     }
     setWhatsappDialogOpen(false);
     setClienteParaWhatsapp(null);
+    setWhatsappTemplate("");
+    setWhatsappMensagem("");
   };
 
   // Função para abrir diálogo de toggle ativo/inativo
@@ -1492,34 +1578,81 @@ export default function ClientesListCreate() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmar envio de WhatsApp */}
-      <AlertDialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen}>
-        <AlertDialogContent className="bg-card border-border text-foreground">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Enviar mensagem no WhatsApp</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Deseja abrir o WhatsApp para enviar mensagem para "{clienteParaWhatsapp?.nome}"?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              className="border-border hover:bg-muted"
-              onClick={() => {
-                setWhatsappDialogOpen(false);
-                setClienteParaWhatsapp(null);
-              }}
-            >
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmarEnvioWhatsApp}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Abrir WhatsApp
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal de WhatsApp com templates */}
+      <Dialog open={whatsappDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setWhatsappDialogOpen(false);
+          setClienteParaWhatsapp(null);
+          setWhatsappTemplate("");
+          setWhatsappMensagem("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Enviar WhatsApp</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Enviando para: <span className="font-medium text-foreground">{clienteParaWhatsapp?.nome}</span>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Escolha um template (opcional)</Label>
+              <Select 
+                value={whatsappTemplate} 
+                onValueChange={(value) => {
+                  setWhatsappTemplate(value);
+                  gerarMensagemWhatsApp(value);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Mensagem</Label>
+              <Textarea
+                placeholder="Digite sua mensagem ou selecione um template acima..."
+                value={whatsappMensagem}
+                onChange={(e) => setWhatsappMensagem(e.target.value)}
+                className="min-h-[120px] resize-none"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setWhatsappDialogOpen(false);
+                  setClienteParaWhatsapp(null);
+                  setWhatsappTemplate("");
+                  setWhatsappMensagem("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmarEnvioWhatsApp}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Abrir WhatsApp
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmar ativar/desativar cliente */}
       <AlertDialog open={toggleDialogOpen} onOpenChange={setToggleDialogOpen}>
