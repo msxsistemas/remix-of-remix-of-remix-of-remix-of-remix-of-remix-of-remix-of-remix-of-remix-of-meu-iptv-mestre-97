@@ -495,16 +495,19 @@ export default function ClientesCadastro() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Usuário</Label>
-                        <Input 
-                          placeholder="Nome de usuário no painel" 
-                          className="bg-background border-border"
-                          value={acesso.usuario}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, usuario: e.target.value } : a
-                            ));
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Nome de usuário no painel" 
+                            className="bg-background border-border flex-1"
+                            value={acesso.usuario}
+                            onChange={(e) => {
+                              setAcessosAdicionais(prev => prev.map((a, i) => 
+                                i === index ? { ...a, usuario: e.target.value } : a
+                              ));
+                            }}
+                          />
+                          <div className="w-10 shrink-0" />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -536,30 +539,36 @@ export default function ClientesCadastro() {
 
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">MAC Address / Email</Label>
-                        <Input 
-                          placeholder="Ex: 00:1A:2B:3C:4D:5E ou email@clouddy.com" 
-                          className="bg-background border-border"
-                          value={acesso.mac}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, mac: e.target.value } : a
-                            ));
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Ex: 00:1A:2B:3C:4D:5E ou email@clouddy.com" 
+                            className="bg-background border-border flex-1"
+                            value={acesso.mac}
+                            onChange={(e) => {
+                              setAcessosAdicionais(prev => prev.map((a, i) => 
+                                i === index ? { ...a, mac: e.target.value } : a
+                              ));
+                            }}
+                          />
+                          <div className="w-10 shrink-0" />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Key / OTP</Label>
-                        <Input 
-                          placeholder="Chave de ativação ou OTP" 
-                          className="bg-background border-border"
-                          value={acesso.key}
-                          onChange={(e) => {
-                            setAcessosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, key: e.target.value } : a
-                            ));
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Chave de ativação ou OTP" 
+                            className="bg-background border-border flex-1"
+                            value={acesso.key}
+                            onChange={(e) => {
+                              setAcessosAdicionais(prev => prev.map((a, i) => 
+                                i === index ? { ...a, key: e.target.value } : a
+                              ));
+                            }}
+                          />
+                          <div className="w-10 shrink-0" />
+                        </div>
                       </div>
 
                       <div className="space-y-2 md:col-span-2">
@@ -653,26 +662,29 @@ export default function ClientesCadastro() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Aplicativo</Label>
-                        <Select 
-                          value={appItem.app} 
-                          onValueChange={(v) => {
-                            setAplicativosAdicionais(prev => prev.map((a, i) => 
-                              i === index ? { ...a, app: v } : a
-                            ));
-                          }}
-                          disabled={loadingData}
-                        >
-                          <SelectTrigger className="bg-background border-border">
-                            <SelectValue placeholder="Selecione o aplicativo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {aplicativos.map((a) => (
-                              <SelectItem key={a.id} value={String(a.id)}>
-                                {a.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={appItem.app} 
+                            onValueChange={(v) => {
+                              setAplicativosAdicionais(prev => prev.map((a, i) => 
+                                i === index ? { ...a, app: v } : a
+                              ));
+                            }}
+                            disabled={loadingData}
+                          >
+                            <SelectTrigger className="bg-background border-border flex-1">
+                              <SelectValue placeholder="Selecione o aplicativo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {aplicativos.map((a) => (
+                                <SelectItem key={a.id} value={String(a.id)}>
+                                  {a.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="w-10 shrink-0" />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
