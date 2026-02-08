@@ -261,7 +261,7 @@ export default function ClientesCadastro() {
   const saudacao = hora < 12 ? "Bom Dia" : hora < 18 ? "Boa Tarde" : "Boa Noite";
 
   const SectionHeader = ({ icon: Icon, title, color }: { icon: any; title: string; color: string }) => (
-    <div className="flex items-center gap-2 mb-4 mt-6 first:mt-0">
+    <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">
       <Icon className={`h-4 w-4 ${color}`} />
       <span className={`text-sm font-semibold ${color}`}>{title}</span>
     </div>
@@ -284,12 +284,12 @@ export default function ClientesCadastro() {
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold text-foreground mb-6">Cadastrar Novo Cliente</h2>
 
-          <form onSubmit={onSubmit} className="space-y-1">
+          <form onSubmit={onSubmit} className="space-y-3">
             
             {/* Seção: Dados Pessoais */}
             <SectionHeader icon={User} title="Dados Pessoais" color="text-cyan-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Nome <span className="text-destructive">*</span></Label>
                 <Input 
@@ -328,7 +328,7 @@ export default function ClientesCadastro() {
             {/* Seção: Plano e Produto */}
             <SectionHeader icon={Package} title="Plano e Produto" color="text-cyan-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Produto <span className="text-destructive">*</span></Label>
                 <Select 
@@ -405,7 +405,7 @@ export default function ClientesCadastro() {
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-6">
+              <div className="flex items-center gap-3 pt-4">
                 <Switch
                   checked={form.watch("fixo")}
                   onCheckedChange={(checked) => form.setValue("fixo", checked)}
@@ -417,7 +417,7 @@ export default function ClientesCadastro() {
             {/* Seção: Credenciais de Acesso */}
             <SectionHeader icon={Key} title="Credenciais de Acesso" color="text-cyan-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Usuário</Label>
                 <Input 
@@ -467,7 +467,7 @@ export default function ClientesCadastro() {
             {/* Seção: Aplicativo */}
             <SectionHeader icon={Smartphone} title="Aplicativo" color="text-cyan-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Aplicativo</Label>
                 <Select 
@@ -501,7 +501,7 @@ export default function ClientesCadastro() {
             {/* Seção: Financeiro */}
             <SectionHeader icon={DollarSign} title="Financeiro" color="text-green-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Desconto (R$)</Label>
                 <Input 
@@ -511,7 +511,7 @@ export default function ClientesCadastro() {
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-6">
+              <div className="flex items-center gap-3 pt-4">
                 <Switch
                   checked={form.watch("descontoRecorrente")}
                   onCheckedChange={(checked) => form.setValue("descontoRecorrente", checked)}
@@ -523,7 +523,7 @@ export default function ClientesCadastro() {
             {/* Seção: Notificações */}
             <SectionHeader icon={Bell} title="Notificações" color="text-yellow-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Mensagem de Boas-vindas</Label>
                 <Select 
@@ -553,7 +553,7 @@ export default function ClientesCadastro() {
             </div>
 
             {/* Collapsible: Acessos Adicionais */}
-            <Collapsible className="mt-4">
+            <Collapsible className="mt-3">
               <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-2">
                   <Key className="h-4 w-4 text-cyan-400" />
@@ -679,7 +679,7 @@ export default function ClientesCadastro() {
             {/* Seção: Captação e Observações */}
             <SectionHeader icon={Users} title="Captação e Observações" color="text-purple-400" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Como conheceu?</Label>
                 <Select 
@@ -730,7 +730,7 @@ export default function ClientesCadastro() {
             </div>
 
             {/* Botões */}
-            <div className="flex gap-3 pt-6">
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
