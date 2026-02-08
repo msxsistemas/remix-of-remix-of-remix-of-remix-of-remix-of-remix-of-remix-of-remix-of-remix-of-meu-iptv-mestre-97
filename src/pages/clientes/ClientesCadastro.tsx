@@ -320,7 +320,7 @@ export default function ClientesCadastro() {
                 <Label className="text-sm font-medium">Data de Aniversário</Label>
                 <Input 
                   type="date"
-                  className="bg-background border-border"
+                  className="bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden"
                   {...form.register("aniversario")}
                 />
               </div>
@@ -401,7 +401,7 @@ export default function ClientesCadastro() {
                 <Label className="text-sm font-medium">Data de Vencimento <span className="text-destructive">*</span></Label>
                 <Input 
                   type="date"
-                  className="bg-background border-border"
+                  className="bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden"
                   {...form.register("dataVenc")}
                 />
               </div>
@@ -493,7 +493,7 @@ export default function ClientesCadastro() {
                 <Label className="text-sm font-medium">Vencimento do App</Label>
                 <Input 
                   type="date"
-                  className="bg-background border-border"
+                  className="bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden"
                   {...form.register("dataVencApp")}
                 />
               </div>
