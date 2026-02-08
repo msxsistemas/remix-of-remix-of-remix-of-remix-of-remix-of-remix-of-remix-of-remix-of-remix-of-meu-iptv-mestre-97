@@ -89,7 +89,7 @@ export function AppSidebar() {
     { to: "/relatorios", icon: Filter, label: "Relatórios" },
     { to: "/configuracoes", icon: Globe, label: "Gateways" },
     { to: "/whatsapp", icon: WhatsAppIcon, label: "WhatsApp", hasWhatsappSubmenu: true },
-    { to: "/configuracoes/mensagens-cobranca", icon: Share2, label: "Indicações" },
+    { to: "/indicacoes", icon: Share2, label: "Indicações" },
     { to: "/configuracoes/mensagens-padroes", icon: MoreHorizontal, label: "Outros" },
     { to: "/logs", icon: ScrollText, label: "Logs", hasLogsSubmenu: true },
   ];
