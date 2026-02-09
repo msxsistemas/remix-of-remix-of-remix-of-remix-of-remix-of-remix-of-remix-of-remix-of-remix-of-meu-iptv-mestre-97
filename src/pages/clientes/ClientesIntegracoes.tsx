@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Server } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { PROVEDORES, ProvedoresList, ProviderCard, PanelsList, Panel, ProviderConfig } from "@/components/servidores/ProvedoresList";
+import { PROVEDORES, ProvedoresList, ProviderCard, PanelsList } from "@/components/servidores/ProvedoresList";
+import { Panel, ProviderConfig } from "@/config/provedores";
 import { AddPanelModal, EditPanelModal, TestResultModal, DeleteConfirmModal, SuccessModal } from "@/components/servidores/ServidoresModals";
 
 export default function ClientesIntegracoes() {

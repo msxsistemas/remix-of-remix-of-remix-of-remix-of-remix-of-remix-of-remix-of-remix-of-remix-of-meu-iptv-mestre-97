@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { PROVEDORES, Panel, ProviderConfig } from "@/components/servidores/ProvedoresList";
+import { PROVEDORES, Panel, ProviderConfig } from "@/config/provedores";
 
 export function useServidorPage(providerId: string) {
   const provider = PROVEDORES.find(p => p.id === providerId) || null;
