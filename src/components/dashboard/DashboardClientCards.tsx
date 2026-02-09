@@ -16,22 +16,22 @@ export default function DashboardClientCards({
       label: "Clientes Ativos",
       value: clientesAtivos,
       icon: Users,
-      borderColor: "border-success",
-      textColor: "text-success",
+      bgColor: "bg-success",
+      iconBgColor: "bg-success/80",
     },
     {
       label: "Clientes Vencidos",
       value: clientesVencidos,
       icon: AlertTriangle,
-      borderColor: "border-destructive",
-      textColor: "text-destructive",
+      bgColor: "bg-destructive",
+      iconBgColor: "bg-destructive/80",
     },
     {
       label: "Clientes Desativados",
       value: clientesDesativados,
       icon: UserX,
-      borderColor: "border-dashboard-purple",
-      textColor: "text-dashboard-purple",
+      bgColor: "bg-dashboard-purple",
+      iconBgColor: "bg-dashboard-purple/80",
     },
   ];
 
@@ -40,13 +40,13 @@ export default function DashboardClientCards({
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`rounded-xl border-2 ${card.borderColor} bg-transparent p-5 transition-transform duration-200 hover:scale-[1.02] shadow-lg`}
+          className={`rounded-xl ${card.bgColor} p-5 text-white transition-transform duration-200 hover:scale-[1.02] shadow-lg`}
         >
           <div className="flex items-center gap-4">
-            <card.icon className={`h-6 w-6 ${card.textColor}`} />
+            <card.icon className="h-6 w-6 text-white/80" />
             <div>
-              <p className={`text-base font-medium ${card.textColor}`}>{card.label}</p>
-              <p className={`text-2xl font-bold ml-1 ${card.textColor}`}>{card.value}</p>
+              <p className="text-base font-medium text-white">{card.label}</p>
+              <p className="text-2xl font-bold ml-1">{card.value}</p>
             </div>
           </div>
         </div>
