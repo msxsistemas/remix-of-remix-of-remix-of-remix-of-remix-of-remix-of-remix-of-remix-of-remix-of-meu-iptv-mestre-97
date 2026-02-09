@@ -21,7 +21,6 @@ import {
   DollarSign,
   ArrowLeftRight,
   Filter,
-  
   Globe,
   MessageSquare,
   Share2,
@@ -76,13 +75,28 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
 
-  // Estilo base dos itens
+  // Estilo base dos itens - com destaque de cor quando ativo
   const menuItemClass = (active: boolean) =>
-    `flex items-center justify-between w-full px-5 py-3 transition-colors border-0 rounded-none ${
-      active ? "text-white" : "text-[#8b8b9a] hover:text-white"
+    `flex items-center justify-between w-full px-5 py-3 transition-all border-0 rounded-none ${
+      active 
+        ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
+        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
     }`;
 
-  // Menu items baseado na imagem de referência
+  // Estilo para subitens ativos
+  const subItemClass = (active: boolean) =>
+    `flex items-center gap-2 py-1 text-[13px] transition-colors ${
+      active ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
+    }`;
+
+  const subItemDotClass = (active: boolean) =>
+    `w-2 h-2 rounded-full border ${
+      active 
+        ? "border-primary bg-primary" 
+        : "border-muted-foreground bg-transparent"
+    }`;
+
+  // Menu items
   const menuItems = [
     { to: "/", icon: Home, label: "Dashboard" },
     { to: "/clientes", icon: Users, label: "Clientes", hasSubmenu: true },
@@ -91,7 +105,6 @@ export function AppSidebar() {
     { to: "/produtos", icon: Package, label: "Produtos", hasProdutosSubmenu: true },
     { to: "/servidores", icon: Server, label: "Servidores" },
     { to: "/financeiro", icon: DollarSign, label: "Financeiro" },
-    
     { to: "/relatorios", icon: Filter, label: "Relatórios" },
     { to: "/configuracoes", icon: Globe, label: "Gateways" },
     { to: "/whatsapp", icon: WhatsAppIcon, label: "WhatsApp", hasWhatsappSubmenu: true },
@@ -100,31 +113,22 @@ export function AppSidebar() {
     { to: "/logs", icon: ScrollText, label: "Logs", hasLogsSubmenu: true },
   ];
 
-  // Subitens do Clientes
   const clientesSubItems = [
     { to: "/clientes/cadastro", label: "Adicionar" },
     { to: "/clientes", label: "Gerenciar" },
   ];
-
-  // Subitens do Planos
   const planosSubItems = [
     { to: "/planos/cadastro", label: "Adicionar" },
     { to: "/planos", label: "Gerenciar" },
   ];
-
-  // Subitens do Aplicativos
   const aplicativosSubItems = [
     { to: "/aplicativos/cadastro", label: "Adicionar" },
     { to: "/aplicativos", label: "Gerenciar" },
   ];
-
-  // Subitens do Produtos
   const produtosSubItems = [
     { to: "/produtos/cadastro", label: "Adicionar" },
     { to: "/produtos", label: "Gerenciar" },
   ];
-
-  // Subitens do WhatsApp
   const whatsappSubItems = [
     { to: "/whatsapp/gerenciar-mensagens", label: "Gerenciar Mensagens" },
     { to: "/whatsapp/fila-mensagens", label: "Fila de Mensagens" },
@@ -132,23 +136,59 @@ export function AppSidebar() {
     { to: "/whatsapp/templates", label: "Templates" },
     { to: "/whatsapp/parear", label: "Parear Whatsapp" },
   ];
-
-  // Subitens do Logs
   const logsSubItems = [
     { to: "/logs/painel", label: "Logs do Painel" },
     { to: "/logs/sistema", label: "Logs do Sistema" },
   ];
-
-  // Subitens das Indicações
   const indicacoesSubItems = [
     { to: "/indicacoes/clientes", label: "Indicação de Clientes" },
     { to: "/indicacoes/sistema", label: "Indicação do Sistema" },
   ];
-
-  // Subitens do Outros
   const outrosSubItems = [
     { to: "/outros/cupom", label: "Cupom" },
   ];
+
+  // Helper to render submenu items
+  const renderSubItems = (items: { to: string; label: string }[]) => (
+    <SidebarMenuSub className="ml-8 mt-2 space-y-1">
+      {items.map((subItem) => (
+        <SidebarMenuSubItem key={subItem.to}>
+          <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
+            <NavLink to={subItem.to} end className={subItemClass(isActive(subItem.to))}>
+              <span className={subItemDotClass(isActive(subItem.to))} />
+              {subItem.label}
+            </NavLink>
+          </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+      ))}
+    </SidebarMenuSub>
+  );
+
+  // Helper to render a submenu parent
+  const renderSubmenuParent = (
+    item: typeof menuItems[0],
+    menuKey: string,
+    sectionActive: boolean,
+    subItems: { to: string; label: string }[]
+  ) => (
+    <SidebarMenuItem key={item.to}>
+      <SidebarMenuButton
+        onClick={() => toggleSubmenu(menuKey)}
+        className={`${menuItemClass(sectionActive)} hover:bg-accent/50`}
+      >
+        <div className="flex items-center gap-3">
+          <item.icon className="h-5 w-5" />
+          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
+        </div>
+        {!isCollapsed && (
+          <ChevronRight
+            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === menuKey ? "rotate-90" : ""}`}
+          />
+        )}
+      </SidebarMenuButton>
+      {openSubmenu === menuKey && !isCollapsed && renderSubItems(subItems)}
+    </SidebarMenuItem>
+  );
 
   return (
     <Sidebar className="border-r border-border" collapsible="icon">
@@ -160,211 +200,32 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* Separator Line */}
         <div className="mx-4 border-t border-border/50 mb-2" />
 
-        {/* Main Navigation */}
         <SidebarGroup className="px-0">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0">
               {menuItems.map((item) => {
-                // Item Clientes com submenu
-                if (item.hasSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("clientes")}
-                        className={`${menuItemClass(clientesActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "clientes" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "clientes" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {clientesSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  {/* Círculo indicador */}
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
+                if (item.hasSubmenu) return renderSubmenuParent(item, "clientes", clientesActive, clientesSubItems);
+                if (item.hasPlanosSubmenu) return renderSubmenuParent(item, "planos", planosActive, planosSubItems);
+                if (item.hasAplicativosSubmenu) return renderSubmenuParent(item, "aplicativos", aplicativosActive, aplicativosSubItems);
+                if (item.hasProdutosSubmenu) return renderSubmenuParent(item, "produtos", produtosActive, produtosSubItems);
+                if (item.hasLogsSubmenu) return renderSubmenuParent(item, "logs", logsActive, logsSubItems);
+                if (item.hasIndicacoesSubmenu) return renderSubmenuParent(item, "indicacoes", indicacoesActive, indicacoesSubItems);
+                if (item.hasOutrosSubmenu) return renderSubmenuParent(item, "outros", outrosActive, outrosSubItems);
 
-                // Item Planos com submenu
-                if (item.hasPlanosSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("planos")}
-                        className={`${menuItemClass(planosActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "planos" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "planos" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {planosSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item Aplicativos com submenu
-                if (item.hasAplicativosSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("aplicativos")}
-                        className={`${menuItemClass(aplicativosActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "aplicativos" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "aplicativos" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {aplicativosSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item Produtos com submenu
-                if (item.hasProdutosSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("produtos")}
-                        className={`${menuItemClass(produtosActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "produtos" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "produtos" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {produtosSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item WhatsApp com submenu
+                // WhatsApp - special styling
                 if (item.hasWhatsappSubmenu) {
                   return (
                     <SidebarMenuItem key={item.to}>
                       <SidebarMenuButton
                         onClick={() => toggleSubmenu("whatsapp")}
-                        className={`h-auto p-0 hover:bg-transparent rounded-none ${whatsappActive ? "" : ""}`}
+                        className="h-auto p-0 hover:bg-transparent rounded-none"
                       >
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
                           whatsappActive 
-                            ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg mx-2" 
-                            : "text-[#8b8b9a] hover:text-white"
+                            ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                         }`}>
                           <div className="flex items-center gap-3">
                             <Phone className="h-5 w-5" />
@@ -377,169 +238,7 @@ export function AppSidebar() {
                           )}
                         </div>
                       </SidebarMenuButton>
-                      {openSubmenu === "whatsapp" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {whatsappSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  {/* Círculo indicador */}
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item Logs com submenu
-                if (item.hasLogsSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("logs")}
-                        className={`${menuItemClass(logsActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "logs" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "logs" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {logsSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item Indicações com submenu
-                if (item.hasIndicacoesSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("indicacoes")}
-                        className={`${menuItemClass(indicacoesActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "indicacoes" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "indicacoes" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {indicacoesSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Item Outros com submenu
-                if (item.hasOutrosSubmenu) {
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        onClick={() => toggleSubmenu("outros")}
-                        className={`${menuItemClass(outrosActive)} hover:bg-transparent`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <item.icon className="h-5 w-5" />
-                          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
-                        </div>
-                        {!isCollapsed && (
-                          <ChevronRight
-                            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === "outros" ? "rotate-90" : ""}`}
-                          />
-                        )}
-                      </SidebarMenuButton>
-                      {openSubmenu === "outros" && !isCollapsed && (
-                        <SidebarMenuSub className="ml-8 mt-2 space-y-1">
-                          {outrosSubItems.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.to}>
-                              <SidebarMenuSubButton asChild className="h-auto p-0 hover:bg-transparent">
-                                <NavLink
-                                  to={subItem.to}
-                                  end
-                                  className={`flex items-center gap-2 py-1 text-[13px] transition-colors ${
-                                    isActive(subItem.to) ? "text-[#22d3ee]" : "text-[#8b8b9a] hover:text-white"
-                                  }`}
-                                >
-                                  <span className={`w-2 h-2 rounded-full border ${
-                                    isActive(subItem.to) 
-                                      ? "border-[#22d3ee] bg-[#22d3ee]" 
-                                      : "border-[#8b8b9a] bg-transparent"
-                                  }`} />
-                                  {subItem.label}
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
+                      {openSubmenu === "whatsapp" && !isCollapsed && renderSubItems(whatsappSubItems)}
                     </SidebarMenuItem>
                   );
                 }
@@ -553,7 +252,6 @@ export function AppSidebar() {
                           <item.icon className="h-5 w-5" />
                           {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
                         </div>
-                        {/* Não mostrar seta no Dashboard */}
                         {!isCollapsed && item.to !== "/" && <ChevronRight className="h-4 w-4 opacity-50" />}
                       </NavLink>
                     </SidebarMenuButton>
