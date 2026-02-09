@@ -121,40 +121,79 @@ serve(async (req) => {
       console.log(`⚠️ Erro ao buscar página de login: ${(e as Error).message}`);
     }
 
+    // --- Try Xtream/kOffice style: GET /player_api.php?username=X&password=X ---
+    const xtreamPaths = ['/player_api.php', '/panel_api.php', '/api.php'];
+    const logs: any[] = [];
+    let lastResp: any = null;
+    let lastUrl = '';
+
+    for (const path of xtreamPaths) {
+      const url = `${cleanBase}${path}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+      console.log(`🧪 Testando Xtream endpoint: ${path}`);
+      try {
+        const res = await withTimeout(fetch(url, {
+          method: 'GET',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json', ...hdrs },
+        }), 15000);
+        const text = await res.text();
+        let json: any = null;
+        try { json = JSON.parse(text); } catch (_) {}
+        console.log(`📊 ${path} → status: ${res.status}, snippet: ${text.slice(0, 200)}`);
+        logs.push({ url: `${cleanBase}${path}`, status: res.status, ok: res.ok, snippet: text.slice(0, 200) });
+        lastResp = { status: res.status, ok: res.ok, text, json };
+        lastUrl = `${cleanBase}${path}`;
+
+        // Xtream API returns user_info on success
+        if (res.ok && json && (json.user_info || json.server_info)) {
+          console.log(`✅ Login Xtream bem-sucedido em: ${path}`);
+          return new Response(JSON.stringify({
+            success: true,
+            endpoint: `${cleanBase}${path}`,
+            type: 'Xtream/kOffice',
+            account: {
+              status: json.user_info?.status || 'Active',
+              user: json.user_info || null,
+              token_received: false,
+            },
+            data: {
+              user_info: json.user_info || null,
+              server_info: json.server_info || null,
+              response: json,
+            },
+            logs,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        }
+      } catch (e) {
+        console.log(`⚠️ Erro Xtream ${path}: ${(e as Error).message}`);
+        logs.push({ url: `${cleanBase}${path}`, error: (e as Error).message });
+      }
+    }
+
+    // --- Fallback: Try standard POST login endpoints ---
     const candidates = Array.from(new Set([
       endpointPath || '/api/auth/login',
       '/api/login',
       '/api/v1/login',
       '/api/v1/auth/login',
-      '/api/v2/login',
       '/auth/login',
       '/login',
       '/admin/login',
-      '/api/signin',
-      '/api/auth/signin',
-      '/admin/api/auth/login',
-      '/api/authenticate',
-      '/api/v1/authenticate',
     ]));
-
-    let lastResp: any = null;
-    let lastUrl = '';
-    const logs: any[] = [];
 
     for (const path of candidates) {
       const url = `${cleanBase}${path.startsWith('/') ? '' : '/'}${path}`;
-      console.log(`🧪 Testando endpoint: ${path}`);
+      console.log(`🧪 Testando POST endpoint: ${path}`);
       try {
         const resp = await testOnWaveLogin(url, username, password, hdrs, endpointMethod || 'POST', loginPayload);
         console.log(`📊 ${path} → status: ${resp.status}, ok: ${resp.ok}, snippet: ${String(resp.text).slice(0, 150)}`);
-        
         logs.push({ url, status: resp.status, ok: resp.ok, snippet: String(resp.text).slice(0, 200) });
         lastResp = resp;
         lastUrl = url;
 
-        // Check for token in various formats
         const token = resp.json?.token || resp.json?.jwt || resp.json?.access_token || resp.json?.data?.token || resp.json?.data?.access_token || null;
-        // Also check kOffice-style result field
         const resultField = resp.json?.result;
         const isSuccess = resp.ok && (
           token || 
@@ -188,7 +227,7 @@ serve(async (req) => {
           });
         }
       } catch (e) {
-        console.log(`⚠️ Erro ao tentar ${path}: ${(e as Error).message}`);
+        console.log(`⚠️ Erro POST ${path}: ${(e as Error).message}`);
         logs.push({ url, error: (e as Error).message });
       }
     }
