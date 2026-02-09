@@ -54,7 +54,7 @@ export default function ClientesListCreate() {
   
   // Paginação
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Estados para dados dos selects
   const [planos, setPlanos] = useState<any[]>([]);
@@ -1452,9 +1452,25 @@ export default function ClientesListCreate() {
       {/* Paginação */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
-          <span className="text-sm text-muted-foreground">
-            Página {currentPage} de {totalPages}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">Itens:</span>
+              <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
