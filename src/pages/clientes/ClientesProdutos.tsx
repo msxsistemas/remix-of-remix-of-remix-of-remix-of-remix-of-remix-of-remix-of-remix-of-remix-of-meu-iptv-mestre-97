@@ -424,7 +424,7 @@ export default function ClientesProdutos() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => openEdit(p)}
+                        onClick={() => navigate(`/produtos/editar/${p.id}`)}
                         className="h-8 w-8 text-primary hover:text-primary/80"
                       >
                         <Pencil className="h-4 w-4" />
