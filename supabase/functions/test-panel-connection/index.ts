@@ -62,7 +62,7 @@ serve(async (req) => {
   }
 
   try {
-    const { baseUrl, username, password, extraHeaders, cf_clearance, cookie, endpointPath, endpointMethod, loginPayload, providerId } = await req.json();
+    const { baseUrl, username, password, extraHeaders, cf_clearance, cookie, endpointPath, endpointMethod, loginPayload, providerId, testSteps } = await req.json();
     
     if (!baseUrl || !username || !password) {
       return new Response(JSON.stringify({ 
@@ -275,18 +275,41 @@ serve(async (req) => {
     } // end form-based login block
 
     // --- Fallback: Try standard POST JSON login endpoints (sigma and others) ---
-    // If provider is known, only try its specific endpoint; otherwise try all
-    const candidates = providerId && endpointPath
-      ? [endpointPath]
-      : Array.from(new Set([
-          endpointPath || '/api/auth/login',
-          '/api/login',
-          '/api/v1/login',
-          '/api/v1/auth/login',
-          '/auth/login',
-          '/login',
-          '/admin/login',
-        ]));
+    // Build candidates from testSteps if available, otherwise use endpointPath or defaults
+    let candidates: string[] = [];
+    if (Array.isArray(testSteps) && testSteps.length > 0) {
+      // Extract all endpoints from json-post steps first, then form steps
+      for (const step of testSteps) {
+        if (step.type === 'json-post' && Array.isArray(step.endpoints)) {
+          candidates.push(...step.endpoints);
+        }
+      }
+      // If no json-post endpoints found, try all step endpoints
+      if (candidates.length === 0) {
+        for (const step of testSteps) {
+          if (Array.isArray(step.endpoints)) {
+            candidates.push(...step.endpoints);
+          }
+        }
+      }
+    }
+    
+    if (candidates.length === 0) {
+      candidates = providerId && endpointPath
+        ? [endpointPath]
+        : Array.from(new Set([
+            endpointPath || '/api/auth/login',
+            '/api/login',
+            '/api/v1/login',
+            '/api/v1/auth/login',
+            '/auth/login',
+            '/login',
+            '/admin/login',
+          ]));
+    }
+    
+    // Deduplicate
+    candidates = Array.from(new Set(candidates));
 
     for (const path of candidates) {
       const url = `${cleanBase}${path.startsWith('/') ? '' : '/'}${path}`;
