@@ -14,6 +14,6 @@ export const KOFFICE_API_CONFIG: ProviderConfig = {
   loginMethod: 'POST',
   buildLoginPayload: (usuario: string, senha: string) => ({
     username: usuario,
-    password: senha,
+    api_key: senha,
   }),
 };
