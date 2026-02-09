@@ -276,7 +276,7 @@ export default function ClientesAplicativos() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleEdit(a)}
+                        onClick={() => navigate(`/aplicativos/editar/${a.id}`)}
                         className="h-8 w-8 text-primary hover:text-primary/80"
                       >
                         <Pencil className="h-4 w-4" />
