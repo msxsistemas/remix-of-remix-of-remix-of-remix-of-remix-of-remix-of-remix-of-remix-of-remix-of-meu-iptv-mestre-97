@@ -80,7 +80,7 @@ export function AppSidebar() {
     `flex items-center justify-between w-full px-5 py-3 transition-all border-0 rounded-none ${
       active 
         ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
-        : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+        : "text-muted-foreground hover:text-muted-foreground/80"
     }`;
 
   // Estilo para subitens ativos
@@ -179,7 +179,7 @@ export function AppSidebar() {
         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
           sectionActive 
             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
-            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+            : "text-muted-foreground hover:text-muted-foreground/80"
         }`}>
           <div className="flex items-center gap-3">
             <item.icon className="h-5 w-5" />
@@ -231,7 +231,7 @@ export function AppSidebar() {
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
                           whatsappActive 
                             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
-                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            : "text-muted-foreground hover:text-muted-foreground/80"
                         }`}>
                           <div className="flex items-center gap-3">
                             <Phone className="h-5 w-5" />
@@ -257,7 +257,7 @@ export function AppSidebar() {
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
                           isActive(item.to)
                             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium"
-                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            : "text-muted-foreground hover:text-muted-foreground/80"
                         }`}>
                           <div className="flex items-center gap-3">
                             <item.icon className="h-5 w-5" />
