@@ -1,28 +1,28 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Check, Edit, Pause, RefreshCw, Trash2, Monitor, Plus } from "lucide-react";
+import { Play, Check, Edit, Pause, RefreshCw, Trash2, Monitor, Plus, Lock } from "lucide-react";
 
 // Lista de provedores IPTV disponíveis
 export const PROVEDORES = [
-  { id: 'playfast', nome: 'PLAYFAST', descricao: 'Painel IPTV Playfast' },
-  { id: 'koffice-api', nome: 'KOFFICE API', descricao: 'Integração kOfficePanel API' },
-  { id: 'koffice-v2', nome: 'KOFFICE V2', descricao: 'Painel kOffice versão 2' },
-  { id: 'sigma-v2', nome: 'PAINEL SIGMA', descricao: 'Painel Sigma versão 2' },
-  { id: 'now', nome: 'NOW', descricao: 'Painel NOW IPTV' },
-  { id: 'thebest', nome: 'THEBEST', descricao: 'Painel TheBest IPTV' },
-  { id: 'wplay', nome: 'WPLAY', descricao: 'Painel WPlay IPTV' },
-  { id: 'natv', nome: 'NATV', descricao: 'Painel NATV' },
-  { id: 'uniplay', nome: 'UNIPLAY E FRANQUIAS', descricao: 'Painel Uniplay e Franquias' },
-  { id: 'tvs', nome: 'TVS E FRANQUIAS', descricao: 'Painel TVS e Franquias' },
-  { id: 'mundogf', nome: 'MUNDOGF E FRANQUIAS', descricao: 'Painel MundoGF e Franquias' },
-  { id: 'painelfoda', nome: 'PAINELFODA', descricao: 'Painel Foda IPTV' },
-  { id: 'centralp2braz', nome: 'CENTRALP2BRAZ', descricao: 'Painel CentralP2Braz' },
-  { id: 'clubtv', nome: 'CLUBTV', descricao: 'Painel ClubTV' },
-  { id: 'easyplay', nome: 'EASYPLAY', descricao: 'Painel EasyPlay' },
-  { id: 'blade', nome: 'BLADE', descricao: 'Painel Blade IPTV' },
-  { id: 'live21', nome: 'LIVE21', descricao: 'Painel Live21' },
-  { id: 'elite-office', nome: 'ELITE OFFICE', descricao: 'Painel Elite Office' },
-  { id: 'unitv', nome: 'UNITV', descricao: 'Painel UniTV' },
+  { id: 'playfast', nome: 'PLAYFAST', descricao: 'Painel IPTV Playfast', integrado: false },
+  { id: 'koffice-api', nome: 'KOFFICE API', descricao: 'Integração kOfficePanel API', integrado: false },
+  { id: 'koffice-v2', nome: 'KOFFICE V2', descricao: 'Painel kOffice versão 2', integrado: false },
+  { id: 'sigma-v2', nome: 'PAINEL SIGMA', descricao: 'Painel Sigma versão 2', integrado: true },
+  { id: 'now', nome: 'NOW', descricao: 'Painel NOW IPTV', integrado: false },
+  { id: 'thebest', nome: 'THEBEST', descricao: 'Painel TheBest IPTV', integrado: false },
+  { id: 'wplay', nome: 'WPLAY', descricao: 'Painel WPlay IPTV', integrado: false },
+  { id: 'natv', nome: 'NATV', descricao: 'Painel NATV', integrado: false },
+  { id: 'uniplay', nome: 'UNIPLAY E FRANQUIAS', descricao: 'Painel Uniplay e Franquias', integrado: false },
+  { id: 'tvs', nome: 'TVS E FRANQUIAS', descricao: 'Painel TVS e Franquias', integrado: false },
+  { id: 'mundogf', nome: 'MUNDOGF E FRANQUIAS', descricao: 'Painel MundoGF e Franquias', integrado: false },
+  { id: 'painelfoda', nome: 'PAINELFODA', descricao: 'Painel Foda IPTV', integrado: false },
+  { id: 'centralp2braz', nome: 'CENTRALP2BRAZ', descricao: 'Painel CentralP2Braz', integrado: false },
+  { id: 'clubtv', nome: 'CLUBTV', descricao: 'Painel ClubTV', integrado: false },
+  { id: 'easyplay', nome: 'EASYPLAY', descricao: 'Painel EasyPlay', integrado: false },
+  { id: 'blade', nome: 'BLADE', descricao: 'Painel Blade IPTV', integrado: false },
+  { id: 'live21', nome: 'LIVE21', descricao: 'Painel Live21', integrado: false },
+  { id: 'elite-office', nome: 'ELITE OFFICE', descricao: 'Painel Elite Office', integrado: false },
+  { id: 'unitv', nome: 'UNITV', descricao: 'Painel UniTV', integrado: false },
 ];
 
 export interface Panel {
@@ -49,13 +49,18 @@ export function ProvedoresList({ filteredProvedores, selectedProvider, onSelectP
         <button
           key={provedor.id}
           onClick={() => onSelectProvider(provedor.id)}
-          className={`px-4 py-2 text-xs font-medium rounded-md transition-all ${
+          className={`px-4 py-2 text-xs font-medium rounded-md transition-all relative ${
             selectedProvider === provedor.id
               ? "bg-primary text-primary-foreground"
-              : "bg-secondary/80 text-secondary-foreground/70 border border-border/30 hover:bg-secondary hover:text-secondary-foreground"
+              : provedor.integrado
+                ? "bg-secondary/80 text-secondary-foreground/70 border border-border/30 hover:bg-secondary hover:text-secondary-foreground"
+                : "bg-secondary/40 text-muted-foreground/50 border border-border/20 cursor-default"
           }`}
         >
           {provedor.nome}
+          {!provedor.integrado && (
+            <Lock className="inline-block w-3 h-3 ml-1 opacity-50" />
+          )}
         </button>
       ))}
     </div>
@@ -68,6 +73,30 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider, stats }: ProviderCardProps) {
+  if (!provider.integrado) {
+    return (
+      <div className="rounded-lg p-6 bg-card border border-border">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+              <Lock className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">{provider.nome}</h3>
+              <p className="text-sm text-muted-foreground">{provider.descricao}</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="text-amber-400 border-amber-400/50 bg-amber-400/10">
+            Em breve
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mt-4">
+          A integração com <span className="font-medium text-foreground">{provider.nome}</span> ainda não está disponível. Em breve você poderá configurar seus painéis aqui.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg p-4 bg-card border border-border">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -81,7 +110,6 @@ export function ProviderCard({ provider, stats }: ProviderCardProps) {
           </div>
         </div>
 
-        {/* Estatísticas */}
         <div className="flex gap-2">
           <div className="border border-primary/50 rounded-lg px-4 py-2 text-center min-w-[70px]">
             <div className="text-lg font-bold text-primary">{stats.total}</div>
