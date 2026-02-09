@@ -14,7 +14,7 @@ export default function ClientesIntegracoes() {
   const [autoRenewal, setAutoRenewal] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<string>('playfast');
+  const [selectedProvider, setSelectedProvider] = useState<string>('sigma-v2');
   
   const [testResultModal, setTestResultModal] = useState<{
     isOpen: boolean;
@@ -440,17 +440,19 @@ export default function ClientesIntegracoes() {
         <ProviderCard provider={currentProvider} stats={providerStats} />
       )}
 
-      {/* Panels List */}
-      <PanelsList
-        panels={providerPanels}
-        providerName={currentProvider?.nome || ''}
-        isTestingConnection={isTestingConnection}
-        onAddPanel={() => setIsConfigModalOpen(true)}
-        onEditPanel={startEditPanel}
-        onToggleStatus={handleToggleStatus}
-        onTestPanel={testPanel}
-        onDeletePanel={openDeleteConfirm}
-      />
+      {/* Panels List - only for integrated providers */}
+      {currentProvider?.integrado && (
+        <PanelsList
+          panels={providerPanels}
+          providerName={currentProvider?.nome || ''}
+          isTestingConnection={isTestingConnection}
+          onAddPanel={() => setIsConfigModalOpen(true)}
+          onEditPanel={startEditPanel}
+          onToggleStatus={handleToggleStatus}
+          onTestPanel={testPanel}
+          onDeletePanel={openDeleteConfirm}
+        />
+      )}
 
       {/* Modals */}
       <AddPanelModal
