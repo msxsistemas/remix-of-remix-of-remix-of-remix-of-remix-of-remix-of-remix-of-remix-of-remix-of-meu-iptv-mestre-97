@@ -202,18 +202,7 @@ serve(async (req) => {
       }
     }
 
-    // Discovery (always run for logging)
-    try {
-      console.log('🔍 Descobrindo estrutura...');
-      const resp = await withTimeout(fetch(`${cleanBase}/login`, {
-        method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' },
-      }), 10000);
-      const html = await resp.text();
-      const csrf = html.match(/name=["']_token["']\s+value=["'](.*?)["']/);
-      console.log(`🔑 CSRF: ${csrf ? csrf[1].slice(0, 20) + '...' : 'não encontrado'}`);
-    } catch (e) {
-      console.log(`⚠️ Discovery: ${(e as Error).message}`);
-    }
+    // Skip discovery - go straight to test steps to avoid triggering rate limits
 
     const logs: any[] = [];
 
