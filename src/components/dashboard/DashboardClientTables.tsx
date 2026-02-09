@@ -279,7 +279,7 @@ export default function DashboardClientTables() {
   const [vencendoHoje, setVencendoHoje] = useState<Cliente[]>([]);
   const [proximoVencer, setProximoVencer] = useState<Cliente[]>([]);
   const [planosMap, setPlanosMap] = useState<Map<string, Plano>>(new Map());
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [mensagensPadroes, setMensagensPadroes] = useState<any>(null);
 
   useEffect(() => {
     if (userId) {
@@ -289,10 +289,10 @@ export default function DashboardClientTables() {
 
   const carregarDados = async () => {
     try {
-      const [clientesRes, planosRes, templatesRes] = await Promise.all([
+      const [clientesRes, planosRes, mensagensRes] = await Promise.all([
         supabase.from("clientes").select("*").eq("user_id", userId),
         supabase.from("planos").select("*").eq("user_id", userId),
-        supabase.from("templates_mensagens").select("*").eq("user_id", userId),
+        supabase.from("mensagens_padroes").select("*").eq("user_id", userId).maybeSingle(),
       ]);
 
       if (clientesRes.error) throw clientesRes.error;
@@ -302,7 +302,7 @@ export default function DashboardClientTables() {
       const planos = planosRes.data || [];
 
       setPlanosMap(new Map(planos.map((p) => [p.id, p])));
-      setTemplates(templatesRes.data || []);
+      setMensagensPadroes(mensagensRes.data);
 
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
@@ -372,22 +372,22 @@ export default function DashboardClientTables() {
       return;
     }
 
-    // Mapear tipo para nome do template
-    const templateNames: Record<NotificationType, string> = {
-      vencido: "Plano Venceu Ontem",
-      vence_hoje: "Plano Vencendo Hoje",
-      proximo_vencer: "Plano Vencendo Amanhã",
+    // Buscar mensagem da tabela mensagens_padroes
+    const mensagemKey: Record<NotificationType, string> = {
+      vencido: "vencido",
+      vence_hoje: "vence_hoje",
+      proximo_vencer: "proximo_vencer",
     };
 
-    const templateNome = templateNames[type];
-    const template = templates.find((t) => t.nome === templateNome);
+    const key = mensagemKey[type];
+    const mensagem = mensagensPadroes?.[key];
 
-    if (!template) {
-      toast.error(`Template "${templateNome}" não encontrado. Configure em Templates.`);
+    if (!mensagem) {
+      toast.error(`Mensagem "${key}" não configurada. Configure em Gerenciar Mensagens.`);
       return;
     }
 
-    const mensagemProcessada = processarMensagem(template.mensagem, cliente);
+    const mensagemProcessada = processarMensagem(mensagem, cliente);
 
     try {
       // Inserir na fila de mensagens

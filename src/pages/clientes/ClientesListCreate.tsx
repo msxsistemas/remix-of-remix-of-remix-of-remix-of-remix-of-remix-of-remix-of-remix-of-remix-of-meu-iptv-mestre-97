@@ -545,28 +545,26 @@ export default function ClientesListCreate() {
         }
       }
 
-      // Mapear tipo para nome do template
-      const templateNames: Record<string, string> = {
-        vencido: "Plano Venceu Ontem",
-        vence_hoje: "Plano Vencendo Hoje",
-        proximo_vencer: "Plano Vencendo Amanhã",
+      // Buscar mensagem da tabela mensagens_padroes
+      const { data: mensagensData } = await supabase
+        .from("mensagens_padroes")
+        .select("*")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .maybeSingle();
+
+      const mensagemKey: Record<string, string> = {
+        vencido: "vencido",
+        vence_hoje: "vence_hoje",
+        proximo_vencer: "proximo_vencer",
       };
 
-      const templateNome = templateNames[tipoNotificacao];
-      
-      // Buscar templates de mensagens
-      const { data: templatesData, error: templatesError } = await supabase
-        .from("templates_mensagens")
-        .select("*");
+      const key = mensagemKey[tipoNotificacao];
+      const mensagemTemplate = mensagensData?.[key as keyof typeof mensagensData] as string | null;
 
-      if (templatesError) throw templatesError;
-
-      const template = templatesData?.find((t) => t.nome === templateNome);
-
-      if (!template) {
+      if (!mensagemTemplate) {
         toast({
           title: "Erro",
-          description: `Template "${templateNome}" não encontrado. Configure em Templates.`,
+          description: `Mensagem "${key}" não configurada. Configure em Gerenciar Mensagens.`,
           variant: "destructive",
         });
         setNotificandoId(null);
@@ -586,7 +584,7 @@ export default function ClientesListCreate() {
         ? new Date(cliente.data_vencimento).toLocaleDateString("pt-BR")
         : "";
 
-      const mensagemProcessada = template.mensagem
+      const mensagemProcessada = mensagemTemplate
         .replace(/{nome_cliente}/g, cliente.nome)
         .replace(/{usuario}/g, cliente.usuario || "")
         .replace(/{vencimento}/g, vencimento)
