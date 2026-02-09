@@ -17,6 +17,7 @@ export default function AplicativosEditar() {
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     nome: "",
     descricao: "",
@@ -54,10 +55,19 @@ export default function AplicativosEditar() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome.trim()) {
-      toast({ title: "Erro", description: "O campo Nome é obrigatório", variant: "destructive" });
+    const errors: Record<string, string> = {};
+    if (!formData.nome.trim()) errors.nome = "Campo obrigatório";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      setTimeout(() => {
+        const el = document.querySelector(`[data-field="${firstErrorField}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
+    setFieldErrors({});
     if (!id) return;
 
     setLoading(true);
@@ -98,14 +108,15 @@ export default function AplicativosEditar() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="nome">
                 <Label className="text-sm font-medium">Nome do Aplicativo <span className="text-destructive">*</span></Label>
                 <Input 
                   placeholder="Nome do aplicativo" 
-                  className="bg-background border-border"
+                  className={`bg-background border-border ${fieldErrors.nome ? 'border-destructive' : ''}`}
                   value={formData.nome}
-                  onChange={(e) => handleInputChange("nome", e.target.value)}
+                  onChange={(e) => { handleInputChange("nome", e.target.value); setFieldErrors(prev => ({ ...prev, nome: '' })); }}
                 />
+                {fieldErrors.nome && <span className="text-xs text-destructive">{fieldErrors.nome}</span>}
               </div>
 
               <div className="space-y-2">

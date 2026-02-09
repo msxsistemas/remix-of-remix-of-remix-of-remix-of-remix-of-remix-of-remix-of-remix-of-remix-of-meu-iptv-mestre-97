@@ -192,21 +192,26 @@ export default function ClientesEditar() {
     return cleaned;
   };
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const onSubmit = form.handleSubmit(async (data) => {
     if (!id) return;
 
-    const camposFaltantes: string[] = [];
-    if (!data.nome || data.nome.trim() === '') camposFaltantes.push("Nome");
-    if (!data.dataVenc) camposFaltantes.push("Data de Vencimento");
-    if (!data.plano) camposFaltantes.push("Plano");
+    const errors: Record<string, string> = {};
+    if (!data.nome || data.nome.trim() === '') errors.nome = "Campo obrigatório";
+    if (!data.dataVenc) errors.dataVenc = "Campo obrigatório";
+    if (!data.plano) errors.plano = "Campo obrigatório";
 
-    if (camposFaltantes.length > 0) {
-      toast({
-        title: "Preencha os campos obrigatórios",
-        description: camposFaltantes.join(", "),
-      });
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      setTimeout(() => {
+        const el = document.querySelector(`[data-field="${firstErrorField}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
+    setFieldErrors({});
 
     const whatsappFormatado = formatWhatsAppNumber(data.whatsapp);
 
@@ -314,13 +319,14 @@ export default function ClientesEditar() {
             <SectionHeader icon={User} title="Dados Pessoais" color="text-primary" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="nome">
                 <Label className="text-sm font-medium">Nome <span className="text-destructive">*</span></Label>
                 <Input 
                   placeholder="Nome completo do cliente" 
-                  className="bg-background border-border"
-                  {...form.register("nome")}
+                  className={`bg-background border-border ${fieldErrors.nome ? 'border-destructive' : ''}`}
+                  {...form.register("nome", { onChange: () => setFieldErrors(prev => ({ ...prev, nome: '' })) })}
                 />
+                {fieldErrors.nome && <span className="text-xs text-destructive">{fieldErrors.nome}</span>}
               </div>
               
               <div className="space-y-2">
@@ -378,14 +384,14 @@ export default function ClientesEditar() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="plano">
                 <Label className="text-sm font-medium">Plano <span className="text-destructive">*</span></Label>
                 <Select 
                   value={form.watch("plano")} 
-                  onValueChange={(v) => form.setValue("plano", v)} 
+                  onValueChange={(v) => { form.setValue("plano", v); setFieldErrors(prev => ({ ...prev, plano: '' })); }} 
                   disabled={loadingData}
                 >
-                  <SelectTrigger className="bg-background border-border">
+                  <SelectTrigger className={`bg-background border-border ${fieldErrors.plano ? 'border-destructive' : ''}`}>
                     <SelectValue placeholder="Selecione o plano" />
                   </SelectTrigger>
                   <SelectContent>
@@ -396,6 +402,7 @@ export default function ClientesEditar() {
                     ))}
                   </SelectContent>
                 </Select>
+                {fieldErrors.plano && <span className="text-xs text-destructive">{fieldErrors.plano}</span>}
               </div>
 
               <div className="space-y-2">
@@ -425,13 +432,14 @@ export default function ClientesEditar() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="dataVenc">
                 <Label className="text-sm font-medium">Data de Vencimento <span className="text-destructive">*</span></Label>
                 <Input 
                   type="date"
-                  className="bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden"
-                  {...form.register("dataVenc")}
+                  className={`bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden ${fieldErrors.dataVenc ? 'border-destructive' : ''}`}
+                  {...form.register("dataVenc", { onChange: () => setFieldErrors(prev => ({ ...prev, dataVenc: '' })) })}
                 />
+                {fieldErrors.dataVenc && <span className="text-xs text-destructive">{fieldErrors.dataVenc}</span>}
               </div>
 
               <div className="flex items-center gap-3 pt-4">

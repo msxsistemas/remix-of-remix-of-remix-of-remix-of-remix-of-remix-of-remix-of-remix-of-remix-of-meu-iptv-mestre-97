@@ -23,6 +23,7 @@ export default function PlanosCadastro() {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     nome: "",
     valor: "",
@@ -42,23 +43,20 @@ export default function PlanosCadastro() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nome.trim()) {
-      toast({
-        title: "Erro",
-        description: "O campo Nome é obrigatório",
-        variant: "destructive",
-      });
-      return;
-    }
+    const errors: Record<string, string> = {};
+    if (!formData.nome.trim()) errors.nome = "Campo obrigatório";
+    if (!formData.valor.trim()) errors.valor = "Campo obrigatório";
 
-    if (!formData.valor.trim()) {
-      toast({
-        title: "Erro",
-        description: "O campo Valor é obrigatório",
-        variant: "destructive",
-      });
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      setTimeout(() => {
+        const el = document.querySelector(`[data-field="${firstErrorField}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
+    setFieldErrors({});
 
     setLoading(true);
     try {
@@ -95,26 +93,28 @@ export default function PlanosCadastro() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="nome">
                 <Label className="text-sm font-medium">Nome do Plano <span className="text-destructive">*</span></Label>
                 <Input 
                   placeholder="Nome do plano" 
-                  className="bg-background border-border"
+                  className={`bg-background border-border ${fieldErrors.nome ? 'border-destructive' : ''}`}
                   value={formData.nome}
-                  onChange={(e) => handleInputChange("nome", e.target.value)}
+                  onChange={(e) => { handleInputChange("nome", e.target.value); setFieldErrors(prev => ({ ...prev, nome: '' })); }}
                 />
+                {fieldErrors.nome && <span className="text-xs text-destructive">{fieldErrors.nome}</span>}
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2" data-field="valor">
                 <Label className="text-sm font-medium">Valor <span className="text-destructive">*</span></Label>
                 <Input 
                   type="text"
                   inputMode="numeric"
                   placeholder="R$ 0,00"
-                  className="bg-background border-border"
+                  className={`bg-background border-border ${fieldErrors.valor ? 'border-destructive' : ''}`}
                   value={formData.valor}
-                  onChange={(e) => handleInputChange("valor", formatCurrencyBRL(e.target.value))}
+                  onChange={(e) => { handleInputChange("valor", formatCurrencyBRL(e.target.value)); setFieldErrors(prev => ({ ...prev, valor: '' })); }}
                 />
+                {fieldErrors.valor && <span className="text-xs text-destructive">{fieldErrors.valor}</span>}
               </div>
 
               <div className="space-y-2">
