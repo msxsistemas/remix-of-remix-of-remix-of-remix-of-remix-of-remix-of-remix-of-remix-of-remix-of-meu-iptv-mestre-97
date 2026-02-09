@@ -225,11 +225,15 @@ serve(async (req) => {
         console.log(`📊 Form login → status: ${formStatus}, location: ${formLocation}, snippet: ${formText.slice(0, 200)}`);
         logs.push({ url: `${cleanBase}/login (form)`, status: formStatus, location: formLocation, snippet: formText.slice(0, 200) });
 
-        // Success indicators: redirect to dashboard/home, or page without login form
+        // Success indicators: redirect specifically to dashboard/home (not ./ or back to login)
+        const locationLower = formLocation.toLowerCase();
+        const isRedirectToApp = locationLower.includes('dashboard') || locationLower.includes('/home') || locationLower.includes('/admin') || locationLower.includes('/panel');
+        const isRedirectToLogin = !formLocation || locationLower === './' || locationLower === '.' || locationLower.includes('/login') || locationLower === '/';
+        
         const isFormSuccess = (
-          (formStatus === 302 || formStatus === 301) && formLocation && !formLocation.includes('/login')
+          (formStatus === 302 || formStatus === 301) && isRedirectToApp && !isRedirectToLogin
         ) || (
-          formStatus === 200 && !formText.includes('form-login') && !formText.includes('login_error') && !formText.includes('Credenciais') && formText.includes('dashboard')
+          formStatus === 200 && formText.includes('dashboard') && !formText.includes('form-login') && !formText.includes('login_error')
         );
 
         if (isFormSuccess) {
