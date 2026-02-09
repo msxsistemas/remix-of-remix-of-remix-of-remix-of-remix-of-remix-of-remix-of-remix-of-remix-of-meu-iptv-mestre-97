@@ -164,6 +164,11 @@ export function AppSidebar() {
     </SidebarMenuSub>
   );
 
+  // Determina se o item deve ficar azul: apenas se é o submenu aberto, 
+  // ou se a rota está ativa E nenhum outro submenu está aberto
+  const isMenuHighlighted = (menuKey: string, sectionActive: boolean) =>
+    openSubmenu === menuKey || (sectionActive && openSubmenu === null);
+
   // Helper to render a submenu parent (same style as WhatsApp)
   const renderSubmenuParent = (
     item: typeof menuItems[0],
@@ -177,7 +182,7 @@ export function AppSidebar() {
         className="h-auto p-0 hover:bg-transparent active:bg-transparent active:text-inherit focus-visible:ring-0 rounded-none"
       >
         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
-          sectionActive || openSubmenu === menuKey
+          isMenuHighlighted(menuKey, sectionActive)
             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
             : "text-muted-foreground hover:text-muted-foreground/80"
         }`}>
@@ -229,7 +234,7 @@ export function AppSidebar() {
                         className="h-auto p-0 hover:bg-transparent active:bg-transparent active:text-inherit focus-visible:ring-0 rounded-none"
                       >
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
-                          whatsappActive || openSubmenu === "whatsapp"
+                          isMenuHighlighted("whatsapp", whatsappActive)
                             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
                             : "text-muted-foreground hover:text-muted-foreground/80"
                         }`}>
@@ -255,7 +260,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild className="h-auto p-0 hover:bg-transparent active:bg-transparent active:text-inherit focus-visible:ring-0 rounded-none">
                       <NavLink to={item.to} end>
                         <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
-                          isActive(item.to)
+                          isActive(item.to) && openSubmenu === null
                             ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium"
                             : "text-muted-foreground hover:text-muted-foreground/80"
                         }`}>
