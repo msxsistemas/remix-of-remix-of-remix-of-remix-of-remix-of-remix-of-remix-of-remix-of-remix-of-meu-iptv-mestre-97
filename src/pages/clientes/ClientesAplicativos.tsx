@@ -256,7 +256,7 @@ export default function ClientesAplicativos() {
               filteredApps.map((a, index) => (
                 <TableRow key={a.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {index + 1}
+                    {filteredApps.length - index}
                   </TableCell>
                   <TableCell className="font-medium">{a.nome}</TableCell>
                   <TableCell className="text-muted-foreground">{a.descricao || "-"}</TableCell>

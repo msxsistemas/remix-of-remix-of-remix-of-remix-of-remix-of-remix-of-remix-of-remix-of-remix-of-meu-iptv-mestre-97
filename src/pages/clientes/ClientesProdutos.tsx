@@ -399,7 +399,7 @@ export default function ClientesProdutos() {
               filteredProdutos.map((p, index) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {index + 1}
+                    {filteredProdutos.length - index}
                   </TableCell>
                   <TableCell className="font-medium">{p.nome}</TableCell>
                   <TableCell>

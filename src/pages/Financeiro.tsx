@@ -409,7 +409,7 @@ export default function Financeiro() {
               transacoesFiltradas.map((r, index) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {index + 1}
+                    {transacoesFiltradas.length - index}
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">
