@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Info, Shield, Eye, CheckCircle, XCircle, Plus, Loader2, Key } from "lucide-react";
-import { Panel, ProviderConfig } from "./ProvedoresList";
+import { Panel, ProviderConfig } from "@/config/provedores";
 
 interface AddPanelModalProps {
   isOpen: boolean;

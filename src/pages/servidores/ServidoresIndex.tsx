@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { Server, Lock, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { PROVEDORES } from "@/components/servidores/ProvedoresList";
+import { PROVEDORES } from "@/config/provedores";
 
 const PROVIDER_ROUTES: Record<string, string> = {
   'sigma-v2': '/servidores/sigma',
