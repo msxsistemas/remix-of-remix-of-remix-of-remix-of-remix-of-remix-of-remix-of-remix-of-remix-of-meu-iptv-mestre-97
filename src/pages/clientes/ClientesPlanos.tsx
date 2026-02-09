@@ -206,6 +206,7 @@ export default function ClientesPlanos() {
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
+            <Label className="text-muted-foreground">Busca</Label>
             <Input
               placeholder="Buscar..."
               value={searchTerm}
@@ -257,10 +258,10 @@ export default function ClientesPlanos() {
           </TableHeader>
           <TableBody>
             {filteredPlanos.length ? (
-              filteredPlanos.map((p, index) => (
+              filteredPlanos.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {filteredPlanos.length - index}
+                    {p.id?.slice(0, 8)}
                   </TableCell>
                   <TableCell className="font-medium">{p.nome}</TableCell>
                   <TableCell>
@@ -285,8 +286,8 @@ export default function ClientesPlanos() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/planos/editar/${p.id}`)}
-                        className="h-8 w-8 text-primary hover:text-primary/80"
+                        onClick={() => handleEdit(p)}
+                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -294,7 +295,10 @@ export default function ClientesPlanos() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleToggleAtivo(p)}
-                        className="h-8 w-8 text-warning hover:text-warning/80"
+                        className={`h-8 w-8 ${(p as any).ativo !== false 
+                          ? "text-muted-foreground hover:text-warning hover:bg-warning/10" 
+                          : "text-muted-foreground hover:text-success hover:bg-success/10"
+                        }`}
                         title={(p as any).ativo !== false ? "Desativar" : "Ativar"}
                       >
                         <Power className="h-4 w-4" />
@@ -304,7 +308,7 @@ export default function ClientesPlanos() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive/80"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

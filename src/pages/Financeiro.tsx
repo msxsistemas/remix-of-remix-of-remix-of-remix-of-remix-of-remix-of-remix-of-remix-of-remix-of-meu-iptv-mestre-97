@@ -321,6 +321,7 @@ export default function Financeiro() {
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="space-y-2">
+            <Label className="text-muted-foreground">Busca</Label>
             <Input
               placeholder="Buscar..."
               value={termoPesquisa}
@@ -405,10 +406,10 @@ export default function Financeiro() {
                 </TableCell>
               </TableRow>
             ) : (
-              transacoesFiltradas.map((r, index) => (
+              transacoesFiltradas.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {transacoesFiltradas.length - index}
+                    {r.id.split('-')[1]?.substring(0, 8) || r.id.substring(0, 8)}
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5">

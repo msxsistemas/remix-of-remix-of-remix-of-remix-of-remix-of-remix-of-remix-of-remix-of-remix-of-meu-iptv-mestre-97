@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useClientes, usePlanos, useProdutos, useAplicativos, useTemplatesCobranca } from "@/hooks/useDatabase";
-import { useEvolutionAPISimple } from "@/hooks/useEvolutionAPISimple";
+import { useEvolutionAPI } from "@/hooks/useEvolutionAPI";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash, Plus, Send, RefreshCw, Power, Copy, Bell, Loader2 } from "lucide-react";
@@ -63,7 +63,7 @@ export default function ClientesListCreate() {
   const { buscar: buscarProdutos } = useProdutos();
   const { buscar: buscarAplicativos } = useAplicativos();
   const { buscar: buscarTemplates } = useTemplatesCobranca();
-  const { sendMessage, session: whatsappSession, loading: sendingMessage } = useEvolutionAPISimple();
+  const { sendMessage, session: whatsappSession, loading: sendingMessage } = useEvolutionAPI();
   const { dismiss, toast } = useToast();
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -1115,8 +1115,9 @@ export default function ClientesListCreate() {
         {/* Linha 1: Busca, Servidor, Planos, Status */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
+            <Label className="text-sm font-normal text-muted-foreground">Busca</Label>
             <Input 
-              placeholder="Buscar..." 
+              placeholder="" 
               {...filtros.register("search")}
               className="bg-background"
             />
@@ -1259,7 +1260,6 @@ export default function ClientesListCreate() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="w-16 font-medium">ID:</TableHead>
               <TableHead className="font-medium">Nome do Cliente:</TableHead>
               <TableHead className="font-medium">Usuário:</TableHead>
               <TableHead className="font-medium">Vencimento:</TableHead>
@@ -1272,20 +1272,20 @@ export default function ClientesListCreate() {
           <TableBody>
             {loadingClientes ? (
               <TableRow>
-               <TableCell colSpan={8} className="text-center py-8">
+               <TableCell colSpan={7} className="text-center py-8">
                   <span className="text-muted-foreground">Carregando clientes...</span>
                 </TableCell>
               </TableRow>
             ) : clientesFiltrados.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <span className="text-muted-foreground">Nenhum cliente encontrado</span>
                 </TableCell>
               </TableRow>
             ) : (
               clientesFiltrados
                 .filter(cliente => cliente && cliente.id)
-                .map((cliente, index) => {
+                .map((cliente) => {
                   const { status } = getClienteStatus(cliente);
                   const formattedPhone = cliente.whatsapp ? `+${cliente.whatsapp}` : '-';
                   return (
@@ -1294,9 +1294,6 @@ export default function ClientesListCreate() {
                       className="cursor-pointer hover:bg-muted/20"
                       onClick={() => handleEditCliente(cliente)}
                     >
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {clientesFiltrados.filter(c => c && c.id).length - index}
-                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{cliente.nome.split(' ').slice(0, 2).join(' ')}</span>
@@ -1403,7 +1400,7 @@ export default function ClientesListCreate() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-warning hover:text-warning/80"
+                            className="h-8 w-8 text-primary hover:text-primary/80"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleToggleAtivo(cliente);
