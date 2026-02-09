@@ -164,7 +164,7 @@ export function AppSidebar() {
     </SidebarMenuSub>
   );
 
-  // Helper to render a submenu parent
+  // Helper to render a submenu parent (same style as WhatsApp)
   const renderSubmenuParent = (
     item: typeof menuItems[0],
     menuKey: string,
@@ -174,17 +174,23 @@ export function AppSidebar() {
     <SidebarMenuItem key={item.to}>
       <SidebarMenuButton
         onClick={() => toggleSubmenu(menuKey)}
-        className={`${menuItemClass(sectionActive)}`}
+        className="h-auto p-0 hover:bg-transparent rounded-none"
       >
-        <div className="flex items-center gap-3">
-          <item.icon className="h-5 w-5" />
-          {!isCollapsed && <span className="text-[14px]">{item.label}</span>}
+        <div className={`flex items-center justify-between w-full px-5 py-3 transition-all ${
+          sectionActive 
+            ? "bg-primary/15 text-primary border-l-[3px] border-l-primary font-medium" 
+            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+        }`}>
+          <div className="flex items-center gap-3">
+            <item.icon className="h-5 w-5" />
+            {!isCollapsed && <span className="text-[14px] font-medium">{item.label}</span>}
+          </div>
+          {!isCollapsed && (
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${openSubmenu === menuKey ? "rotate-180" : ""}`}
+            />
+          )}
         </div>
-        {!isCollapsed && (
-          <ChevronRight
-            className={`h-4 w-4 opacity-50 transition-transform ${openSubmenu === menuKey ? "rotate-90" : ""}`}
-          />
-        )}
       </SidebarMenuButton>
       {openSubmenu === menuKey && !isCollapsed && renderSubItems(subItems)}
     </SidebarMenuItem>
