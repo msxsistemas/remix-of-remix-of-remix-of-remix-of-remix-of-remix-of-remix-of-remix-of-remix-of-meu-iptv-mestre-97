@@ -172,7 +172,94 @@ serve(async (req) => {
       }
     }
 
-    // --- Fallback: Try standard POST login endpoints ---
+    // --- Try form-based login (kOffice panels use HTML forms with CSRF) ---
+    try {
+      console.log('🔄 Tentando login via formulário HTML (kOffice style)...');
+      // Step 1: GET login page to extract CSRF token
+      const loginPageResp2 = await withTimeout(fetch(`${cleanBase}/login`, {
+        method: 'GET',
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', ...hdrs },
+        redirect: 'manual',
+      }), 10000);
+      const loginHtml2 = await loginPageResp2.text();
+      const cookies = loginPageResp2.headers.get('set-cookie') || '';
+      
+      // Extract CSRF token
+      const csrfMatch2 = loginHtml2.match(/name=["']csrf_token["']\s+value=["'](.*?)["']/);
+      const csrf2 = csrfMatch2 ? csrfMatch2[1] : null;
+      console.log(`🔑 CSRF token extraído: ${csrf2 ? csrf2.slice(0, 20) + '...' : 'não encontrado'}`);
+      console.log(`🍪 Cookies: ${cookies.slice(0, 100)}`);
+
+      if (csrf2 || loginHtml2.includes('form-login')) {
+        // Step 2: POST form-encoded data
+        const formBody = new URLSearchParams();
+        formBody.append('try_login', '1');
+        if (csrf2) formBody.append('csrf_token', csrf2);
+        formBody.append('username', username);
+        formBody.append('password', password);
+
+        const formHeaders: Record<string, string> = {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Origin': cleanBase,
+          'Referer': `${cleanBase}/login`,
+          ...hdrs,
+        };
+        if (cookies) {
+          const cookieParts = cookies.split(',').map(c => c.split(';')[0].trim()).join('; ');
+          formHeaders['Cookie'] = formHeaders['Cookie'] ? `${formHeaders['Cookie']}; ${cookieParts}` : cookieParts;
+        }
+
+        console.log(`🔄 POST form-encoded para: ${cleanBase}/login`);
+        const formResp = await withTimeout(fetch(`${cleanBase}/login`, {
+          method: 'POST',
+          headers: formHeaders,
+          body: formBody.toString(),
+          redirect: 'manual',
+        }), 15000);
+
+        const formStatus = formResp.status;
+        const formLocation = formResp.headers.get('location') || '';
+        const formText = await formResp.text();
+        console.log(`📊 Form login → status: ${formStatus}, location: ${formLocation}, snippet: ${formText.slice(0, 200)}`);
+        logs.push({ url: `${cleanBase}/login (form)`, status: formStatus, location: formLocation, snippet: formText.slice(0, 200) });
+
+        // Success indicators: redirect to dashboard/home, or page without login form
+        const isFormSuccess = (
+          (formStatus === 302 || formStatus === 301) && formLocation && !formLocation.includes('/login')
+        ) || (
+          formStatus === 200 && !formText.includes('form-login') && !formText.includes('login_error') && !formText.includes('Credenciais') && formText.includes('dashboard')
+        );
+
+        if (isFormSuccess) {
+          console.log(`✅ Login via formulário bem-sucedido!`);
+          return new Response(JSON.stringify({
+            success: true,
+            endpoint: `${cleanBase}/login`,
+            type: 'kOffice Form',
+            account: {
+              status: 'Active',
+              user: { username },
+              token_received: false,
+            },
+            data: {
+              redirect: formLocation || null,
+              response: formText.slice(0, 500),
+            },
+            logs,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        }
+      }
+    } catch (e) {
+      console.log(`⚠️ Erro form login: ${(e as Error).message}`);
+      logs.push({ url: `${cleanBase}/login (form)`, error: (e as Error).message });
+    }
+
+    // --- Fallback: Try standard POST JSON login endpoints ---
     const candidates = Array.from(new Set([
       endpointPath || '/api/auth/login',
       '/api/login',
