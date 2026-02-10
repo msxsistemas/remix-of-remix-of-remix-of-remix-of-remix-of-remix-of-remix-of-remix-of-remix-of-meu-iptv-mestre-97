@@ -158,7 +158,7 @@ export default function PixManual() {
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-stretch">
         {/* Coluna esquerda */}
         <div className="flex flex-col gap-4 order-1">
           <Card className="shadow-sm">
