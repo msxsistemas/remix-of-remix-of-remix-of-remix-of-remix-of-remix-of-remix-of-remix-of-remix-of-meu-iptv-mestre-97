@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PROVEDORES, Panel, ProviderConfig, getTestStrategy } from "@/config/provedores";
+import { resolveUniplayApiUrl } from "@/config/provedores/uniplay";
 
 export function useServidorPage(providerId: string) {
   const provider = PROVEDORES.find(p => p.id === providerId) || null;
@@ -138,6 +139,9 @@ export function useServidorPage(providerId: string) {
         return;
       }
 
+      // Uniplay: resolver URL de frontend para API
+      const resolvedBaseUrl = providerId === 'uniplay' ? resolveUniplayApiUrl(baseUrl) : baseUrl;
+
       const endpoint = provider?.loginEndpoint || '/api/auth/login';
       const payload = provider?.buildLoginPayload
         ? provider.buildLoginPayload(usuario, senha)
@@ -155,13 +159,13 @@ export function useServidorPage(providerId: string) {
         if (isXtream) {
           // Xtream: GET com username/password como query params
           const xtreamPath = '/player_api.php';
-          directUrl = `${baseUrl}${xtreamPath}?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
+          directUrl = `${resolvedBaseUrl}${xtreamPath}?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
           response = await fetch(directUrl, {
             method: 'GET',
             headers: { 'Accept': 'application/json' },
           });
         } else {
-          directUrl = `${baseUrl}${endpoint}`;
+          directUrl = `${resolvedBaseUrl}${endpoint}`;
           response = await fetch(directUrl, {
             method: provider?.loginMethod || "POST",
             headers: {
@@ -175,15 +179,32 @@ export function useServidorPage(providerId: string) {
         const data = await response.json();
 
         const isSuccess = response.ok && (
-          data?.token || data?.success === true || data?.user || 
+          data?.token || data?.access_token || data?.success === true || data?.user || 
           data?.result === 'success' || data?.user_info || data?.server_info
         );
 
         if (isSuccess) {
-          if (data.token) localStorage.setItem("auth_token", data.token);
+          const token = data.token || data.access_token;
+          if (token) localStorage.setItem("auth_token", token);
+          
+          // Try to get credits for Uniplay
+          let creditsInfo = '';
+          if (providerId === 'uniplay' && token) {
+            try {
+              const dashResp = await fetch(`${resolvedBaseUrl}/api/dash-reseller`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: '{}',
+              });
+              const dashData = await dashResp.json();
+              const credits = dashData?.credits ?? dashData?.credit ?? dashData?.saldo;
+              if (credits !== undefined) creditsInfo = `\n💰 Créditos: ${credits}`;
+            } catch {}
+          }
+          
           setTestResultModal({
             isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
-            details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n📡 Status: ${data?.user_info?.status || 'OK'}\n\n✅ Autenticação realizada com sucesso.`,
+            details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n📡 Status: ${data?.user_info?.status || 'OK'}${creditsInfo}\n\n✅ Autenticação realizada com sucesso.`,
           });
           return;
         }

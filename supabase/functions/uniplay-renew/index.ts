@@ -6,6 +6,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Mapeamento de URLs frontend → API
+const URL_MAP: Record<string, string> = {
+  'gestordefender.com': 'gesapioffice.com',
+  'www.gestordefender.com': 'gesapioffice.com',
+};
+
+function resolveApiUrl(inputUrl: string): string {
+  try {
+    const url = new URL(inputUrl.replace(/\/$/, ''));
+    const host = url.hostname.toLowerCase();
+    const apiHost = URL_MAP[host];
+    if (apiHost) return `${url.protocol}//${apiHost}`;
+    return url.origin;
+  } catch {
+    return inputUrl.replace(/\/$/, '');
+  }
+}
+
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error("timeout")), ms);
@@ -70,7 +88,8 @@ serve(async (req) => {
       });
     }
 
-    const cleanBase = panel.url.replace(/\/$/, '');
+    const cleanBase = resolveApiUrl(panel.url);
+    console.log(`🔗 Uniplay: URL original: ${panel.url} → API: ${cleanBase}`);
     const login = await loginUniplay(cleanBase, panel.usuario, panel.senha);
     if (!login.success) {
       return new Response(JSON.stringify({ success: false, error: login.error }), {
