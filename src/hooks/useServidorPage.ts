@@ -175,6 +175,41 @@ export function useServidorPage(providerId: string) {
         return;
       }
 
+      // KOffice API/V2: usa Edge Function dedicada para teste (form login + verify)
+      if (providerId === 'koffice-api' || providerId === 'koffice-v2') {
+        try {
+          const { data, error } = await supabase.functions.invoke('koffice-renew', {
+            body: { action: 'test_connection', url: baseUrl, panelUser: usuario, panelPass: senha },
+          });
+
+          if (error) {
+            setTestResultModal({
+              isOpen: true, success: false, message: "Erro no Teste",
+              details: `❌ Painel: ${nomePainel}\n\n❌ Não foi possível conectar ao painel KOffice.\nErro: ${error.message}`,
+            });
+            return;
+          }
+
+          if (data?.success) {
+            setTestResultModal({
+              isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
+              details: `✅ Painel: ${nomePainel}\n🔗 URL: ${baseUrl}\n👤 Usuário: ${usuario}\n👥 Total Clientes: ${data.clients_count ?? 'n/d'}\n✅ Clientes Ativos: ${data.active_clients_count ?? 'n/d'}\n\n✅ Autenticação realizada com sucesso no painel.`,
+            });
+          } else {
+            setTestResultModal({
+              isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
+              details: `❌ Painel: ${nomePainel}\n🔗 URL: ${baseUrl}\n\n❌ ${data?.error || 'Credenciais inválidas.'}`,
+            });
+          }
+        } catch (err: any) {
+          setTestResultModal({
+            isOpen: true, success: false, message: "Erro no Teste",
+            details: `Erro inesperado: ${err.message}`,
+          });
+        }
+        return;
+      }
+
       // Uniplay: todas as franquias usam gesapioffice.com como API
       const resolvedBaseUrl = providerId === 'uniplay' ? UNIPLAY_API_BASE : baseUrl;
 
