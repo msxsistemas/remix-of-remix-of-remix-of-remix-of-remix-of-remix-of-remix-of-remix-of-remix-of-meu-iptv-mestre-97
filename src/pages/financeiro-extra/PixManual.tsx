@@ -158,7 +158,7 @@ export default function PixManual() {
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-stretch">
+      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Coluna esquerda */}
         <div className="flex flex-col gap-4 order-1">
           <Card className="shadow-sm">
@@ -202,7 +202,7 @@ export default function PixManual() {
               <CardTitle className="text-sm">Chave PIX</CardTitle>
               <CardDescription>Selecione o tipo e insira sua chave PIX.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {pixManualEnabled ? (
                 <>
                   <div>
@@ -210,12 +210,12 @@ export default function PixManual() {
                     <RadioGroup
                       value={pixKeyType}
                       onValueChange={(v) => setPixKeyType(v as PixKeyType)}
-                      className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                      className="grid grid-cols-3 gap-1.5"
                     >
                       {(Object.keys(pixKeyLabels) as PixKeyType[]).map((type) => (
-                        <div key={type} className="flex items-center space-x-2 rounded-md border px-3 py-2 hover:bg-accent/50 transition-colors">
+                        <div key={type} className="flex items-center space-x-1.5 rounded-md border px-2 py-1.5 hover:bg-accent/50 transition-colors">
                           <RadioGroupItem value={type} id={`pix-type-${type}`} />
-                          <Label htmlFor={`pix-type-${type}`} className="text-sm cursor-pointer">
+                          <Label htmlFor={`pix-type-${type}`} className="text-xs cursor-pointer">
                             {pixKeyLabels[type]}
                           </Label>
                         </div>
