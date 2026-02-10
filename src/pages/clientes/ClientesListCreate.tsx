@@ -249,7 +249,16 @@ export default function ClientesListCreate() {
             else if (plano.tipo === 'meses') durationIn = 'months';
             else if (plano.tipo === 'anos') durationIn = 'years';
 
-            const { data: renewResult } = await supabase.functions.invoke('mundogf-renew', {
+            // Rotear para a edge function correta baseado no provedor
+            const providerFunctionMap: Record<string, string> = {
+              'mundogf': 'mundogf-renew',
+              'sigma-v2': 'sigma-renew',
+              'koffice-api': 'koffice-renew',
+              'koffice-v2': 'koffice-renew',
+            };
+            const functionName = providerFunctionMap[painel.provedor] || 'mundogf-renew';
+
+            const { data: renewResult } = await supabase.functions.invoke(functionName, {
               body: {
                 action: 'renew_by_username',
                 panelId: painel.id,
