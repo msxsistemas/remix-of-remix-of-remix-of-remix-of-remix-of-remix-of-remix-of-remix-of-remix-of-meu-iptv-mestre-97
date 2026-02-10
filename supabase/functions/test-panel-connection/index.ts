@@ -474,15 +474,81 @@ serve(async (req) => {
       }
     }
 
-    // --- Uniplay: API bloqueia por IP/geo. Teste deve ser feito pelo browser do usuário ---
+    // --- Uniplay: REST API com JWT em gesapioffice.com ---
     if (isUniplay) {
-      // Edge function não consegue acessar gesapioffice.com (geo-block).
-      // Retornar instrução para o frontend testar direto.
-      return new Response(JSON.stringify({
-        success: false,
-        useDirectBrowserTest: true,
-        details: 'Uniplay requer teste direto pelo browser.',
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      const UNIPLAY_API = 'https://gesapioffice.com';
+      console.log(`🔄 Uniplay: Testando login JWT em ${UNIPLAY_API}/api/login...`);
+      try {
+        const loginResp = await withTimeout(fetch(`${UNIPLAY_API}/api/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+            'Origin': 'https://gestordefender.com',
+            'Referer': 'https://gestordefender.com/',
+          },
+          body: JSON.stringify({ username, password, code: '' }),
+        }), 15000);
+
+        const loginText = await loginResp.text();
+        let loginJson: any = null;
+        try { loginJson = JSON.parse(loginText); } catch {}
+
+        console.log(`📊 Uniplay login → status: ${loginResp.status}, has_token: ${!!loginJson?.access_token}`);
+
+        if (loginResp.ok && loginJson?.access_token) {
+          // Try to get credits/account info
+          let credits = null;
+          const authHdrs = {
+            'Authorization': `Bearer ${loginJson.access_token}`,
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+          };
+          try {
+            const dashResp = await withTimeout(fetch(`${UNIPLAY_API}/api/dash-reseller`, { method: 'GET', headers: authHdrs }), 10000);
+            const dashText = await dashResp.text();
+            let dashJson: any = null;
+            try { dashJson = JSON.parse(dashText); } catch {}
+            credits = dashJson?.credits ?? dashJson?.data?.credits ?? null;
+            console.log(`📊 Uniplay dash-reseller → status: ${dashResp.status}, credits: ${credits}`);
+          } catch (e) {
+            console.log(`⚠️ Uniplay dash-reseller: ${(e as Error).message}`);
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            endpoint: `${UNIPLAY_API}/api/login`,
+            type: 'Uniplay JWT',
+            account: {
+              status: 'Active',
+              user: { username },
+              token_received: true,
+              credits,
+            },
+            data: {
+              token_type: loginJson.token_type,
+              expires_in: loginJson.expires_in,
+              crypt_pass: loginJson.crypt_pass ? true : false,
+              credits,
+            },
+            logs,
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+        }
+
+        // Login failed
+        const errorMsg = loginJson?.message || loginJson?.error || loginText.slice(0, 200);
+        return new Response(JSON.stringify({
+          success: false,
+          details: `Falha no login Uniplay: ${errorMsg}`,
+          debug: { status: loginResp.status, response: loginText.slice(0, 500) },
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      } catch (e) {
+        return new Response(JSON.stringify({
+          success: false,
+          details: `Erro ao conectar com Uniplay: ${(e as Error).message}`,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      }
     }
 
     if (!providerId || isKoffice) {
