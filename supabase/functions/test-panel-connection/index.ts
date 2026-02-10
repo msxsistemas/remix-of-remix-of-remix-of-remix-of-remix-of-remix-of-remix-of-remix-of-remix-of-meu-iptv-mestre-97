@@ -13,6 +13,22 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+/** Normaliza o proxy URL para formato http://user:pass@host:port */
+function normalizeProxyUrl(raw: string): string {
+  const trimmed = raw.trim();
+  // Already in URL format
+  if (/^https?:\/\//.test(trimmed)) return trimmed;
+  // Format: host:port:user:pass
+  const parts = trimmed.split(':');
+  if (parts.length === 4) {
+    const [host, port, user, pass] = parts;
+    return `http://${user}:${pass}@${host}:${port}`;
+  }
+  // Format: user:pass@host:port (missing scheme)
+  if (trimmed.includes('@')) return `http://${trimmed}`;
+  return `http://${trimmed}`;
+}
+
 /** Cria um fetch que roteia pela proxy brasileira se configurada */
 function createProxiedFetch(): typeof fetch {
   const proxyUrl = Deno.env.get('BRAZIL_PROXY_URL');
@@ -20,9 +36,10 @@ function createProxiedFetch(): typeof fetch {
     console.log('⚠️ BRAZIL_PROXY_URL não configurada, usando fetch direto');
     return fetch;
   }
-  console.log(`🌐 Usando proxy BR: ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+  const normalizedUrl = normalizeProxyUrl(proxyUrl);
+  console.log(`🌐 Usando proxy BR: ${normalizedUrl.replace(/\/\/.*@/, '//***@')}`);
   try {
-    const client = (Deno as any).createHttpClient({ proxy: { url: proxyUrl } });
+    const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
     return (input: string | URL | Request, init?: RequestInit) => {
       return fetch(input, { ...init, client } as any);
     };
@@ -586,7 +603,7 @@ serve(async (req) => {
         
         let detailMsg: string;
         if (isGeoBlocked) {
-          detailMsg = `⚠️ A API do Uniplay (gesapioffice.com) retornou erro 404 — provavelmente por bloqueio geográfico de IP (o servidor de teste roda na Europa).\n\n✅ Isso NÃO significa que suas credenciais estão erradas.\n\n👉 Você pode criar o painel normalmente — a renovação automática será tentada e funcionará se a API aceitar a conexão.`;
+          detailMsg = `❌ A API do Uniplay (gesapioffice.com) retornou erro 404 — provavelmente por bloqueio geográfico de IP.\n\n⚠️ A proxy brasileira pode não estar funcionando corretamente. Verifique o secret BRAZIL_PROXY_URL.\n\n👉 Não é possível validar suas credenciais sem acesso à API. Verifique seu login diretamente em ${uniplayFrontend}.`;
         } else if (needsCaptcha) {
           detailMsg = `Login Uniplay requer reCAPTCHA v2. A resolução via 2Captcha falhou — verifique o saldo/chave do 2Captcha. Verifique suas credenciais diretamente em ${uniplayFrontend}.`;
         } else {
@@ -594,13 +611,11 @@ serve(async (req) => {
         }
         
         return new Response(JSON.stringify({
-          success: isGeoBlocked ? true : false,
+          success: false,
           endpoint: `${UNIPLAY_API}/api/login`,
           type: 'Uniplay JWT',
-          account: isGeoBlocked ? { status: 'Não verificado (bloqueio geo)', user: { username } } : undefined,
           details: detailMsg,
-          data: isGeoBlocked ? { geoBlocked: true, captchaSolved: !!captchaToken } : undefined,
-          debug: { status: loginResp.status, response: loginText.slice(0, 500), captchaSolved: !!captchaToken },
+          debug: { status: loginResp.status, response: loginText.slice(0, 500), captchaSolved: !!captchaToken, proxyWorking: false },
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } catch (e) {
         return new Response(JSON.stringify({

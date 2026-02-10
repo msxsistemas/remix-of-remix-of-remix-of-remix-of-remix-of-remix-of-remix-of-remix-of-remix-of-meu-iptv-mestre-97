@@ -16,6 +16,19 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+/** Normaliza o proxy URL para formato http://user:pass@host:port */
+function normalizeProxyUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (/^https?:\/\//.test(trimmed)) return trimmed;
+  const parts = trimmed.split(':');
+  if (parts.length === 4) {
+    const [host, port, user, pass] = parts;
+    return `http://${user}:${pass}@${host}:${port}`;
+  }
+  if (trimmed.includes('@')) return `http://${trimmed}`;
+  return `http://${trimmed}`;
+}
+
 /** Cria um fetch que roteia pela proxy brasileira se configurada */
 function createProxiedFetch(): typeof fetch {
   const proxyUrl = Deno.env.get('BRAZIL_PROXY_URL');
@@ -23,9 +36,10 @@ function createProxiedFetch(): typeof fetch {
     console.log('⚠️ BRAZIL_PROXY_URL não configurada, usando fetch direto');
     return fetch;
   }
-  console.log(`🌐 Usando proxy BR: ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
+  const normalizedUrl = normalizeProxyUrl(proxyUrl);
+  console.log(`🌐 Usando proxy BR: ${normalizedUrl.replace(/\/\/.*@/, '//***@')}`);
   try {
-    const client = (Deno as any).createHttpClient({ proxy: { url: proxyUrl } });
+    const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
     return (input: string | URL | Request, init?: RequestInit) => {
       return fetch(input, { ...init, client } as any);
     };
