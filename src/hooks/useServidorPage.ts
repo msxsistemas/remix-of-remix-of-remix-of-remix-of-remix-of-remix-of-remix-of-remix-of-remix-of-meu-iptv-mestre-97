@@ -176,7 +176,25 @@ export function useServidorPage(providerId: string) {
           });
         }
 
-        const data = await response.json();
+        let data: any = null;
+        try { data = await response.json(); } catch { data = await response.text().catch(() => null); }
+
+        // Uniplay: status 500 com "Credenciais inválidas" = credenciais erradas
+        const responseText = typeof data === 'string' ? data : '';
+        const isCredentialRejection = !response.ok && (
+          responseText.toLowerCase().includes('credenciais') ||
+          responseText.toLowerCase().includes('credencias') ||
+          responseText.toLowerCase().includes('invalid') ||
+          (typeof data === 'object' && data?.message?.toLowerCase?.().includes('invalid'))
+        );
+
+        if (isCredentialRejection) {
+          setTestResultModal({
+            isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
+            details: `❌ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n\n❌ Credenciais inválidas. Verifique usuário e senha.`,
+          });
+          return;
+        }
 
         const isSuccess = response.ok && (
           data?.token || data?.access_token || data?.success === true || data?.user || 

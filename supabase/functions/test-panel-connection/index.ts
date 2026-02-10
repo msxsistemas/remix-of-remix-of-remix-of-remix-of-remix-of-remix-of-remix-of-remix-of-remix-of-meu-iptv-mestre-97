@@ -709,6 +709,23 @@ serve(async (req) => {
 
         const token = resp.json?.token || resp.json?.jwt || resp.json?.access_token || resp.json?.data?.token || resp.json?.data?.access_token || null;
         const resultField = resp.json?.result;
+        
+        // Detect credential rejection (Uniplay returns 500 with "Credenciais inválidas")
+        const respTextLower = String(resp.text || '').toLowerCase();
+        const isCredentialRejection = !resp.ok && (
+          respTextLower.includes('credenciais') || respTextLower.includes('credencias') || 
+          respTextLower.includes('invalid credentials') || respTextLower.includes('unauthorized')
+        );
+        
+        if (isCredentialRejection) {
+          console.log(`❌ Credenciais rejeitadas em: ${url}`);
+          return new Response(JSON.stringify({
+            success: false,
+            details: '❌ Credenciais inválidas. O painel rejeitou o usuário/senha fornecidos.',
+            debug: { url, method: endpointMethod || 'POST', status: resp.status, response: String(resp.text).slice(0, 300) },
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+        }
+
         const isSuccess = resp.ok && (
           token || 
           resp.json?.success === true || 
