@@ -24,109 +24,26 @@ function mergeSetCookies(existing: string, setCookieHeader: string | null): stri
   return [...cookieMap.values()].join('; ');
 }
 
-// KOffice API (Xtream-style) - uses GET with username/password params
-async function xtreamRenew(baseUrl: string, panelUser: string, panelPass: string, clientUsername: string, duration: number, durationIn: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const cleanBase = baseUrl.replace(/\/$/, '');
-  const apiPaths = ['/panel_api.php', '/api.php'];
-
-  for (const path of apiPaths) {
-    // Step 1: Search for client by username
-    const searchUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=user&sub=list`;
-    try {
-      console.log(`🔍 KOffice Xtream: Buscando clientes via ${path}`);
-      const searchResp = await withTimeout(fetch(searchUrl, {
-        method: 'GET',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      }), 15000);
-      const searchText = await searchResp.text();
-      let searchJson: any = null;
-      try { searchJson = JSON.parse(searchText); } catch {}
-
-      if (!searchResp.ok || !searchJson) continue;
-
-      // Find the user - the response might be an object with user IDs as keys or an array
-      let clientId: string | null = null;
-      if (typeof searchJson === 'object' && !Array.isArray(searchJson)) {
-        for (const [id, user] of Object.entries(searchJson as Record<string, any>)) {
-          if ((user.username || '').toLowerCase() === clientUsername.toLowerCase()) {
-            clientId = id;
-            break;
-          }
-        }
-      } else if (Array.isArray(searchJson)) {
-        const match = searchJson.find((u: any) => (u.username || '').toLowerCase() === clientUsername.toLowerCase());
-        if (match) clientId = String(match.id || match.user_id);
-      }
-
-      if (!clientId) {
-        console.log(`⚠️ KOffice Xtream: Usuário "${clientUsername}" não encontrado via ${path}`);
-        continue;
-      }
-
-      console.log(`✅ KOffice: Cliente encontrado (ID: ${clientId})`);
-
-      // Step 2: Extend the user
-      // Convert duration to timestamp or use the panel's extend endpoint
-      const extendUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=user&sub=extend&user_id=${clientId}&duration=${duration}&duration_in=${durationIn}`;
-      
-      const extendResp = await withTimeout(fetch(extendUrl, {
-        method: 'GET',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      }), 15000);
-      const extendText = await extendResp.text();
-      let extendJson: any = null;
-      try { extendJson = JSON.parse(extendText); } catch {}
-
-      console.log(`📊 KOffice extend → status: ${extendResp.status}, response: ${extendText.slice(0, 300)}`);
-
-      if (extendResp.ok && (extendJson?.result === true || extendJson?.success || extendJson?.result === 1)) {
-        return { success: true, message: 'Cliente renovado com sucesso via Xtream API' };
-      }
-
-      // Try alternative extend format
-      const altExtendUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=edit_user&user_id=${clientId}&duration=${duration}&duration_in=${durationIn}`;
-      const altResp = await withTimeout(fetch(altExtendUrl, {
-        method: 'GET',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      }), 15000);
-      const altText = await altResp.text();
-      let altJson: any = null;
-      try { altJson = JSON.parse(altText); } catch {}
-
-      if (altResp.ok && (altJson?.result === true || altJson?.success || altJson?.result === 1)) {
-        return { success: true, message: 'Cliente renovado com sucesso via Xtream API' };
-      }
-    } catch (e) {
-      console.log(`⚠️ KOffice Xtream ${path}: ${(e as Error).message}`);
-    }
-  }
-
-  return { success: false, error: 'Não foi possível renovar via Xtream API' };
-}
-
-// KOffice V2 (form-based, similar to MundoGF)
-async function kofficeV2Renew(baseUrl: string, panelUser: string, panelPass: string, clientUsername: string, duration: number, durationIn: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const cleanBase = baseUrl.replace(/\/$/, '');
-
-  // Step 1: Login via form
+// Shared: form login + get session cookies
+async function formLogin(cleanBase: string, panelUser: string, panelPass: string): Promise<{ success: boolean; cookies: string; csrf: string; error?: string }> {
   const loginResp = await withTimeout(fetch(`${cleanBase}/login`, {
     method: 'GET',
     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html' },
   }), 10000);
   const loginHtml = await loginResp.text();
 
-  const csrfInput = loginHtml.match(/name=["']_token["']\s+value=["'](.*?)["']/);
-  const csrfMeta = loginHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
   const csrfMatch = loginHtml.match(/name=["']csrf_token["']\s+value=["'](.*?)["']/);
-  const csrfToken = (csrfInput ? csrfInput[1] : null) || (csrfMeta ? csrfMeta[1] : null) || (csrfMatch ? csrfMatch[1] : null) || '';
+  const laravelCsrf = loginHtml.match(/name=["']_token["']\s+value=["'](.*?)["']/);
+  const metaCsrf = loginHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
+  const csrfToken = (csrfMatch ? csrfMatch[1] : null) || (laravelCsrf ? laravelCsrf[1] : null) || (metaCsrf ? metaCsrf[1] : null) || '';
 
   let allCookies = mergeSetCookies('', loginResp.headers.get('set-cookie'));
 
   const formBody = new URLSearchParams();
   formBody.append('try_login', '1');
   if (csrfToken) {
-    formBody.append('_token', csrfToken);
     formBody.append('csrf_token', csrfToken);
+    formBody.append('_token', csrfToken);
   }
   formBody.append('username', panelUser);
   formBody.append('password', panelPass);
@@ -151,126 +68,248 @@ async function kofficeV2Renew(baseUrl: string, panelUser: string, panelPass: str
 
   allCookies = mergeSetCookies(allCookies, postResp.headers.get('set-cookie'));
   await postResp.text();
-
   const postLocation = postResp.headers.get('location') || '';
-  const isSuccess = (postResp.status === 302 || postResp.status === 301) && postLocation && !postLocation.toLowerCase().includes('/login');
-  if (!isSuccess) {
-    return { success: false, error: `Login KOffice V2 falhou (status: ${postResp.status})` };
-  }
+  console.log(`📊 Form login → status: ${postResp.status}, location: ${postLocation}`);
 
   // Follow redirect
-  const followUrl = postLocation.startsWith('http') ? postLocation : `${cleanBase}${postLocation}`;
-  const followResp = await withTimeout(fetch(followUrl, {
+  if (postLocation) {
+    const followUrl = postLocation.startsWith('http') ? postLocation : `${cleanBase}/${postLocation.replace(/^\.\//, '')}`;
+    const followResp = await withTimeout(fetch(followUrl, {
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Cookie': allCookies },
+      redirect: 'manual',
+    }), 10000);
+    allCookies = mergeSetCookies(allCookies, followResp.headers.get('set-cookie'));
+    const dashHtml = await followResp.text();
+    const dashCsrf = dashHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
+    if (dashCsrf) return { success: true, cookies: allCookies, csrf: dashCsrf[1] };
+  }
+
+  // Verify session
+  const verifyResp = await withTimeout(fetch(`${cleanBase}/dashboard/api?get_info&month=0`, {
     method: 'GET',
-    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Cookie': allCookies },
-    redirect: 'manual',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'application/json, text/javascript, */*; q=0.01',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Cookie': allCookies,
+      'Referer': `${cleanBase}/dashboard/`,
+    },
   }), 10000);
-  allCookies = mergeSetCookies(allCookies, followResp.headers.get('set-cookie'));
-  const dashHtml = await followResp.text();
-  const dashCsrf = dashHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
-  const freshCsrf = dashCsrf ? dashCsrf[1] : csrfToken;
+  const verifyText = await verifyResp.text();
+  let verifyJson: any = null;
+  try { verifyJson = JSON.parse(verifyText); } catch {}
+
+  if (verifyResp.ok && verifyJson && typeof verifyJson === 'object' && !verifyText.includes('/login')) {
+    return { success: true, cookies: allCookies, csrf: csrfToken };
+  }
+
+  return { success: false, cookies: allCookies, csrf: csrfToken, error: 'Login falhou - sessão não validada' };
+}
+
+// Test connection
+async function testConnection(baseUrl: string, panelUser: string, panelPass: string): Promise<{ success: boolean; clients_count?: string; active_clients_count?: string; error?: string }> {
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const loginResult = await formLogin(cleanBase, panelUser, panelPass);
+
+  if (!loginResult.success) {
+    return { success: false, error: loginResult.error || 'Credenciais inválidas.' };
+  }
+
+  // Try to get dashboard info
+  const infoResp = await withTimeout(fetch(`${cleanBase}/dashboard/api?get_info&month=0`, {
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'application/json, text/javascript, */*; q=0.01',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Cookie': loginResult.cookies,
+      'Referer': `${cleanBase}/dashboard/`,
+    },
+  }), 10000);
+
+  const infoText = await infoResp.text();
+  let infoJson: any = null;
+  try { infoJson = JSON.parse(infoText); } catch {}
+  console.log(`📊 Test info → status: ${infoResp.status}, isJSON: ${!!infoJson}, snippet: ${infoText.slice(0, 200)}`);
+
+  if (infoResp.ok && infoJson?.iptv) {
+    return {
+      success: true,
+      clients_count: infoJson.iptv.clients_count,
+      active_clients_count: infoJson.iptv.active_clients_count,
+    };
+  }
+
+  if (infoText.includes('/login')) {
+    return { success: false, error: 'Credenciais inválidas. Login falhou.' };
+  }
+
+  return { success: false, error: 'Não foi possível verificar a sessão no painel.' };
+}
+
+// KOffice API (Xtream-style) renewal
+async function xtreamRenew(baseUrl: string, panelUser: string, panelPass: string, clientUsername: string, duration: number, durationIn: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const apiPaths = ['/panel_api.php', '/api.php'];
+
+  for (const path of apiPaths) {
+    const searchUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=user&sub=list`;
+    try {
+      console.log(`🔍 KOffice Xtream: Buscando clientes via ${path}`);
+      const searchResp = await withTimeout(fetch(searchUrl, {
+        method: 'GET',
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      }), 15000);
+      const searchText = await searchResp.text();
+      let searchJson: any = null;
+      try { searchJson = JSON.parse(searchText); } catch {}
+
+      if (!searchResp.ok || !searchJson) continue;
+
+      let clientId: string | null = null;
+      if (typeof searchJson === 'object' && !Array.isArray(searchJson)) {
+        for (const [id, user] of Object.entries(searchJson as Record<string, any>)) {
+          if ((user.username || '').toLowerCase() === clientUsername.toLowerCase()) {
+            clientId = id;
+            break;
+          }
+        }
+      } else if (Array.isArray(searchJson)) {
+        const match = searchJson.find((u: any) => (u.username || '').toLowerCase() === clientUsername.toLowerCase());
+        if (match) clientId = String(match.id || match.user_id);
+      }
+
+      if (!clientId) {
+        console.log(`⚠️ KOffice Xtream: Usuário "${clientUsername}" não encontrado via ${path}`);
+        continue;
+      }
+
+      console.log(`✅ KOffice: Cliente encontrado (ID: ${clientId})`);
+
+      const extendUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=user&sub=extend&user_id=${clientId}&duration=${duration}&duration_in=${durationIn}`;
+      const extendResp = await withTimeout(fetch(extendUrl, {
+        method: 'GET',
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      }), 15000);
+      const extendText = await extendResp.text();
+      let extendJson: any = null;
+      try { extendJson = JSON.parse(extendText); } catch {}
+
+      if (extendResp.ok && (extendJson?.result === true || extendJson?.success || extendJson?.result === 1)) {
+        return { success: true, message: 'Cliente renovado com sucesso via Xtream API' };
+      }
+
+      const altExtendUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}&action=edit_user&user_id=${clientId}&duration=${duration}&duration_in=${durationIn}`;
+      const altResp = await withTimeout(fetch(altExtendUrl, {
+        method: 'GET',
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      }), 15000);
+      const altText = await altResp.text();
+      let altJson: any = null;
+      try { altJson = JSON.parse(altText); } catch {}
+
+      if (altResp.ok && (altJson?.result === true || altJson?.success || altJson?.result === 1)) {
+        return { success: true, message: 'Cliente renovado com sucesso via Xtream API' };
+      }
+    } catch (e) {
+      console.log(`⚠️ KOffice Xtream ${path}: ${(e as Error).message}`);
+    }
+  }
+
+  return { success: false, error: 'Não foi possível renovar via Xtream API' };
+}
+
+// KOffice V2 (form-based) renewal
+async function kofficeV2Renew(baseUrl: string, panelUser: string, panelPass: string, clientUsername: string, duration: number, durationIn: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const loginResult = await formLogin(cleanBase, panelUser, panelPass);
+
+  if (!loginResult.success) {
+    return { success: false, error: `Login KOffice V2 falhou: ${loginResult.error}` };
+  }
 
   console.log(`✅ KOffice V2: Login OK, buscando cliente "${clientUsername}"`);
 
-  // Step 2: Search for client - try multiple patterns
+  // Search for client
   const searchEndpoints = [
-    { url: `${cleanBase}/ajax/getClients`, method: 'POST', isDataTable: true },
-    { url: `${cleanBase}/api/clients?search=${encodeURIComponent(clientUsername)}`, method: 'GET', isDataTable: false },
-    { url: `${cleanBase}/dashboard/api?get_users`, method: 'GET', isDataTable: false },
+    { url: `${cleanBase}/clients/api/?get_clients`, method: 'POST', isDataTable: true },
+    { url: `${cleanBase}/dashboard/api/?get_almost_expired_clients`, method: 'POST', isDataTable: true },
   ];
 
   let clientId: string | null = null;
   for (const ep of searchEndpoints) {
     try {
       const headers: Record<string, string> = {
-        'Cookie': allCookies,
+        'Cookie': loginResult.cookies,
         'X-Requested-With': 'XMLHttpRequest',
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'application/json',
         'Referer': `${cleanBase}/`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRF-TOKEN': loginResult.csrf,
       };
 
-      let fetchOpts: any = { method: ep.method, headers };
+      const dtBody = new URLSearchParams();
+      dtBody.append('draw', '1');
+      dtBody.append('start', '0');
+      dtBody.append('length', '1000');
+      dtBody.append('search[value]', clientUsername);
 
-      if (ep.isDataTable && ep.method === 'POST') {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        headers['X-CSRF-TOKEN'] = freshCsrf;
-        const dtBody = new URLSearchParams();
-        dtBody.append('draw', '1');
-        dtBody.append('start', '0');
-        dtBody.append('length', '1000');
-        dtBody.append('search[value]', clientUsername);
-        fetchOpts.body = dtBody.toString();
-      }
-
-      const resp = await withTimeout(fetch(ep.url, fetchOpts), 15000);
+      const resp = await withTimeout(fetch(ep.url, { method: 'POST', headers, body: dtBody.toString() }), 15000);
       const text = await resp.text();
       let json: any = null;
       try { json = JSON.parse(text); } catch {}
 
       if (!resp.ok || !json) continue;
 
-      // DataTable format
       if (json.data && Array.isArray(json.data)) {
-        const match = json.data.find((c: any) => {
-          const u = (c.username || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
-          return u === clientUsername.toLowerCase();
-        });
-        if (match) {
-          clientId = String(match.user_id || match.id);
-          console.log(`✅ KOffice V2: Cliente encontrado (ID: ${clientId})`);
-          break;
+        for (const row of json.data) {
+          // row[1] contains username (possibly with HTML)
+          const usernameCell = String(row[1] || '').replace(/<[^>]*>/g, '').trim();
+          if (usernameCell.toLowerCase() === clientUsername.toLowerCase()) {
+            clientId = String(row[0]); // row[0] is the client ID
+            console.log(`✅ KOffice V2: Cliente encontrado (ID: ${clientId})`);
+            break;
+          }
         }
-      }
-
-      // Array or object format
-      const items = json.users || json.clients || (Array.isArray(json) ? json : null);
-      if (items) {
-        const arr = Array.isArray(items) ? items : Object.values(items);
-        const match = arr.find((c: any) => (c.username || '').toLowerCase() === clientUsername.toLowerCase());
-        if (match) {
-          clientId = String((match as any).user_id || (match as any).id);
-          break;
-        }
+        if (clientId) break;
       }
     } catch (e) {
-      console.log(`⚠️ KOffice V2 search ${ep.url}: ${(e as Error).message}`);
+      console.log(`⚠️ KOffice V2 search: ${(e as Error).message}`);
     }
   }
 
   if (!clientId) {
-    return { success: false, error: `Usuário "${clientUsername}" não encontrado no painel KOffice V2` };
+    return { success: false, error: `Usuário "${clientUsername}" não encontrado no painel KOffice` };
   }
 
-  // Step 3: Extend client
+  // Extend client
   const extendEndpoints = [
     `${cleanBase}/clients/${clientId}/extend`,
-    `${cleanBase}/api/clients/${clientId}/extend`,
-    `${cleanBase}/dashboard/api?extend_user&user_id=${clientId}&duration=${duration}&duration_in=${durationIn}`,
+    `${cleanBase}/clients/api/?extend_client`,
   ];
 
   for (const url of extendEndpoints) {
     try {
-      const isGet = url.includes('dashboard/api?');
       const extendBody = new URLSearchParams();
-      if (!isGet) {
-        extendBody.append('_token', freshCsrf);
-        extendBody.append('duration', String(duration));
-        extendBody.append('duration_in', durationIn);
-      }
+      extendBody.append('_token', loginResult.csrf);
+      extendBody.append('duration', String(duration));
+      extendBody.append('duration_in', durationIn);
+      extendBody.append('user_id', clientId);
 
       const resp = await withTimeout(fetch(url, {
-        method: isGet ? 'GET' : 'POST',
+        method: 'POST',
         headers: {
-          'Cookie': allCookies,
+          'Cookie': loginResult.cookies,
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': freshCsrf,
+          'X-CSRF-TOKEN': loginResult.csrf,
           'User-Agent': 'Mozilla/5.0',
           'Accept': 'application/json',
           'Referer': `${cleanBase}/clients`,
         },
-        body: isGet ? undefined : extendBody.toString(),
+        body: extendBody.toString(),
       }), 15000);
 
       const text = await resp.text();
@@ -287,7 +326,7 @@ async function kofficeV2Renew(baseUrl: string, panelUser: string, panelPass: str
     }
   }
 
-  return { success: false, error: 'Não foi possível renovar no KOffice V2. Endpoints de extensão não responderam.' };
+  return { success: false, error: 'Não foi possível renovar no KOffice V2.' };
 }
 
 serve(async (req) => {
@@ -297,13 +336,51 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, panelId, username, duration, durationIn } = body;
+    const { action, panelId, username, duration, durationIn, url: directUrl, panelUser: directUser, panelPass: directPass } = body;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Support both koffice-api and koffice-v2
+    // Test connection action
+    if (action === 'test_connection') {
+      let testUrl: string, testUser: string, testPass: string;
+
+      if (panelId) {
+        const { data: panel } = await supabase
+          .from('paineis_integracao')
+          .select('*')
+          .eq('id', panelId)
+          .in('provedor', ['koffice-api', 'koffice-v2'])
+          .single();
+        if (!panel) {
+          return new Response(JSON.stringify({ success: false, error: 'Painel não encontrado' }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+          });
+        }
+        testUrl = panel.url;
+        testUser = panel.usuario;
+        testPass = panel.senha;
+      } else {
+        testUrl = directUrl;
+        testUser = directUser;
+        testPass = directPass;
+      }
+
+      if (!testUrl || !testUser || !testPass) {
+        return new Response(JSON.stringify({ success: false, error: 'URL, usuário e senha são obrigatórios' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400,
+        });
+      }
+
+      console.log(`🧪 KOffice test_connection: ${testUrl} (user: ${testUser})`);
+      const result = await testConnection(testUrl, testUser, testPass);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+      });
+    }
+
+    // Renew action
     const { data: panel } = await supabase
       .from('paineis_integracao')
       .select('*')
@@ -334,7 +411,6 @@ serve(async (req) => {
       }
 
       if (result.success) {
-        // Log renewal
         const authHeader = req.headers.get('authorization');
         if (authHeader) {
           const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
@@ -354,7 +430,7 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: false, error: 'Action inválida. Use: renew_by_username' }), {
+    return new Response(JSON.stringify({ success: false, error: 'Action inválida. Use: test_connection, renew_by_username' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400,
     });
   } catch (error) {
