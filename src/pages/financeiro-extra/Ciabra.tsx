@@ -151,7 +151,7 @@ export default function Ciabra() {
                 <CardTitle className="text-sm">Chaves de API Ciabra</CardTitle>
               </div>
               <CardDescription>
-                Cole suas chaves de API do Ciabra abaixo. Encontre-as em: Perfil → Integração → Chave da API.
+                Acesse a plataforma Ciabra → Integração → Chave da API para obter sua Chave Pública e Chave Secreta.
               </CardDescription>
             </CardHeader>
             <CardContent>
