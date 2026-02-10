@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.mundogf-renew]
 verify_jwt = false
+
+[functions.sigma-renew]
+verify_jwt = false
+
+[functions.koffice-renew]
+verify_jwt = false
