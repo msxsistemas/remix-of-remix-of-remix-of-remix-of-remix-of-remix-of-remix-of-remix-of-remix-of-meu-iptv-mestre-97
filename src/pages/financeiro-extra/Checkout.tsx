@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { CreditCard, QrCode, Settings } from "lucide-react";
+import { CreditCard, QrCode, Settings, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAssas } from "@/hooks/useAssas";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,8 @@ export default function Checkout() {
   const { user } = useCurrentUser();
   const [pixEnabled, setPixEnabled] = useState(false);
   const [creditCardEnabled, setCreditCardEnabled] = useState(false);
+  const [pixManualEnabled, setPixManualEnabled] = useState(false);
+  const [pixManualKey, setPixManualKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -38,6 +41,8 @@ export default function Checkout() {
       if (data) {
         setPixEnabled(data.pix_enabled);
         setCreditCardEnabled(data.credit_card_enabled);
+        setPixManualEnabled(data.pix_manual_enabled);
+        setPixManualKey(data.pix_manual_key || "");
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -100,8 +105,10 @@ export default function Checkout() {
     try {
       const configData = {
         user_id: user.id,
-        pix_enabled: pixEnabled && asaasConfigured, // Só permitir PIX se Asaas estiver configurado
+        pix_enabled: pixEnabled && asaasConfigured,
         credit_card_enabled: creditCardEnabled,
+        pix_manual_enabled: pixManualEnabled,
+        pix_manual_key: pixManualEnabled ? pixManualKey.trim() || null : null,
       };
 
       const { error } = await supabase
@@ -193,6 +200,51 @@ export default function Checkout() {
                 <div className="mt-3 p-3 bg-success/10 rounded-md border border-success/20">
                   <p className="text-sm text-success">
                     ✅ Asaas ativo como provedor PIX
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-foreground/70" />
+                <CardTitle className="text-sm">PIX Manual</CardTitle>
+              </div>
+              <CardDescription>
+                Configure uma chave PIX manual para receber pagamentos diretamente, sem integração com gateway.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-md border px-3 py-2 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">PIX Manual</span>
+                <div className="flex items-center gap-2">
+                  <Switch 
+                    checked={pixManualEnabled} 
+                    onCheckedChange={setPixManualEnabled}
+                    id="pix-manual-toggle"
+                  />
+                  <Badge variant={pixManualEnabled ? "default" : "destructive"}>
+                    {pixManualEnabled ? "Habilitado" : "Desabilitado"}
+                  </Badge>
+                </div>
+              </div>
+              
+              {pixManualEnabled && (
+                <div className="space-y-2">
+                  <label htmlFor="pix-manual-key" className="text-sm font-medium">
+                    Chave PIX
+                  </label>
+                  <Input
+                    id="pix-manual-key"
+                    placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                    value={pixManualKey}
+                    onChange={(e) => setPixManualKey(e.target.value)}
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Insira sua chave PIX para que os clientes possam realizar pagamentos manuais.
                   </p>
                 </div>
               )}
