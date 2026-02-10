@@ -213,109 +213,54 @@ export function useServidorPage(providerId: string) {
       // Uniplay: todas as franquias usam gesapioffice.com como API
       const resolvedBaseUrl = providerId === 'uniplay' ? UNIPLAY_API_BASE : baseUrl;
 
+      // Uniplay: SEMPRE usar Edge Function (browser é bloqueado por CORS/Origin)
+      if (providerId === 'uniplay') {
+        try {
+          const { data, error } = await supabase.functions.invoke('test-panel-connection', {
+            body: {
+              baseUrl: resolvedBaseUrl, username: usuario, password: senha,
+              endpointPath: '/api/login',
+              endpointMethod: 'POST',
+              loginPayload: { username: usuario, password: senha, code: '' },
+              providerId: 'uniplay',
+              testSteps: [{ type: 'json-post', endpoints: ['/api/login'], label: 'Uniplay JWT API' }],
+              extraHeaders: { Accept: 'application/json' },
+            },
+          });
+
+          if (error || !data) {
+            setTestResultModal({
+              isOpen: true, success: false, message: 'Erro no Teste',
+              details: `Não foi possível executar o teste. ${error?.message ?? ''}`.trim(),
+            });
+            return;
+          }
+
+          if (data.success) {
+            const account = data.account;
+            setTestResultModal({
+              isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
+              details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${data.endpoint}\n👤 Usuário: ${usuario}\n📡 Status: ${account?.status ?? 'OK'}${account?.credits ? `\n💰 Créditos: ${account.credits}` : ''}${data.data?.expires_in ? `\n⏰ Token expira em: ${Math.round(data.data.expires_in / 3600)}h` : ''}\n\n✅ Autenticação JWT realizada com sucesso.`,
+            });
+          } else {
+            setTestResultModal({
+              isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
+              details: `❌ Painel: ${nomePainel}\n🔗 API: ${resolvedBaseUrl}/api/login\n👤 Usuário: ${usuario}\n\n❌ ${data.details || 'Credenciais inválidas.'}`,
+            });
+          }
+        } catch (err: any) {
+          setTestResultModal({
+            isOpen: true, success: false, message: "Erro no Teste",
+            details: `Erro inesperado: ${err.message}`,
+          });
+        }
+        return;
+      }
+
       const endpoint = provider?.loginEndpoint || '/api/auth/login';
       const payload = provider?.buildLoginPayload
         ? provider.buildLoginPayload(usuario, senha)
         : { username: usuario, password: senha };
-
-      const strategy = getTestStrategy(providerId);
-      const isXtream = strategy.steps.some(s => s.type === 'xtream');
-      const skipBrowserTest = false;
-
-      if (!skipBrowserTest) {
-        try {
-          let response: Response;
-          let directUrl: string;
-
-          if (isXtream) {
-            const xtreamPath = '/player_api.php';
-            directUrl = `${resolvedBaseUrl}${xtreamPath}?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
-            response = await fetch(directUrl, {
-              method: 'GET',
-              headers: { 'Accept': 'application/json' },
-            });
-          } else {
-            directUrl = `${resolvedBaseUrl}${endpoint}`;
-            response = await fetch(directUrl, {
-              method: provider?.loginMethod || "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-              },
-              body: JSON.stringify(payload),
-            });
-          }
-
-          let data: any = null;
-          const responseText = await response.text();
-          try { data = JSON.parse(responseText); } catch { data = responseText; }
-
-          const textLower = (typeof data === 'string' ? data : '').toLowerCase();
-          
-          // Uniplay retorna 500 com "Credencias inválidas" quando Origin é bloqueado
-          // Mas também quando credenciais são realmente inválidas
-          // Verificar se é rejeição de credenciais vs bloqueio de Origin
-          const isCredentialText = textLower.includes('credenciais') || textLower.includes('credencias') || textLower.includes('invalid');
-          const isMessageInvalid = typeof data === 'object' && data?.message?.toLowerCase?.().includes('invalid');
-
-          if (!response.ok && (isCredentialText || isMessageInvalid)) {
-            // Para Uniplay, 500 com "credencias" pode ser bloqueio de Origin
-            if (providerId === 'uniplay' && response.status === 500) {
-              setTestResultModal({
-                isOpen: true, success: false, message: "BLOQUEIO DE ORIGEM",
-                details: `⚠️ Painel: ${nomePainel}\n🔗 API: ${directUrl}\n👤 Usuário: ${usuario}\n\n⚠️ A API do Uniplay bloqueou a requisição porque o domínio de origem não é autorizado.\n\n💡 Isso é normal no ambiente de preview. Crie o painel e teste após publicar o app no seu domínio próprio, ou verifique as credenciais diretamente no site ${formData.urlPainel.trim()}.`,
-              });
-              return;
-            }
-            setTestResultModal({
-              isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
-              details: `❌ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n\n❌ Credenciais inválidas. Verifique usuário e senha.`,
-            });
-            return;
-          }
-
-          const isSuccess = response.ok && (
-            data?.access_token || data?.token || data?.success === true || data?.user || 
-            data?.result === 'success' || data?.user_info || data?.server_info
-          );
-
-          if (isSuccess) {
-            const token = data.access_token || data.token;
-            if (token) localStorage.setItem("auth_token", token);
-            
-            let creditsInfo = '';
-            if (providerId === 'uniplay' && token) {
-              try {
-                const dashResp = await fetch(`${resolvedBaseUrl}/api/dash-reseller`, {
-                  method: 'GET',
-                  headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-                });
-                const dashData = await dashResp.json();
-                const credits = dashData?.credits ?? dashData?.credit ?? dashData?.saldo;
-                if (credits !== undefined) creditsInfo = `\n💰 Créditos: ${credits}`;
-              } catch {}
-            }
-            
-            setTestResultModal({
-              isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
-              details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n📡 Status: ${data?.user_info?.status || 'OK'}${creditsInfo}\n\n✅ Autenticação realizada com sucesso.`,
-            });
-            return;
-          }
-          console.log('Teste direto não obteve sucesso, tentando via Edge Function...');
-        } catch (directError: any) {
-          console.log('Teste direto falhou, tentando via Edge Function:', directError.message);
-        }
-      }
-
-      // Uniplay: edge function não funciona (geo-block), não tentar fallback
-      if (providerId === 'uniplay') {
-        setTestResultModal({
-          isOpen: true, success: false, message: "BLOQUEIO DE ORIGEM",
-          details: `⚠️ Painel: ${nomePainel}\n🔗 API: ${resolvedBaseUrl}${endpoint}\n👤 Usuário: ${usuario}\n\n⚠️ A API do Uniplay bloqueou a requisição do ambiente de preview.\n\n💡 Crie o painel e verifique as credenciais diretamente no site ${formData.urlPainel.trim()}.`,
-        });
-        return;
-      }
 
       // Fallback: via Edge Function (outros provedores)
       const fallbackStrategy = getTestStrategy(providerId);
