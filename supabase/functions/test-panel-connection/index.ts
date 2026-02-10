@@ -130,7 +130,24 @@ serve(async (req) => {
       });
     }
 
-    const cleanBase = String(baseUrl).replace(/\/$/, "");
+    let cleanBase = String(baseUrl).replace(/\/$/, "");
+    
+    // Uniplay: mapear URLs de frontend para API
+    const isUniplay = providerId === 'uniplay';
+    if (isUniplay) {
+      const UNIPLAY_URL_MAP: Record<string, string> = {
+        'gestordefender.com': 'gesapioffice.com',
+        'www.gestordefender.com': 'gesapioffice.com',
+      };
+      try {
+        const parsed = new URL(cleanBase);
+        const apiHost = UNIPLAY_URL_MAP[parsed.hostname.toLowerCase()];
+        if (apiHost) {
+          cleanBase = `${parsed.protocol}//${apiHost}`;
+          console.log(`🔗 Uniplay URL mapping: ${baseUrl} → ${cleanBase}`);
+        }
+      } catch {}
+    }
     
     console.log(`🚀 Iniciando teste para: ${cleanBase} (provedor: ${providerId || 'auto'})`);
     console.log(`👤 Username: ${username}`);
@@ -703,18 +720,46 @@ serve(async (req) => {
         
         if (isSuccess) {
           console.log(`✅ Login bem-sucedido em: ${url}`);
+          
+          // Uniplay: buscar créditos via /api/dash-reseller
+          let credits = null;
+          if (isUniplay && token) {
+            try {
+              const dashResp = await withTimeout(fetch(`${cleanBase}/api/dash-reseller`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: '{}',
+              }), 10000);
+              const dashText = await dashResp.text();
+              let dashJson: any = null;
+              try { dashJson = JSON.parse(dashText); } catch {}
+              if (dashJson) {
+                credits = dashJson.credits ?? dashJson.credit ?? dashJson.saldo ?? null;
+                console.log(`💰 Uniplay créditos: ${credits}`);
+              }
+            } catch (e) {
+              console.log(`⚠️ Uniplay dash-reseller: ${(e as Error).message}`);
+            }
+          }
+
           return new Response(JSON.stringify({
             success: true,
             endpoint: url,
-            type: 'Panel',
+            type: isUniplay ? 'Uniplay JWT' : 'Panel',
             account: {
               status: 'Active',
-              user: resp.json?.user || resp.json?.data?.user || null,
+              user: resp.json?.user || resp.json?.data?.user || { username },
               token_received: !!token,
+              credits,
             },
             data: {
               token: token || null,
               user: resp.json?.user || resp.json?.data?.user || null,
+              credits,
               response: resp.json,
             },
             logs,

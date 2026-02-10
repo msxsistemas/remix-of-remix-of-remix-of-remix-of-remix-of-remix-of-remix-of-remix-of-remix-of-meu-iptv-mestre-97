@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { UNIPLAY_KNOWN_URLS } from "@/config/provedores/uniplay";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -53,6 +54,7 @@ export function AddPanelModal({
   const urlPlaceholder = providerConfig?.urlPlaceholder || 'https://painel.exemplo.com';
   const usuarioPlaceholder = providerConfig?.usuarioPlaceholder || 'seu_usuario';
   const isApiKey = senhaLabel.toLowerCase().includes('chave') || senhaLabel.toLowerCase().includes('api');
+  const isUniplay = providerConfig?.id === 'uniplay';
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -95,7 +97,25 @@ export function AddPanelModal({
               onChange={(e) => setFormData({ ...formData, urlPainel: e.target.value })}
               placeholder={urlPlaceholder}
             />
-            <p className="text-xs text-muted-foreground">URL do seu painel {providerName}</p>
+            <p className="text-xs text-muted-foreground">
+              URL do painel {providerName} ou franquias
+            </p>
+            {isUniplay && (
+              <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                {UNIPLAY_KNOWN_URLS.map((u) => (
+                  <div key={u.url}>
+                    • <span className="font-medium">{u.label}:</span>{' '}
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => setFormData({ ...formData, urlPainel: u.url })}
+                    >
+                      {u.url.replace('https://', '')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
