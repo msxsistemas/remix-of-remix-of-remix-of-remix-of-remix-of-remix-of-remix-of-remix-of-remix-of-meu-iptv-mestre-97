@@ -53,33 +53,17 @@ serve(async (req) => {
 
     switch (action) {
       case 'configure': {
-        const { apiKey, webhookUrl } = body;
+        const { apiKey, publicKey, webhookUrl } = body;
 
         if (!apiKey) {
           return new Response(
-            JSON.stringify({ success: false, error: 'API Key é obrigatória' }),
+            JSON.stringify({ success: false, error: 'Chave Secreta é obrigatória' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           );
         }
 
-        // Validate API Key with Ciabra
+        // Save config directly — validation happens when charges are created
         try {
-          const testResp = await fetch(`${CIABRA_BASE_URL}/v1/customers?limit=1`, {
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!testResp.ok) {
-            const respText = await testResp.text();
-            console.error('Ciabra validation response:', testResp.status, respText);
-            throw new Error('API Key inválida');
-          }
-
-          await testResp.text(); // consume body
-
-          // Save config
           const keyHash = btoa(apiKey.substring(0, 10) + apiKey.substring(apiKey.length - 10));
 
           const { data: existing } = await supabaseAdmin
@@ -114,10 +98,10 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         } catch (error: any) {
-          console.error('Ciabra validation failed:', error);
+          console.error('Ciabra config save failed:', error);
           return new Response(
-            JSON.stringify({ success: false, error: error.message || 'API Key inválida ou sem permissão' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            JSON.stringify({ success: false, error: error.message || 'Erro ao salvar configuração' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           );
         }
       }
