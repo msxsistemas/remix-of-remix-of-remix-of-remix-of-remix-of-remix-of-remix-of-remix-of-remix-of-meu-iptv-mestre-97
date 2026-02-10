@@ -147,10 +147,10 @@ export function useServidorPage(providerId: string) {
         ? provider.buildLoginPayload(usuario, senha)
         : { username: usuario, password: senha };
 
-      // Uniplay API tem CORS: * — pode testar direto do browser
+      // Uniplay: API valida Origin header, deve usar Edge Function
       const strategy = getTestStrategy(providerId);
       const isXtream = strategy.steps.some(s => s.type === 'xtream');
-      const skipBrowserTest = false;
+      const skipBrowserTest = providerId === 'uniplay';
 
       if (!skipBrowserTest) {
         try {
@@ -233,7 +233,7 @@ export function useServidorPage(providerId: string) {
       const fallbackStrategy = getTestStrategy(providerId);
       const { data, error } = await supabase.functions.invoke('test-panel-connection', {
         body: {
-          baseUrl, username: usuario, password: senha,
+          baseUrl: resolvedBaseUrl, username: usuario, password: senha,
           endpointPath: endpoint,
           endpointMethod: provider?.loginMethod || 'POST',
           loginPayload: payload,
