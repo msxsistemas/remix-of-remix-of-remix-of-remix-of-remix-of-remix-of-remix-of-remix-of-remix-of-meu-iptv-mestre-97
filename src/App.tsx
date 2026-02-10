@@ -117,6 +117,7 @@ const App = () => (
             <Route path="/configuracoes/mercado-pago" element={<MercadoPago />} />
             
             <Route path="/configuracoes/ciabra" element={<Ciabra />} />
+            <Route path="/configuracoes/pix-manual" element={<Checkout />} />
             {/* WhatsApp routes */}
             <Route path="/whatsapp/gerenciar-mensagens" element={<GerenciarMensagens />} />
             <Route path="/whatsapp/fila-mensagens" element={<FilaMensagens />} />

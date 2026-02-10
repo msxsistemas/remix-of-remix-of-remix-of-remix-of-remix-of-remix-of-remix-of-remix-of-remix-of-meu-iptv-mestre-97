@@ -66,7 +66,7 @@ export function AppSidebar() {
   const logsActive = currentPath.startsWith("/logs");
   const indicacoesActive = currentPath.startsWith("/indicacoes");
   const outrosActive = currentPath.startsWith("/outros") || currentPath === "/configuracoes/mensagens-padroes";
-  const gatewaysActive = currentPath === "/configuracoes" || currentPath.startsWith("/configuracoes/asaas") || currentPath.startsWith("/configuracoes/mercado-pago") || currentPath.startsWith("/configuracoes/ciabra");
+  const gatewaysActive = currentPath === "/configuracoes" || currentPath.startsWith("/configuracoes/asaas") || currentPath.startsWith("/configuracoes/mercado-pago") || currentPath.startsWith("/configuracoes/ciabra") || currentPath.startsWith("/configuracoes/pix-manual");
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(
     clientesActive ? "clientes" : planosActive ? "planos" : aplicativosActive ? "aplicativos" : produtosActive ? "produtos" : currentPath.startsWith("/servidores") ? "servidores" : financeiroActive ? "financeiro" : whatsappActive ? "whatsapp" : logsActive ? "logs" : indicacoesActive ? "indicacoes" : outrosActive ? "outros" : gatewaysActive ? "gateways" : null
   );
@@ -156,8 +156,8 @@ export function AppSidebar() {
   const gatewaysSubItems = [
     { to: "/configuracoes/asaas", label: "Asaas" },
     { to: "/configuracoes/mercado-pago", label: "Mercado Pago" },
-    
     { to: "/configuracoes/ciabra", label: "Ciabra" },
+    { to: "/configuracoes/pix-manual", label: "PIX Manual" },
   ];
   const servidoresSubItems = [
     { to: "/servidores", label: "Todos os Servidores" },
