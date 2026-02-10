@@ -77,6 +77,8 @@ export type Database = {
           credit_card_enabled: boolean
           id: string
           pix_enabled: boolean
+          pix_manual_enabled: boolean
+          pix_manual_key: string | null
           updated_at: string
           user_id: string
         }
@@ -85,6 +87,8 @@ export type Database = {
           credit_card_enabled?: boolean
           id?: string
           pix_enabled?: boolean
+          pix_manual_enabled?: boolean
+          pix_manual_key?: string | null
           updated_at?: string
           user_id: string
         }
@@ -93,6 +97,8 @@ export type Database = {
           credit_card_enabled?: boolean
           id?: string
           pix_enabled?: boolean
+          pix_manual_enabled?: boolean
+          pix_manual_key?: string | null
           updated_at?: string
           user_id?: string
         }

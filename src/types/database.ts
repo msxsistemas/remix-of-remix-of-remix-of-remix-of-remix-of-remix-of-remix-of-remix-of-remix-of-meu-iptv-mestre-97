@@ -92,6 +92,8 @@ export interface CheckoutConfig {
   user_id?: string;
   pix_enabled: boolean;
   credit_card_enabled: boolean;
+  pix_manual_enabled: boolean;
+  pix_manual_key?: string | null;
   created_at?: string;
   updated_at?: string;
 }
