@@ -158,9 +158,9 @@ export default function PixManual() {
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <main className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         {/* Coluna esquerda - Status */}
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <Card className="shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -183,7 +183,7 @@ export default function PixManual() {
           </Card>
 
           {/* Salvar */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm flex-1 flex flex-col justify-center">
             <CardContent className="pt-6">
               <div className="text-center space-y-3">
                 <p className="text-sm font-medium">Finalizar Configuração</p>
