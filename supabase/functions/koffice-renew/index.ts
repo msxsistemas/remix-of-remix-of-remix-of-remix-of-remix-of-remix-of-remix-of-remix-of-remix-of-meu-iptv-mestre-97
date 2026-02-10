@@ -180,16 +180,63 @@ async function formLogin(cleanBase: string, panelUser: string, panelPass: string
   return { success: false, cookies: allCookies, csrf: csrfToken, error: 'Login falhou - sessão não validada' };
 }
 
-// Test connection
+// Test connection - try Xtream API first (no session needed), then form login
 async function testConnection(baseUrl: string, panelUser: string, panelPass: string): Promise<{ success: boolean; clients_count?: string; active_clients_count?: string; error?: string }> {
   const cleanBase = baseUrl.replace(/\/$/, '');
+  
+  // Strategy 1: Try Xtream/Panel API (stateless, no cookies needed)
+  const apiPaths = ['/panel_api.php', '/api.php', '/player_api.php'];
+  for (const path of apiPaths) {
+    try {
+      const apiUrl = `${cleanBase}${path}?username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}`;
+      console.log(`🔍 Trying Xtream API: ${path}`);
+      const resp = await withTimeout(fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      }), 10000);
+      const text = await resp.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log(`📊 Xtream ${path} → status: ${resp.status}, isJSON: ${!!json}, snippet: ${text.substring(0, 200)}`);
+      
+      if (resp.ok && json && typeof json === 'object') {
+        // Check if it's a valid authenticated response (has user_info, server_info, or client data)
+        if (json.user_info || json.server_info || json.result === true || json.success) {
+          const clientsCount = json.user_info?.active_cons || json.active_clients_count;
+          return {
+            success: true,
+            clients_count: json.clients_count || json.user_info?.max_connections || 'n/d',
+            active_clients_count: clientsCount || 'n/d',
+          };
+        }
+        // If response has data keys (list of users), it means auth worked
+        const keys = Object.keys(json);
+        if (keys.length > 0 && !json.error && !json.message?.toLowerCase?.().includes('invalid')) {
+          return {
+            success: true,
+            clients_count: String(keys.length),
+            active_clients_count: 'n/d',
+          };
+        }
+      }
+      // Check for auth failure indicators
+      if (text.includes('incorrect') || text.includes('invalid') || text.includes('Authentication')) {
+        console.log(`❌ Xtream ${path}: auth failed`);
+      }
+    } catch (e) {
+      console.log(`⚠️ Xtream ${path}: ${(e as Error).message}`);
+    }
+  }
+  
+  // Strategy 2: Try form-based login (for V2 panels)
+  console.log(`🔄 Xtream API not available, trying form login...`);
   const loginResult = await formLogin(cleanBase, panelUser, panelPass);
 
   if (!loginResult.success) {
     return { success: false, error: loginResult.error || 'Credenciais inválidas.' };
   }
 
-  // Try to get dashboard info
+  // Try to get dashboard info with session
   const infoResp = await withTimeout(fetch(`${cleanBase}/dashboard/api?get_info&month=0`, {
     method: 'GET',
     headers: {
@@ -204,7 +251,6 @@ async function testConnection(baseUrl: string, panelUser: string, panelPass: str
   const infoText = await infoResp.text();
   let infoJson: any = null;
   try { infoJson = JSON.parse(infoText); } catch {}
-  console.log(`📊 Test info → status: ${infoResp.status}, isJSON: ${!!infoJson}, snippet: ${infoText.slice(0, 200)}`);
 
   if (infoResp.ok && infoJson?.iptv) {
     return {
