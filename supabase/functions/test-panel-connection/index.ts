@@ -16,7 +16,6 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 /** Normaliza o proxy URL para formato http://user:pass@host:port */
 function normalizeProxyUrl(raw: string): string {
   const trimmed = raw.trim();
-  // Already in URL format
   if (/^https?:\/\//.test(trimmed)) return trimmed;
   // Format: host:port:user:pass
   const parts = trimmed.split(':');
@@ -24,7 +23,6 @@ function normalizeProxyUrl(raw: string): string {
     const [host, port, user, pass] = parts;
     return `http://${user}:${pass}@${host}:${port}`;
   }
-  // Format: user:pass@host:port (missing scheme)
   if (trimmed.includes('@')) return `http://${trimmed}`;
   return `http://${trimmed}`;
 }
@@ -37,19 +35,53 @@ function createProxiedFetch(): typeof fetch {
     return fetch;
   }
   const normalizedUrl = normalizeProxyUrl(proxyUrl);
-  console.log(`🌐 Usando proxy BR: ${normalizedUrl.replace(/\/\/.*@/, '//***@')}`);
-  try {
-    const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
-    return (input: string | URL | Request, init?: RequestInit) => {
-      return fetch(input, { ...init, client } as any);
-    };
-  } catch (e) {
-    console.log(`⚠️ Erro ao criar proxy client: ${(e as Error).message}, usando fetch direto`);
-    return fetch;
+  const maskedUrl = normalizedUrl.replace(/\/\/.*@/, '//***@');
+  console.log(`🌐 Proxy BR configurada: ${maskedUrl}`);
+
+  // Strategy 1: Deno.createHttpClient (works in Deno CLI, may work in newer edge-runtime)
+  if (typeof (Deno as any).createHttpClient === 'function') {
+    try {
+      const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
+      if (client) {
+        console.log('✅ Proxy: Deno.createHttpClient criado com sucesso');
+        return (input: string | URL | Request, init?: RequestInit) => {
+          return fetch(input, { ...init, client } as any);
+        };
+      }
+    } catch (e) {
+      console.log(`⚠️ Proxy Strategy 1 (createHttpClient) falhou: ${(e as Error).message}`);
+    }
+  } else {
+    console.log('⚠️ Deno.createHttpClient não disponível neste runtime');
   }
+
+  // Strategy 2: HTTP_PROXY/HTTPS_PROXY env vars
+  try {
+    Deno.env.set('HTTP_PROXY', normalizedUrl);
+    Deno.env.set('HTTPS_PROXY', normalizedUrl);
+    console.log('🔄 Proxy: Env vars HTTP_PROXY/HTTPS_PROXY definidas');
+  } catch (e) {
+    console.log(`⚠️ Proxy Strategy 2 (env vars) falhou: ${(e as Error).message}`);
+  }
+
+  // Return regular fetch (will use env vars if the runtime supports them)
+  return fetch;
 }
 
 const proxiedFetch = createProxiedFetch();
+
+/** Verifica se a proxy está funcionando testando o IP público */
+async function verifyProxy(): Promise<{ working: boolean; ip?: string; error?: string }> {
+  try {
+    const resp = await withTimeout(proxiedFetch('https://api.ipify.org?format=json'), 10000);
+    const data = await resp.json();
+    console.log(`🌐 Proxy IP check: ${JSON.stringify(data)}`);
+    return { working: true, ip: data.ip };
+  } catch (e) {
+    console.log(`❌ Proxy IP check falhou: ${(e as Error).message}`);
+    return { working: false, error: (e as Error).message };
+  }
+}
 
 /**
  * Resolve reCAPTCHA usando 2Captcha API
@@ -517,6 +549,11 @@ serve(async (req) => {
       const UNIPLAY_API = 'https://gesapioffice.com';
       const uniplayFrontend = frontendUrl || 'https://gestordefender.com';
       console.log(`🔄 Uniplay: Testando login JWT em ${UNIPLAY_API}/api/login...`);
+      
+      // Verificar se a proxy está funcionando antes de continuar
+      const proxyCheck = await verifyProxy();
+      console.log(`🌐 Proxy check: working=${proxyCheck.working}, ip=${proxyCheck.ip || 'n/a'}`);
+      
       try {
         // siteKey conhecida do reCAPTCHA v2 do Uniplay (extraída do frontend)
         const UNIPLAY_RECAPTCHA_SITEKEY = '6LfTwuwfAAAAAGfw3TatjhOOCP2jNuPqO4U2xske';
@@ -603,7 +640,10 @@ serve(async (req) => {
         
         let detailMsg: string;
         if (isGeoBlocked) {
-          detailMsg = `❌ A API do Uniplay (gesapioffice.com) retornou erro 404 — provavelmente por bloqueio geográfico de IP.\n\n⚠️ A proxy brasileira pode não estar funcionando corretamente. Verifique o secret BRAZIL_PROXY_URL.\n\n👉 Não é possível validar suas credenciais sem acesso à API. Verifique seu login diretamente em ${uniplayFrontend}.`;
+          const proxyInfo = proxyCheck.working 
+            ? `IP da proxy: ${proxyCheck.ip} (pode não ser brasileiro)` 
+            : `Proxy não funcionou: ${proxyCheck.error || 'desconhecido'}`;
+          detailMsg = `❌ A API do Uniplay (gesapioffice.com) retornou erro 404 — bloqueio geográfico de IP.\n\n⚠️ ${proxyInfo}\n\n💡 Deno.createHttpClient: ${typeof (Deno as any).createHttpClient === 'function' ? 'disponível' : 'NÃO disponível'}\n\n👉 Verifique se a proxy é brasileira e está ativa. Verifique seu login diretamente em ${uniplayFrontend}.`;
         } else if (needsCaptcha) {
           detailMsg = `Login Uniplay requer reCAPTCHA v2. A resolução via 2Captcha falhou — verifique o saldo/chave do 2Captcha. Verifique suas credenciais diretamente em ${uniplayFrontend}.`;
         } else {
@@ -615,7 +655,7 @@ serve(async (req) => {
           endpoint: `${UNIPLAY_API}/api/login`,
           type: 'Uniplay JWT',
           details: detailMsg,
-          debug: { status: loginResp.status, response: loginText.slice(0, 500), captchaSolved: !!captchaToken, proxyWorking: false },
+          debug: { status: loginResp.status, response: loginText.slice(0, 500), captchaSolved: !!captchaToken, proxyCheck },
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } catch (e) {
         return new Response(JSON.stringify({

@@ -37,16 +37,33 @@ function createProxiedFetch(): typeof fetch {
     return fetch;
   }
   const normalizedUrl = normalizeProxyUrl(proxyUrl);
-  console.log(`🌐 Usando proxy BR: ${normalizedUrl.replace(/\/\/.*@/, '//***@')}`);
-  try {
-    const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
-    return (input: string | URL | Request, init?: RequestInit) => {
-      return fetch(input, { ...init, client } as any);
-    };
-  } catch (e) {
-    console.log(`⚠️ Erro ao criar proxy client: ${(e as Error).message}, usando fetch direto`);
-    return fetch;
+  console.log(`🌐 Proxy BR: ${normalizedUrl.replace(/\/\/.*@/, '//***@')}`);
+
+  if (typeof (Deno as any).createHttpClient === 'function') {
+    try {
+      const client = (Deno as any).createHttpClient({ proxy: { url: normalizedUrl } });
+      if (client) {
+        console.log('✅ Proxy: Deno.createHttpClient criado');
+        return (input: string | URL | Request, init?: RequestInit) => {
+          return fetch(input, { ...init, client } as any);
+        };
+      }
+    } catch (e) {
+      console.log(`⚠️ Proxy createHttpClient falhou: ${(e as Error).message}`);
+    }
+  } else {
+    console.log('⚠️ Deno.createHttpClient não disponível');
   }
+
+  try {
+    Deno.env.set('HTTP_PROXY', normalizedUrl);
+    Deno.env.set('HTTPS_PROXY', normalizedUrl);
+    console.log('🔄 Proxy: Env vars HTTP_PROXY/HTTPS_PROXY definidas');
+  } catch (e) {
+    console.log(`⚠️ Proxy env vars falhou: ${(e as Error).message}`);
+  }
+
+  return fetch;
 }
 
 const proxiedFetch = createProxiedFetch();
