@@ -147,90 +147,87 @@ export function useServidorPage(providerId: string) {
         ? provider.buildLoginPayload(usuario, senha)
         : { username: usuario, password: senha };
 
-      // Tenta primeiro diretamente do navegador (funciona para Sigma e outros painéis)
-      // Para provedores Xtream (koffice-api), tenta GET com params na URL
+      // Para Uniplay, vai direto pela Edge Function (CORS bloqueia no browser)
       const strategy = getTestStrategy(providerId);
       const isXtream = strategy.steps.some(s => s.type === 'xtream');
+      const skipBrowserTest = providerId === 'uniplay';
 
-      try {
-        let response: Response;
-        let directUrl: string;
+      if (!skipBrowserTest) {
+        try {
+          let response: Response;
+          let directUrl: string;
 
-        if (isXtream) {
-          // Xtream: GET com username/password como query params
-          const xtreamPath = '/player_api.php';
-          directUrl = `${resolvedBaseUrl}${xtreamPath}?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
-          response = await fetch(directUrl, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-          });
-        } else {
-          directUrl = `${resolvedBaseUrl}${endpoint}`;
-          response = await fetch(directUrl, {
-            method: provider?.loginMethod || "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-        }
-
-        let data: any = null;
-        try { data = await response.json(); } catch { data = await response.text().catch(() => null); }
-
-        // Uniplay: status 500 com "Credenciais inválidas" = credenciais erradas
-        const responseText = typeof data === 'string' ? data : '';
-        const isCredentialRejection = !response.ok && (
-          responseText.toLowerCase().includes('credenciais') ||
-          responseText.toLowerCase().includes('credencias') ||
-          responseText.toLowerCase().includes('invalid') ||
-          (typeof data === 'object' && data?.message?.toLowerCase?.().includes('invalid'))
-        );
-
-        if (isCredentialRejection) {
-          setTestResultModal({
-            isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
-            details: `❌ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n\n❌ Credenciais inválidas. Verifique usuário e senha.`,
-          });
-          return;
-        }
-
-        const isSuccess = response.ok && (
-          data?.token || data?.access_token || data?.success === true || data?.user || 
-          data?.result === 'success' || data?.user_info || data?.server_info
-        );
-
-        if (isSuccess) {
-          const token = data.token || data.access_token;
-          if (token) localStorage.setItem("auth_token", token);
-          
-          // Try to get credits for Uniplay
-          let creditsInfo = '';
-          if (providerId === 'uniplay' && token) {
-            try {
-              const dashResp = await fetch(`${resolvedBaseUrl}/api/dash-reseller`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: '{}',
-              });
-              const dashData = await dashResp.json();
-              const credits = dashData?.credits ?? dashData?.credit ?? dashData?.saldo;
-              if (credits !== undefined) creditsInfo = `\n💰 Créditos: ${credits}`;
-            } catch {}
+          if (isXtream) {
+            const xtreamPath = '/player_api.php';
+            directUrl = `${resolvedBaseUrl}${xtreamPath}?username=${encodeURIComponent(usuario)}&password=${encodeURIComponent(senha)}`;
+            response = await fetch(directUrl, {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+            });
+          } else {
+            directUrl = `${resolvedBaseUrl}${endpoint}`;
+            response = await fetch(directUrl, {
+              method: provider?.loginMethod || "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
           }
-          
-          setTestResultModal({
-            isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
-            details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n📡 Status: ${data?.user_info?.status || 'OK'}${creditsInfo}\n\n✅ Autenticação realizada com sucesso.`,
-          });
-          return;
+
+          let data: any = null;
+          try { data = await response.json(); } catch { data = await response.text().catch(() => null); }
+
+          const responseText = typeof data === 'string' ? data : '';
+          const isCredentialRejection = !response.ok && (
+            responseText.toLowerCase().includes('credenciais') ||
+            responseText.toLowerCase().includes('credencias') ||
+            responseText.toLowerCase().includes('invalid') ||
+            (typeof data === 'object' && data?.message?.toLowerCase?.().includes('invalid'))
+          );
+
+          if (isCredentialRejection) {
+            setTestResultModal({
+              isOpen: true, success: false, message: "FALHA NA AUTENTICAÇÃO",
+              details: `❌ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n\n❌ Credenciais inválidas. Verifique usuário e senha.`,
+            });
+            return;
+          }
+
+          const isSuccess = response.ok && (
+            data?.token || data?.access_token || data?.success === true || data?.user || 
+            data?.result === 'success' || data?.user_info || data?.server_info
+          );
+
+          if (isSuccess) {
+            const token = data.token || data.access_token;
+            if (token) localStorage.setItem("auth_token", token);
+            
+            let creditsInfo = '';
+            if (providerId === 'uniplay' && token) {
+              try {
+                const dashResp = await fetch(`${resolvedBaseUrl}/api/dash-reseller`, {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                  body: '{}',
+                });
+                const dashData = await dashResp.json();
+                const credits = dashData?.credits ?? dashData?.credit ?? dashData?.saldo;
+                if (credits !== undefined) creditsInfo = `\n💰 Créditos: ${credits}`;
+              } catch {}
+            }
+            
+            setTestResultModal({
+              isOpen: true, success: true, message: "CONEXÃO REAL BEM-SUCEDIDA!",
+              details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${directUrl}\n👤 Usuário: ${usuario}\n📡 Status: ${data?.user_info?.status || 'OK'}${creditsInfo}\n\n✅ Autenticação realizada com sucesso.`,
+            });
+            return;
+          }
+          console.log('Teste direto não obteve sucesso, tentando via Edge Function...');
+        } catch (directError: any) {
+          console.log('Teste direto falhou, tentando via Edge Function:', directError.message);
         }
-        // Não retorna no else - deixa cair no fallback via Edge Function
-        console.log('Teste direto não obteve sucesso, tentando via Edge Function...');
-      } catch (directError: any) {
-        // Se falhar direto (CORS etc), tenta via Edge Function como fallback
-        console.log('Teste direto falhou, tentando via Edge Function:', directError.message);
       }
 
       // Fallback: via Edge Function
