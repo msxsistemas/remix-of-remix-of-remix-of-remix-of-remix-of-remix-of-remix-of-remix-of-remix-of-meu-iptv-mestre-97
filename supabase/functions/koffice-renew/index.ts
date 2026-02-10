@@ -73,18 +73,28 @@ async function formLogin(cleanBase: string, panelUser: string, panelPass: string
   formBody.append(userFieldName, panelUser);
   formBody.append(passFieldName, panelPass);
 
+  // Resolve form action URL properly
+  let postUrl = `${cleanBase}/login`;
+  if (formAction && formAction !== '/login') {
+    postUrl = formAction.startsWith('http') ? formAction : `${cleanBase}${formAction.startsWith('/') ? '' : '/'}${formAction}`;
+  }
+  console.log(`📤 POST URL: ${postUrl}`);
+
   const postHeaders: Record<string, string> = {
     'Content-Type': 'application/x-www-form-urlencoded',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Accept': 'text/html,application/xhtml+xml',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
     'Origin': cleanBase,
     'Referer': `${cleanBase}/login`,
+    'X-Requested-With': 'XMLHttpRequest',
+    'Cache-Control': 'no-cache',
   };
   if (allCookies) postHeaders['Cookie'] = allCookies;
   const xsrfMatch = allCookies.match(/XSRF-TOKEN=([^;,\s]+)/);
   if (xsrfMatch) postHeaders['X-XSRF-TOKEN'] = decodeURIComponent(xsrfMatch[1]);
 
-  const postResp = await withTimeout(fetch(`${cleanBase}/login`, {
+  const postResp = await withTimeout(fetch(postUrl, {
     method: 'POST',
     headers: postHeaders,
     body: formBody.toString(),
