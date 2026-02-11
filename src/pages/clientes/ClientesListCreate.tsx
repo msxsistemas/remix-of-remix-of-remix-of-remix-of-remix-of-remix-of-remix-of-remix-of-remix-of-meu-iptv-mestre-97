@@ -79,6 +79,7 @@ export default function ClientesListCreate() {
   // Estados para renovação
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [clienteParaRenovar, setClienteParaRenovar] = useState<Cliente | null>(null);
+  const [isRenovando, setIsRenovando] = useState(false);
   
    // Estados para templates de cobrança
    const [templates, setTemplates] = useState<any[]>([]);
@@ -174,6 +175,7 @@ export default function ClientesListCreate() {
   // Função para executar renovação
   const executarRenovacao = async (incluirIntegracao: boolean) => {
     if (!clienteParaRenovar || !clienteParaRenovar.id) return;
+    setIsRenovando(true);
     
     try {
       // Buscar dados do plano para calcular nova data de vencimento
@@ -184,6 +186,7 @@ export default function ClientesListCreate() {
           description: "Plano não encontrado",
           variant: "destructive",
         });
+        setIsRenovando(false);
         return;
       }
 
@@ -231,6 +234,7 @@ export default function ClientesListCreate() {
           description: "Erro ao renovar plano",
           variant: "destructive",
         });
+        setIsRenovando(false);
         return;
       }
 
@@ -314,6 +318,7 @@ export default function ClientesListCreate() {
 
       setRenovarDialogOpen(false);
       setClienteParaRenovar(null);
+      setIsRenovando(false);
 
     } catch (error) {
       console.error('Erro ao renovar plano:', error);
@@ -322,6 +327,7 @@ export default function ClientesListCreate() {
         description: "Erro ao renovar plano",
         variant: "destructive",
       });
+      setIsRenovando(false);
     }
   };
 
@@ -1821,8 +1827,9 @@ export default function ClientesListCreate() {
             <Button
               onClick={() => executarRenovacao(true)}
               className="bg-primary hover:bg-primary/90"
+              disabled={isRenovando}
             >
-              Renovar Plano
+              {isRenovando ? "Renovando..." : "Renovar Plano"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
