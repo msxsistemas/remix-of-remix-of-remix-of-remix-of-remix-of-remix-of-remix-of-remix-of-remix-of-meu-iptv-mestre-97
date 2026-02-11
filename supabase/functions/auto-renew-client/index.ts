@@ -198,6 +198,7 @@ serve(async (req) => {
               username: cliente.usuario,
               duration: renewalMonths > 0 ? renewalMonths : renewalDays,
               durationIn: renewalMonths > 0 ? 'months' : 'days',
+              clienteScreens: cliente.telas || 1,
             };
           }
 
