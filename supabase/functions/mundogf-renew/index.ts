@@ -293,9 +293,12 @@ serve(async (req) => {
         }
       }
 
-      // Get client's current max_cons before extending
+      // Get client's current max_cons and valid option values before extending
       let maxCons = '1';
+      let validOption = '';
+      
       if (username) {
+        // Fetch client info
         const dtBody2 = new URLSearchParams();
         dtBody2.append('draw', '1');
         dtBody2.append('start', '0');
@@ -320,19 +323,66 @@ serve(async (req) => {
         } catch {}
       }
 
-      // Convert duration to option format expected by Rboys panel
-      // option: number of months (e.g., "1" = 1 month)
-      let option = String(duration);
-      if (durationIn === 'days') {
-        option = String(Math.max(1, Math.ceil(Number(duration) / 30)));
+      // Fetch the renewal page to extract valid option values from dropdown
+      try {
+        const renewPageResp = await withTimeout(fetch(`${cleanBase}/clients/${resolvedUserId}/edit`, {
+          method: 'GET',
+          headers: {
+            'Cookie': login.cookies,
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': `${cleanBase}/clients`,
+          },
+        }), 10000);
+        const renewPageHtml = await renewPageResp.text();
+        
+        // Extract option values from the renewal period dropdown
+        // Look for select with options like <option value="1">1 Mês</option>
+        const optionMatches = renewPageHtml.match(/<option\s+value=["']([^"']+)["'][^>]*>([^<]+)<\/option>/gi);
+        if (optionMatches) {
+          console.log(`📋 Available options: ${optionMatches.join(', ')}`);
+          
+          // Map duration to month count
+          let targetMonths = Number(duration);
+          if (durationIn === 'days') {
+            targetMonths = Math.max(1, Math.ceil(Number(duration) / 30));
+          }
+          
+          // Try to find matching option by text content
+          for (const match of optionMatches) {
+            const optionMatch = match.match(/<option\s+value=["']([^"']+)["'][^>]*>([^<]+)<\/option>/i);
+            if (optionMatch) {
+              const optionValue = optionMatch[1];
+              const optionText = optionMatch[2];
+              
+              // Check if this option matches our target
+              if (optionText.includes(`${targetMonths}`) || optionText.includes('Mês') || optionText.includes('Meses')) {
+                validOption = optionValue;
+                console.log(`✅ Matched option: value="${optionValue}", text="${optionText}"`);
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log(`⚠️ Could not fetch renewal page: ${e.message}`);
       }
 
-      console.log(`📤 Extend payload: user_id=${resolvedUserId}, option=${option}, connections=${maxCons}`);
+      // Fallback to calculated option if not found in dropdown
+      if (!validOption) {
+        let months = Number(duration);
+        if (durationIn === 'days') {
+          months = Math.max(1, Math.ceil(months / 30));
+        }
+        validOption = String(months);
+        console.log(`⚠️ Using fallback option: ${validOption}`);
+      }
+
+      console.log(`📤 Extend payload: user_id=${resolvedUserId}, option=${validOption}, connections=${maxCons}`);
 
       // POST /clients/{resolvedUserId}/extend
       const extendBody = new URLSearchParams();
       extendBody.append('_token', login.csrf);
-      extendBody.append('option', option);
+      extendBody.append('option', validOption);
       extendBody.append('connections', maxCons);
 
       const extendResp = await withTimeout(fetch(`${cleanBase}/clients/${resolvedUserId}/extend`, {
