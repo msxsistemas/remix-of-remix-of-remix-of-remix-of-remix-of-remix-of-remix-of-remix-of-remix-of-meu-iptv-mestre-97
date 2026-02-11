@@ -143,16 +143,18 @@ serve(async (req) => {
           // Check Ciabra payment status
           const { data: ciabraConfig } = await supabaseAdmin
             .from('ciabra_config')
-            .select('api_key_hash')
+            .select('api_key_hash, public_key_hash')
             .eq('user_id', fatura.user_id)
             .eq('is_configured', true)
             .maybeSingle();
 
           if (ciabraConfig?.api_key_hash) {
             try {
-              const apiKey = atob(ciabraConfig.api_key_hash);
-              const statusResp = await fetch(`https://api.az.center/v1/charges/${fatura.gateway_charge_id}`, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+              const privateKey = atob(ciabraConfig.api_key_hash);
+              const publicKey = ciabraConfig.public_key_hash ? atob(ciabraConfig.public_key_hash) : '';
+              const basicToken = btoa(`${publicKey}:${privateKey}`);
+              const statusResp = await fetch(`https://api.az.center/invoices/applications/invoices/${fatura.gateway_charge_id}`, {
+                headers: { 'Authorization': `Basic ${basicToken}`, 'Content-Type': 'application/json' }
               });
               const statusText = await statusResp.text();
               let statusData: any = {};
@@ -376,21 +378,19 @@ serve(async (req) => {
           try {
             const { data: ciabraConfig } = await supabaseAdmin
               .from('ciabra_config')
-              .select('api_key_hash')
+              .select('api_key_hash, public_key_hash')
               .eq('user_id', fatura.user_id)
               .eq('is_configured', true)
               .maybeSingle();
 
             if (ciabraConfig?.api_key_hash) {
-              const apiKey = atob(ciabraConfig.api_key_hash);
-              // Ciabra docs say "Basic [TOKEN]" — token IS the apiKey directly
-              const basicAuth = apiKey;
+              const privateKey = atob(ciabraConfig.api_key_hash);
+              const publicKey = ciabraConfig.public_key_hash ? atob(ciabraConfig.public_key_hash) : '';
+              const basicToken = btoa(`${publicKey}:${privateKey}`);
               const externalId = `fatura-${fatura.id.substring(0, 8)}`;
               const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-              // Ciabra Invoice API payload
               const ciabraPayload = {
-                customerId: "default-customer", // Ciabra requires customerId; using default
                 description: `Cobrança - ${fatura.cliente_nome || 'Cliente'}`,
                 dueDate: dueDate,
                 installmentCount: 1,
@@ -399,17 +399,16 @@ serve(async (req) => {
                 price: parseFloat(fatura.valor.toString()),
                 externalId: externalId,
                 paymentTypes: ["PIX"],
-                redirectTo: "https://dxxfablfqigoewcfmjzl.supabase.co",
                 webhooks: [
                   { hookType: "PAYMENT_CONFIRMED", url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/ciabra-integration` }
                 ],
-                notifications: [] // Simplified: no notifications
+                notifications: []
               };
 
               const ciabraResp = await fetch('https://api.az.center/invoices/applications/invoices', {
                 method: 'POST',
                 headers: { 
-                  'Authorization': `Basic ${basicAuth}`, 
+                  'Authorization': `Basic ${basicToken}`, 
                   'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify(ciabraPayload),

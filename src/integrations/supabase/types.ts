@@ -113,6 +113,7 @@ export type Database = {
           created_at: string
           id: string
           is_configured: boolean | null
+          public_key_hash: string | null
           updated_at: string
           user_id: string
           webhook_url: string | null
@@ -122,6 +123,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_configured?: boolean | null
+          public_key_hash?: string | null
           updated_at?: string
           user_id: string
           webhook_url?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_configured?: boolean | null
+          public_key_hash?: string | null
           updated_at?: string
           user_id?: string
           webhook_url?: string | null
