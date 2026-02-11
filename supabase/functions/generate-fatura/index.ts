@@ -364,8 +364,8 @@ serve(async (req) => {
         }
       }
 
-      // Fallback to PIX manual
-      if (!pix_qr_code && !pix_copia_cola && checkoutConfig?.pix_manual_enabled && checkoutConfig?.pix_manual_key) {
+      // Fallback to PIX manual only if automatic PIX is DISABLED
+      if (!pix_qr_code && !pix_copia_cola && !checkoutConfig?.pix_enabled && checkoutConfig?.pix_manual_enabled && checkoutConfig?.pix_manual_key) {
         gateway = 'pix_manual';
         pix_manual_key = checkoutConfig.pix_manual_key;
       }
@@ -569,7 +569,7 @@ serve(async (req) => {
         }
       }
       
-      if (!gateway && checkoutConfig?.pix_manual_enabled && checkoutConfig?.pix_manual_key) {
+      if (!gateway && !checkoutConfig?.pix_enabled && checkoutConfig?.pix_manual_enabled && checkoutConfig?.pix_manual_key) {
         gateway = 'pix_manual';
         pix_manual_key = checkoutConfig.pix_manual_key;
       }
