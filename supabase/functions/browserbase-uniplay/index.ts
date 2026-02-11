@@ -45,24 +45,36 @@ async function createBrowserbaseSession(): Promise<{ sessionId: string; connectU
   const apiKey = Deno.env.get("BROWSERBASE_API_KEY")!;
   const projectId = Deno.env.get("BROWSERBASE_PROJECT_ID")!;
 
-  const resp = await withTimeout(fetch(`${BROWSERBASE_API}/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-BB-API-Key": apiKey },
-    body: JSON.stringify({
-      projectId,
-      proxies: true,
-      browserSettings: { timeout: 120 },
-    }),
-  }), 15000);
+  // Try with proxies first, fallback to without
+  for (const useProxies of [true, false]) {
+    const bodyPayload: any = { projectId, browserSettings: { timeout: 120 } };
+    if (useProxies) bodyPayload.proxies = true;
 
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Browserbase create session failed (${resp.status}): ${text}`);
+    const resp = await withTimeout(fetch(`${BROWSERBASE_API}/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-BB-API-Key": apiKey },
+      body: JSON.stringify(bodyPayload),
+    }), 15000);
+
+    if (resp.status === 402 && useProxies) {
+      console.log("⚠️ Browserbase: Proxies não disponíveis no plano atual, tentando sem proxy...");
+      await resp.text(); // consume body
+      continue;
+    }
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      if (!useProxies) throw new Error(`Browserbase create session failed (${resp.status}): ${text}`);
+      console.log(`⚠️ Browserbase com proxy falhou (${resp.status}), tentando sem...`);
+      continue;
+    }
+
+    const session = await resp.json();
+    console.log(`🌐 Browserbase session criada: ${session.id} (proxy: ${useProxies})`);
+    return { sessionId: session.id, connectUrl: session.connectUrl };
   }
 
-  const session = await resp.json();
-  console.log(`🌐 Browserbase session criada: ${session.id}`);
-  return { sessionId: session.id, connectUrl: session.connectUrl };
+  throw new Error("Browserbase: não foi possível criar sessão");
 }
 
 // ==================== CDP over WebSocket ====================
