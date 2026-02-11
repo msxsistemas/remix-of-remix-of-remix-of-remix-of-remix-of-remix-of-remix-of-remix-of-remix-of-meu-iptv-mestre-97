@@ -301,24 +301,44 @@ export default function FaturaPublica() {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-slate-200 px-6 sm:px-8 py-4 text-center">
-            <p className="text-xs text-slate-400 italic">
-              Obrigado por escolher nossos serviços! Entre em contato conosco se tiver alguma dúvida.
-            </p>
-          </div>
+           {/* Footer */}
+           <div className="border-t border-slate-200 px-6 sm:px-8 py-6 space-y-4">
+             <p className="text-xs text-slate-400 italic text-center">
+               Obrigado por escolher nossos serviços! Entre em contato conosco se tiver alguma dúvida.
+             </p>
 
-          {/* Print Button */}
-          <div className="px-6 sm:px-8 pb-5 flex gap-2 print:hidden">
-            <Button
-              variant="outline"
-              className="flex-1 h-10 gap-2 text-sm"
-              onClick={() => window.print()}
-            >
-              <Printer className="h-4 w-4" />
-              Imprimir
-            </Button>
-          </div>
+             {/* Action Buttons */}
+             <div className="flex justify-center gap-3 print:hidden pt-2">
+               <Button
+                 variant="outline"
+                 className="h-10 gap-2 text-sm rounded-full px-6"
+                 onClick={() => window.print()}
+               >
+                 <Printer className="h-4 w-4" />
+                 Imprimir
+               </Button>
+               
+               {hasPix && !isPaid && (
+                 <Button
+                   className="h-10 gap-2 text-sm rounded-full px-6 bg-emerald-500 hover:bg-emerald-600 text-white"
+                   onClick={() => setShowPix(!showPix)}
+                 >
+                   <QrCode className="h-4 w-4" />
+                   Pagar com PIX
+                 </Button>
+               )}
+
+               {isPaid && (
+                 <Button
+                   disabled
+                   className="h-10 gap-2 text-sm rounded-full px-6 bg-emerald-500 text-white"
+                 >
+                   <CheckCircle className="h-4 w-4" />
+                   Pagamento Confirmado
+                 </Button>
+               )}
+             </div>
+           </div>
         </div>
       </div>
     </div>
