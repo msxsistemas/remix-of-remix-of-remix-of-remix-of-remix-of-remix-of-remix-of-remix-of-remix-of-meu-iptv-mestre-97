@@ -92,7 +92,7 @@ export default function FaturaPublica() {
     setTimeout(() => setCopied(false), 3000);
   };
 
-  const handleGeneratePix = async () => {
+  const handleGeneratePix = useCallback(async () => {
     if (!id) return;
     setGeneratingPix(true);
     try {
@@ -107,7 +107,6 @@ export default function FaturaPublica() {
       const data = await resp.json();
       if (data.success && data.fatura) {
         setFatura(data.fatura as Fatura);
-        toast({ title: "✅ PIX gerado!", description: "QR Code e código disponíveis para pagamento." });
       } else {
         toast({ title: "Erro", description: data.error || "Não foi possível gerar o PIX.", variant: "destructive" });
       }
@@ -116,7 +115,16 @@ export default function FaturaPublica() {
     } finally {
       setGeneratingPix(false);
     }
-  };
+  }, [id, toast]);
+
+  // Auto-generate PIX when modal opens and no PIX data exists
+  const handleOpenPix = useCallback(() => {
+    setShowPix(true);
+    if (fatura && !fatura.pix_qr_code && !fatura.pix_copia_cola && !(fatura.gateway === "pix_manual" && fatura.pix_manual_key)) {
+      // Trigger generation automatically
+      setTimeout(() => handleGeneratePix(), 100);
+    }
+  }, [fatura, handleGeneratePix]);
 
   if (loading) {
     return (
@@ -229,26 +237,33 @@ export default function FaturaPublica() {
 
             {/* PIX Payment Modal */}
             <Dialog open={showPix} onOpenChange={setShowPix}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-bold text-slate-800">PIX AUTOMÁTICO</DialogTitle>
-                  <p className="text-sm text-red-500 font-medium">
-                    Após confirmar o pagamento, clique no botão Fechar logo abaixo!
-                  </p>
-                </DialogHeader>
+              <DialogContent className="sm:max-w-md border-0 shadow-2xl rounded-2xl p-0 overflow-hidden">
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-[#3b9ede] to-[#2d8ace] px-6 py-5">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+                      <QrCode className="h-5 w-5" />
+                      Pagamento PIX
+                    </DialogTitle>
+                    <p className="text-sm text-white/80 mt-1">
+                      Valor: <strong className="text-white">R$ {valorFormatted}</strong>
+                    </p>
+                  </DialogHeader>
+                </div>
 
-                <div className="space-y-4 py-2">
-                  {/* Gateway info */}
-                  {fatura.gateway && fatura.gateway !== "pix_manual" && (
-                    <div className="text-center text-sm text-slate-500">
-                      <span className="font-medium capitalize">{fatura.gateway}</span>
+                <div className="px-6 py-5 space-y-5">
+                  {/* Loading state */}
+                  {generatingPix && (
+                    <div className="flex flex-col items-center gap-3 py-8">
+                      <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#3b9ede] border-t-transparent" />
+                      <p className="text-sm text-slate-500">Gerando código PIX...</p>
                     </div>
                   )}
 
                   {/* QR Code */}
-                  {fatura.pix_qr_code && (
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                  {!generatingPix && fatura.pix_qr_code && (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <img src={`data:image/png;base64,${fatura.pix_qr_code}`} alt="QR Code PIX" className="w-48 h-48" />
                       </div>
                       <p className="text-xs text-slate-400">Escaneie com o app do seu banco</p>
@@ -256,35 +271,36 @@ export default function FaturaPublica() {
                   )}
 
                   {/* Copia e Cola */}
-                  {fatura.pix_copia_cola && (
-                    <div className="space-y-2">
-                      <div className="bg-slate-50 border border-slate-200 rounded p-3 text-xs break-all font-mono text-slate-600 max-h-24 overflow-y-auto">
+                  {!generatingPix && fatura.pix_copia_cola && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">PIX Copia e Cola</p>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs break-all font-mono text-slate-600 max-h-20 overflow-y-auto">
                         {fatura.pix_copia_cola}
                       </div>
                       <Button
-                        className={`w-full h-10 text-sm font-medium ${copied ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#3b9ede] hover:bg-[#2d8ace]"} text-white`}
+                        className={`w-full h-11 text-sm font-semibold rounded-lg ${copied ? "bg-emerald-500 hover:bg-emerald-600" : "bg-[#3b9ede] hover:bg-[#2d8ace]"} text-white`}
                         onClick={() => handleCopy(fatura.pix_copia_cola!)}
                       >
-                        {copied ? <><CheckCircle className="h-4 w-4 mr-1.5" /> Copiado!</> : <><Copy className="h-4 w-4 mr-1.5" /> PIX Copia e Cola</>}
+                        {copied ? <><CheckCircle className="h-4 w-4 mr-2" /> Copiado!</> : <><Copy className="h-4 w-4 mr-2" /> Copiar Código PIX</>}
                       </Button>
                     </div>
                   )}
 
-                  {/* PIX Manual */}
-                  {fatura.gateway === "pix_manual" && fatura.pix_manual_key && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1.5">
+                  {/* PIX Manual - only if gateway is pix_manual */}
+                  {!generatingPix && fatura.gateway === "pix_manual" && fatura.pix_manual_key && !fatura.pix_copia_cola && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-[#3b9ede]" />
-                        <span className="text-sm font-semibold text-slate-600">Chave PIX</span>
+                        <span className="text-sm font-semibold text-slate-700">Chave PIX</span>
                       </div>
-                      <div className="bg-slate-50 border border-slate-200 rounded p-3 text-sm break-all font-mono text-slate-700">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 text-sm break-all font-mono text-slate-700">
                         {fatura.pix_manual_key}
                       </div>
                       <Button
-                        className={`w-full h-10 text-sm font-medium ${copied ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#3b9ede] hover:bg-[#2d8ace]"} text-white`}
+                        className={`w-full h-11 text-sm font-semibold rounded-lg ${copied ? "bg-emerald-500 hover:bg-emerald-600" : "bg-[#3b9ede] hover:bg-[#2d8ace]"} text-white`}
                         onClick={() => handleCopy(fatura.pix_manual_key!)}
                       >
-                        {copied ? <><CheckCircle className="h-4 w-4 mr-1.5" /> Copiado!</> : <><Copy className="h-4 w-4 mr-1.5" /> Copiar Chave PIX</>}
+                        {copied ? <><CheckCircle className="h-4 w-4 mr-2" /> Copiado!</> : <><Copy className="h-4 w-4 mr-2" /> Copiar Chave PIX</>}
                       </Button>
                       <p className="text-xs text-slate-400 text-center">
                         Envie <strong className="text-[#3b9ede]">R$ {valorFormatted}</strong> para a chave acima
@@ -292,34 +308,35 @@ export default function FaturaPublica() {
                     </div>
                   )}
 
-                  {!fatura.pix_qr_code && !fatura.pix_copia_cola && !(fatura.gateway === "pix_manual" && fatura.pix_manual_key) && (
+                  {/* No PIX data and not generating */}
+                  {!generatingPix && !fatura.pix_qr_code && !fatura.pix_copia_cola && !(fatura.gateway === "pix_manual" && fatura.pix_manual_key) && (
                     <div className="flex flex-col items-center gap-3 py-4">
-                      <p className="text-sm text-slate-500 text-center">Clique abaixo para gerar seu código PIX</p>
+                      <p className="text-sm text-slate-500 text-center">Não foi possível gerar o PIX automaticamente.</p>
                       <Button
-                        className="h-11 gap-2 text-sm px-8 bg-[#3b9ede] hover:bg-[#2d8ace] text-white"
+                        className="h-11 gap-2 text-sm px-8 bg-[#3b9ede] hover:bg-[#2d8ace] text-white rounded-lg"
                         onClick={handleGeneratePix}
-                        disabled={generatingPix}
                       >
-                        {generatingPix ? (
-                          <><RefreshCw className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-                        ) : (
-                          <><QrCode className="h-4 w-4" /> Gerar PIX</>
-                        )}
+                        <RefreshCw className="h-4 w-4" /> Tentar novamente
                       </Button>
                     </div>
                   )}
 
-                  {isPending && (
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
+                  {/* Polling indicator */}
+                  {isPending && !generatingPix && (
+                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-50 rounded-lg py-2.5">
                       <RefreshCw className="h-3 w-3 animate-spin" />
                       <span>Verificando pagamento automaticamente...</span>
                     </div>
                   )}
 
+                  {/* Info text */}
+                  <p className="text-xs text-center text-red-500 font-medium">
+                    Após confirmar o pagamento, clique em Fechar!
+                  </p>
+
                   {/* Close button */}
                   <Button
-                    variant="destructive"
-                    className="w-full h-10"
+                    className="w-full h-11 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
                     onClick={() => setShowPix(false)}
                   >
                     Fechar
@@ -367,7 +384,7 @@ export default function FaturaPublica() {
                {!isPaid && (
                  <Button
                     className="h-10 gap-2 text-sm rounded-full px-6 bg-emerald-500 hover:bg-emerald-600 text-white"
-                    onClick={() => setShowPix(!showPix)}
+                    onClick={handleOpenPix}
                   >
                     <QrCode className="h-4 w-4" />
                     Pagar com PIX
