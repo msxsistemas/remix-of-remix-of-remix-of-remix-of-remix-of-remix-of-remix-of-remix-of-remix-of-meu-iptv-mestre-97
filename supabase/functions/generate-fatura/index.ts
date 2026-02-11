@@ -417,16 +417,16 @@ serve(async (req) => {
                 dueDate: dueDate,
                 installmentCount: 1,
                 invoiceType: "SINGLE",
-                items: [],
                 price: parseFloat(fatura.valor.toString()),
-                externalId: externalId,
                 paymentTypes: ["PIX"],
-                webhooks: [
-                  { hookType: "PAYMENT_CONFIRMED", url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/ciabra-integration` }
-                ],
-                notifications: []
+                redirectTo: `${Deno.env.get('SUPABASE_URL')}/rest/v1/faturas?id=eq.${fatura.id}`
               };
-              if (customerId) ciabraPayload.customerId = customerId;
+              
+              if (customerId) {
+                ciabraPayload.customerId = customerId;
+              }
+              
+              console.log(`📋 Ciabra invoice payload:`, JSON.stringify(ciabraPayload));
 
               const ciabraResp = await fetch('https://api.az.center/invoices/applications/invoices', {
                 method: 'POST',
