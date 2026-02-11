@@ -316,14 +316,40 @@ serve(async (req) => {
     } // end xtream block
 
     // --- Try form-based login (only for koffice-v2 or unknown providers) ---
-    // --- MundoGF: connectivity + form POST test (reCAPTCHA v3 blocks full auth) ---
+    // --- MundoGF: connectivity + form POST test with credits & clients ---
     if (isMundogf) {
       try {
         console.log('🔄 MundoGF: teste de conectividade + validação via POST...');
+        
+        // Helper to merge Set-Cookie headers properly (same as mundogf-renew)
+        function mergeSetCookiesMgf(existing: string, resp: Response): string {
+          let allSetCookies: string[] = [];
+          try { allSetCookies = (resp.headers as any).getSetCookie?.() || []; } catch {}
+          if (allSetCookies.length === 0) {
+            const sc = resp.headers.get('set-cookie');
+            if (sc) allSetCookies = sc.split(/,\s*(?=[A-Za-z_-]+=)/);
+          }
+          if (allSetCookies.length === 0) return existing;
+          const existingParts = existing ? existing.split('; ').filter(Boolean) : [];
+          const cookieMap = new Map<string, string>();
+          for (const c of existingParts) { const n = c.split('=')[0]; if (n) cookieMap.set(n, c); }
+          for (const raw of allSetCookies) {
+            const c = raw.split(';')[0].trim();
+            const n = c.split('=')[0];
+            if (n) cookieMap.set(n, c);
+          }
+          return [...cookieMap.values()].join('; ');
+        }
+
         // Step 1: GET login page
         const loginPageResp = await withTimeout(fetch(`${cleanBase}/login`, {
           method: 'GET',
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', ...hdrs },
+          headers: { 
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8',
+            ...hdrs 
+          },
         }), 10000);
         const loginHtml = await loginPageResp.text();
         const hasForm = loginHtml.includes('<form') && loginHtml.includes('username') && loginHtml.includes('password');
@@ -332,106 +358,175 @@ serve(async (req) => {
           return new Response(JSON.stringify({
             success: false,
             details: `Página de login não encontrada ou inválida (status: ${loginPageResp.status})`,
-            debug: { url: `${cleanBase}/login`, status: loginPageResp.status, response: loginHtml.slice(0, 500) },
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
         }
 
-        // Extract CSRF token and cookies
+        // Extract CSRF token
         const csrfInput = loginHtml.match(/name=["']_token["']\s+value=["'](.*?)["']/);
         const csrfMeta = loginHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
-        const csrfToken = (csrfInput ? csrfInput[1] : null) || (csrfMeta ? csrfMeta[1] : null);
-        const cookies = loginPageResp.headers.get('set-cookie') || '';
-        const cookieParts = cookies.split(',').map(c => c.split(';')[0].trim()).join('; ');
+        const csrfToken = (csrfInput ? csrfInput[1] : null) || (csrfMeta ? csrfMeta[1] : null) || '';
 
-        // Extract reCAPTCHA site key from the HTML
-        const recaptchaSiteKeyMatch = loginHtml.match(/sitekey['":\s]+['"]([0-9A-Za-z_-]{20,})['"]/i) 
-          || loginHtml.match(/grecaptcha\.execute\(\s*['"]([0-9A-Za-z_-]{20,})['"]/i)
-          || loginHtml.match(/recaptcha[\/\w]*api\.js\?.*render=([0-9A-Za-z_-]{20,})/i);
-        const recaptchaSiteKey = recaptchaSiteKeyMatch ? recaptchaSiteKeyMatch[1] : null;
-        console.log(`🔑 CSRF: ${csrfToken ? csrfToken.slice(0, 20) + '...' : 'não'}, reCAPTCHA key: ${recaptchaSiteKey || 'não encontrada'}`);
+        // Detect reCAPTCHA
+        const v3RenderMatch = loginHtml.match(/recaptcha[\/\w]*api\.js\?[^"']*render=([0-9A-Za-z_-]{20,})/i)
+          || loginHtml.match(/grecaptcha\.execute\(\s*['"]([0-9A-Za-z_-]{20,})['"]/i);
+        const v2Match = loginHtml.match(/sitekey['":\s]+['"]([0-9A-Za-z_-]{20,})['"]/i);
+        const isV3 = !!v3RenderMatch;
+        const siteKey = v3RenderMatch ? v3RenderMatch[1] : (v2Match ? v2Match[1] : null);
+        console.log(`🔑 CSRF: ${csrfToken ? csrfToken.slice(0, 20) + '...' : 'não'}, reCAPTCHA: ${siteKey ? siteKey.slice(0, 15) + '...' : 'não'}, type: ${isV3 ? 'v3' : 'v2'}`);
 
-        // ---- Resolve reCAPTCHA v3 via 2Captcha ----
-        let recaptchaToken: string | null = null;
-        if (recaptchaSiteKey) {
-          recaptchaToken = await solve2Captcha(recaptchaSiteKey, `${cleanBase}/login`);
+        // Resolve reCAPTCHA
+        let captchaToken = '';
+        if (siteKey) {
+          const solved = await solve2Captcha(siteKey, `${cleanBase}/login`, isV3 ? 'v3' : 'v2');
+          if (solved) captchaToken = solved;
         }
-        const captchaResponse = recaptchaToken || 'server-test-token';
 
-        // ---- Strategy 1: Non-AJAX POST (follow redirects like a browser) ----
-        console.log('🔄 Strategy 1: POST sem AJAX (simulando browser)...');
-        const formBody1 = new URLSearchParams();
-        if (csrfToken) formBody1.append('_token', csrfToken);
-        formBody1.append('username', username);
-        formBody1.append('password', password);
-        formBody1.append('g-recaptcha-response', captchaResponse);
+        // Build cookies properly
+        let allCookies = mergeSetCookiesMgf('', loginPageResp);
+        console.log(`🍪 GET cookies: ${allCookies.slice(0, 150)}`);
 
-        const postHeaders1: Record<string, string> = {
+        // POST login
+        const formBody = new URLSearchParams();
+        if (csrfToken) formBody.append('_token', csrfToken);
+        formBody.append('username', username);
+        formBody.append('password', password);
+        if (captchaToken) formBody.append('g-recaptcha-response', captchaToken);
+
+        const postHeaders: Record<string, string> = {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
           'Origin': cleanBase,
           'Referer': `${cleanBase}/login`,
+          'Cache-Control': 'no-cache',
         };
-        if (cookieParts) postHeaders1['Cookie'] = cookieParts;
-        const xsrfMatch = cookies.match(/XSRF-TOKEN=([^;]+)/);
-        if (xsrfMatch) postHeaders1['X-XSRF-TOKEN'] = decodeURIComponent(xsrfMatch[1]);
+        if (allCookies) postHeaders['Cookie'] = allCookies;
+        const xsrfMatch = allCookies.match(/XSRF-TOKEN=([^;,\s]+)/);
+        if (xsrfMatch) postHeaders['X-XSRF-TOKEN'] = decodeURIComponent(xsrfMatch[1]);
 
-        const postResp1 = await withTimeout(fetch(`${cleanBase}/login`, {
+        const postResp = await withTimeout(fetch(`${cleanBase}/login`, {
           method: 'POST',
-          headers: postHeaders1,
-          body: formBody1.toString(),
+          headers: postHeaders,
+          body: formBody.toString(),
           redirect: 'manual',
         }), 15000);
 
-        const postStatus1 = postResp1.status;
-        const postLocation1 = postResp1.headers.get('location') || '';
-        const postText1 = await postResp1.text();
-        console.log(`📊 Strategy 1 → status: ${postStatus1}, location: ${postLocation1}, snippet: ${postText1.slice(0, 300)}`);
+        const postLocation = postResp.headers.get('location') || '';
+        allCookies = mergeSetCookiesMgf(allCookies, postResp);
+        const postBody = await postResp.text();
 
-        // Success: redirect to dashboard (not back to /login)
-        const loc1Lower = postLocation1.toLowerCase();
-        const isRedirectSuccess = (postStatus1 === 302 || postStatus1 === 301) && postLocation1 && !loc1Lower.includes('/login');
-        // Failed login: redirect back to /login - DON'T return yet, let Strategy 2 diagnose
-        const isRedirectBackToLogin = (postStatus1 === 302 || postStatus1 === 301) && loc1Lower.includes('/login');
+        const isSuccess = (postResp.status === 302 || postResp.status === 301) && postLocation && !postLocation.toLowerCase().includes('/login');
+        console.log(`📊 Login POST → status: ${postResp.status}, redirect: ${postLocation.slice(0, 80)}, success: ${isSuccess}`);
 
-        if (isRedirectSuccess) {
-          console.log('✅ Strategy 1: Login bem-sucedido (redirect para dashboard)');
-          // Follow redirect to get session info
-          const newCookies1 = postResp1.headers.get('set-cookie') || '';
-          const allCookies = cookieParts + (newCookies1 ? '; ' + newCookies1.split(',').map(c => c.split(';')[0].trim()).join('; ') : '');
+        if (isSuccess) {
+          console.log('✅ MundoGF: Login bem-sucedido! Buscando créditos e clientes...');
           
-          // Try to get credits/account info
-          let credits = null;
+          // Follow redirect to capture session cookies and get fresh CSRF
+          const followUrl = postLocation.startsWith('http') ? postLocation : `${cleanBase}${postLocation}`;
+          const followResp = await withTimeout(fetch(followUrl, {
+            method: 'GET',
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', 'Cookie': allCookies },
+            redirect: 'manual',
+          }), 10000);
+          allCookies = mergeSetCookiesMgf(allCookies, followResp);
+          const dashHtml = await followResp.text();
+          const dashCsrf = dashHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["'](.*?)["']/);
+          const freshCsrf = dashCsrf ? dashCsrf[1] : csrfToken;
+
+          // Fetch credits
+          let credits: number | null = null;
           try {
-            const dashResp = await withTimeout(fetch(`${cleanBase}${postLocation1}`, {
+            const creditsResp = await withTimeout(fetch(`${cleanBase}/ajax/getUserCredits`, {
               method: 'GET',
-              headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Cookie': allCookies },
+              headers: { 'Cookie': allCookies, 'X-Requested-With': 'XMLHttpRequest', 'User-Agent': 'Mozilla/5.0' },
             }), 10000);
-            const dashHtml = await dashResp.text();
-            // Try to extract credits from dashboard
-            const creditsMatch = dashHtml.match(/cr[eé]ditos?\s*:?\s*(\d+)/i) || dashHtml.match(/credits?\s*:?\s*(\d+)/i);
-            if (creditsMatch) credits = parseInt(creditsMatch[1]);
-            console.log(`📊 Dashboard credits: ${credits}`);
-          } catch (_) {}
+            const creditsText = await creditsResp.text();
+            let creditsJson: any = null;
+            try { creditsJson = JSON.parse(creditsText); } catch {}
+            credits = creditsJson?.credits ?? null;
+            console.log(`💰 Créditos: ${credits}`);
+          } catch (e) { console.log(`⚠️ Erro ao buscar créditos: ${(e as Error).message}`); }
+
+          // Fetch clients count
+          let totalClients = 0;
+          let activeClients = 0;
+          try {
+            const dtBody = new URLSearchParams();
+            dtBody.append('draw', '1');
+            dtBody.append('start', '0');
+            dtBody.append('length', '1');
+            dtBody.append('search[value]', '');
+
+            const clientsResp = await withTimeout(fetch(`${cleanBase}/ajax/getClients`, {
+              method: 'POST',
+              headers: {
+                'Cookie': allCookies,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': freshCsrf,
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': `${cleanBase}/clients`,
+              },
+              body: dtBody.toString(),
+            }), 15000);
+            const clientsText = await clientsResp.text();
+            let clientsJson: any = null;
+            try { clientsJson = JSON.parse(clientsText); } catch {}
+            totalClients = clientsJson?.recordsTotal ?? 0;
+            
+            // Count active clients - fetch all to count by status
+            if (totalClients > 0) {
+              const dtBody2 = new URLSearchParams();
+              dtBody2.append('draw', '1');
+              dtBody2.append('start', '0');
+              dtBody2.append('length', String(Math.min(totalClients, 5000)));
+              dtBody2.append('search[value]', '');
+              const clientsResp2 = await withTimeout(fetch(`${cleanBase}/ajax/getClients`, {
+                method: 'POST',
+                headers: {
+                  'Cookie': allCookies,
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRF-TOKEN': freshCsrf,
+                  'User-Agent': 'Mozilla/5.0',
+                  'Referer': `${cleanBase}/clients`,
+                },
+                body: dtBody2.toString(),
+              }), 20000);
+              const clientsText2 = await clientsResp2.text();
+              let clientsJson2: any = null;
+              try { clientsJson2 = JSON.parse(clientsText2); } catch {}
+              if (clientsJson2?.data) {
+                activeClients = clientsJson2.data.filter((c: any) => {
+                  const status = String(c.status || '').toLowerCase();
+                  return status === '1' || status === 'active' || status === 'enabled' || status === 'ativo';
+                }).length;
+              }
+            }
+            console.log(`👥 Clientes: total=${totalClients}, ativos=${activeClients}`);
+          } catch (e) { console.log(`⚠️ Erro ao buscar clientes: ${(e as Error).message}`); }
 
           return new Response(JSON.stringify({
             success: true,
             endpoint: `${cleanBase}/login`,
             type: 'MundoGF Session',
-            account: { status: 'Active', user: { username }, token_received: false, credits },
-            data: { connectivity: true, credentialsValidated: true, redirect: postLocation1, credits },
+            account: { 
+              status: 'Conectado com sucesso!', 
+              user: { username }, 
+              token_received: false, 
+              credits,
+              totalClients,
+              activeClients,
+              captchaSolved: true,
+            },
+            data: { connectivity: true, credentialsValidated: true, redirect: postLocation, credits, totalClients, activeClients },
             logs,
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
         }
 
-        if (isRedirectBackToLogin) {
-          console.log('⚠️ Strategy 1: Redirect de volta ao /login — tentando Strategy 2 para diagnóstico...');
-          // Don't return - fall through to Strategy 2 for proper credential diagnosis
-        }
-
-        // ---- Strategy 2: AJAX POST (to get JSON errors) ----
-        console.log('🔄 Strategy 2: POST AJAX para diagnóstico...');
-        // Get fresh CSRF + cookies
+        // Login failed - try AJAX Strategy 2 for diagnosis
+        console.log('⚠️ Strategy 1 falhou, tentando Strategy 2 para diagnóstico...');
         const loginPageResp2 = await withTimeout(fetch(`${cleanBase}/login`, {
           method: 'GET',
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', ...hdrs },
@@ -443,10 +538,9 @@ serve(async (req) => {
         const cookies2 = loginPageResp2.headers.get('set-cookie') || '';
         const cookieParts2 = cookies2.split(',').map(c => c.split(';')[0].trim()).join('; ');
 
-        // Resolve fresh reCAPTCHA for Strategy 2 if needed and first one wasn't solved
-        let captchaResponse2 = captchaResponse;
-        if (recaptchaSiteKey && !recaptchaToken) {
-          const freshToken = await solve2Captcha(recaptchaSiteKey, `${cleanBase}/login`);
+        let captchaResponse2 = captchaToken || 'server-test-token';
+        if (siteKey && !captchaToken) {
+          const freshToken = await solve2Captcha(siteKey, `${cleanBase}/login`, isV3 ? 'v3' : 'v2');
           if (freshToken) captchaResponse2 = freshToken;
         }
 
@@ -478,10 +572,9 @@ serve(async (req) => {
         const postStatus2 = postResp2.status;
         const postText2 = await postResp2.text();
         let postJson2: any = null;
-        try { postJson2 = JSON.parse(postText2); } catch (_) {}
+        try { postJson2 = JSON.parse(postText2); } catch {}
         console.log(`📊 Strategy 2 → status: ${postStatus2}, snippet: ${postText2.slice(0, 300)}`);
 
-        // 422 with validation errors
         if (postStatus2 === 422 && postJson2?.errors) {
           const errorKeys = Object.keys(postJson2.errors);
           const hasCredentialError = errorKeys.includes('username') || errorKeys.includes('password');
@@ -490,50 +583,40 @@ serve(async (req) => {
             return new Response(JSON.stringify({
               success: false,
               details: 'Falha na autenticação MundoGF: Login falhou – Usuário ou senha incorretos.',
-              debug: { url: `${cleanBase}/login`, status: postStatus2, errors: postJson2.errors },
             }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
           }
 
-          // Only recaptcha error = credentials might be valid but can't confirm password
           const onlyRecaptcha = errorKeys.length === 1 && errorKeys[0] === 'g-recaptcha-response';
           if (onlyRecaptcha) {
-            const recaptchaNote = recaptchaToken
-              ? 'Usuário encontrado mas o token reCAPTCHA resolvido pelo 2Captcha foi rejeitado. Tente novamente.'
-              : 'Usuário encontrado no servidor. A senha não pôde ser verificada automaticamente pois o reCAPTCHA v3 impede a validação completa e a chave 2Captcha não está configurada.';
+            const recaptchaNote = captchaToken
+              ? 'O reCAPTCHA v3 impede verificação completa da senha.'
+              : 'O reCAPTCHA v3 impede verificação completa da senha. Configure a chave 2Captcha para resolver automaticamente.';
             return new Response(JSON.stringify({
               success: true,
               endpoint: `${cleanBase}/login`,
               type: 'MundoGF Session',
-              account: { status: 'Active', user: { username }, token_received: false },
-              data: {
-                connectivity: true,
-                credentialsValidated: false,
-                usernameValidated: true,
-                captchaSolved: !!recaptchaToken,
-                note: recaptchaNote,
-              },
+              account: { status: 'Conectado com sucesso!', user: { username }, token_received: false, note: recaptchaNote },
+              data: { connectivity: true, credentialsValidated: false, usernameValidated: true, captchaSolved: false },
               logs,
             }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
           }
         }
 
-        // 200 with redirect in AJAX = success
         if (postStatus2 === 200 && postJson2?.redirect) {
           return new Response(JSON.stringify({
             success: true,
             endpoint: `${cleanBase}/login`,
             type: 'MundoGF Session',
-            account: { status: 'Active', user: { username }, token_received: false },
+            account: { status: 'Conectado com sucesso!', user: { username }, token_received: false },
             data: { connectivity: true, credentialsValidated: true, redirect: postJson2.redirect },
             logs,
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
         }
 
-        // Fallback
         return new Response(JSON.stringify({
           success: false,
           details: 'Falha na autenticação MundoGF.',
-          debug: { url: `${cleanBase}/login`, status: postStatus2, response: postText2.slice(0, 500), status1: postStatus1, location1: postLocation1 },
+          debug: { status: postStatus2, response: postText2.slice(0, 500) },
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
 
       } catch (e) {

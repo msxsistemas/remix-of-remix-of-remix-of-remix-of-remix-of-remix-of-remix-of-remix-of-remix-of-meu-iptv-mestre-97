@@ -199,11 +199,32 @@ export default function ClientesIntegracoes() {
         if (data.data?.token) {
           localStorage.setItem("auth_token", data.data.token);
         }
+        // Build details with credits and clients info if available
+        let detailLines = [
+          `✅ Painel: ${nomePainel}`,
+          `🔗 Endpoint: ${data.endpoint}`,
+          `👤 Usuário: ${usuario}`,
+          `📡 Status: ${account?.status ?? 'OK'}`,
+        ];
+        if (account?.credits !== undefined && account?.credits !== null) {
+          detailLines.push(`💰 Créditos: ${account.credits}`);
+        }
+        if (account?.totalClients !== undefined) {
+          detailLines.push(`👥 Total de Clientes: ${account.totalClients}`);
+        }
+        if (account?.activeClients !== undefined) {
+          detailLines.push(`✅ Clientes Ativos: ${account.activeClients}`);
+        }
+        if (account?.note) {
+          detailLines.push(`\n⚠️ ${account.note}`);
+        }
+        detailLines.push(`\n✅ Autenticação realizada com sucesso no painel.`);
+        
         setTestResultModal({
           isOpen: true,
           success: true,
           message: "CONEXÃO REAL BEM-SUCEDIDA!",
-          details: `✅ Painel: ${nomePainel}\n🔗 Endpoint: ${data.endpoint}\n👤 Usuário: ${usuario}\n📡 Status: ${account?.status ?? 'OK'}\n\n✅ Autenticação realizada com sucesso no painel.`
+          details: detailLines.join('\n')
         });
       } else {
         setTestResultModal({
@@ -261,11 +282,31 @@ export default function ClientesIntegracoes() {
 
       if (data.success) {
         const account = data.account;
+        let detailLines = [
+          `✅ Painel: ${panel.nome}`,
+          `🔗 Endpoint: ${data.endpoint}`,
+          `👤 Usuário: ${panel.usuario}`,
+          `📡 Status: ${(account?.status ?? 'OK')}`,
+        ];
+        if (account?.exp_date) detailLines.push(`⏱️ Expira: ${account.exp_date}`);
+        if (account?.credits !== undefined && account?.credits !== null) {
+          detailLines.push(`💰 Créditos: ${account.credits}`);
+        }
+        if (account?.totalClients !== undefined) {
+          detailLines.push(`👥 Total de Clientes: ${account.totalClients}`);
+        }
+        if (account?.activeClients !== undefined) {
+          detailLines.push(`✅ Clientes Ativos: ${account.activeClients}`);
+        }
+        if (account?.note) {
+          detailLines.push(`\n⚠️ ${account.note}`);
+        }
+        detailLines.push(`\n✅ Autenticação realizada com sucesso no painel.`);
         setTestResultModal({
           isOpen: true,
           success: true,
           message: 'CONEXÃO REAL BEM-SUCEDIDA!',
-          details: `✅ Painel: ${panel.nome}\n🔗 Endpoint: ${data.endpoint}\n👤 Usuário: ${panel.usuario}\n📡 Status: ${(account?.status ?? 'OK')}\n⏱️ Expira: ${account?.exp_date ?? 'n/d'}\n\n✅ Autenticação realizada com sucesso no painel.`,
+          details: detailLines.join('\n'),
         });
       } else {
         const logs = Array.isArray(data.logs)
