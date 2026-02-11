@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export default function AdminProtectedRoute({ children }: { children?: React.ReactNode }) {
-  const { isAdmin, loading } = useAdminAuth();
+  const { isAdmin, loading, user } = useAdminAuth();
 
   if (loading) {
     return (
@@ -15,8 +15,8 @@ export default function AdminProtectedRoute({ children }: { children?: React.Rea
     );
   }
 
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
+  if (!user || !isAdmin) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;
