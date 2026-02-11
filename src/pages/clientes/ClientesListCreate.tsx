@@ -7,7 +7,7 @@ import { useTemplatesMensagens } from "@/hooks/useTemplatesMensagens";
 import { useEvolutionAPISimple } from "@/hooks/useEvolutionAPISimple";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash, Plus, Send, RefreshCw, Power, Copy, Bell, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Edit, Trash, Plus, Send, RefreshCw, Power, Bell, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import type { Cliente } from "@/types/database";
 import { Input } from "@/components/ui/input";
@@ -79,12 +79,8 @@ export default function ClientesListCreate() {
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [clienteParaRenovar, setClienteParaRenovar] = useState<Cliente | null>(null);
   
-  // Estados para templates e mensagens
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [clienteParaMensagem, setClienteParaMensagem] = useState<Cliente | null>(null);
-  const [templateSelecionado, setTemplateSelecionado] = useState<string>("");
-  const [mensagemGerada, setMensagemGerada] = useState("");
+   // Estados para templates de cobrança
+   const [templates, setTemplates] = useState<any[]>([]);
   
   // Estados para WhatsApp e toggle
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
@@ -711,114 +707,6 @@ export default function ClientesListCreate() {
     } finally {
       setNotificandoId(null);
     }
-  };
-
-  // Função para abrir diálogo de templates
-  const handleCopiarMensagem = (cliente: Cliente) => {
-    setClienteParaMensagem(cliente);
-    setTemplateSelecionado("");
-    setMensagemGerada("");
-    setTemplateDialogOpen(true);
-  };
-
-  // Função para gerar mensagem com dados do cliente
-  const gerarMensagemComCliente = () => {
-    if (!templateSelecionado) {
-      toast({
-        title: "Erro",
-        description: "Selecione um template",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const template = allTemplates.find(t => t.id === templateSelecionado);
-    if (!template || !clienteParaMensagem) return;
-
-    const sanitizeNumber = (val: any) => {
-      if (val === null || val === undefined) return 0;
-      const cleaned = String(val).replace(/[^0-9,.-]/g, '').replace(',', '.');
-      const n = parseFloat(cleaned);
-      return isNaN(n) ? 0 : n;
-    };
-
-    const normalize = (s: any) => String(s ?? '').trim().toLowerCase();
-
-    const findPlano = () => {
-      const cliVal = clienteParaMensagem.plano;
-      let p = planos.find(pl => String(pl.id) === String(cliVal));
-      if (p) return p;
-      p = planos.find(pl => normalize(pl.nome) === normalize(cliVal));
-      if (p) return p;
-      p = planos.find(pl => normalize(pl.nome).includes(normalize(cliVal)) || normalize(cliVal).includes(normalize(pl.nome)));
-      return p;
-    };
-
-    const plano = findPlano();
-    const planoNome = plano?.nome || clienteParaMensagem.plano || "N/A";
-    const valorPlano = sanitizeNumber(plano?.valor);
-
-    const hora = new Date().getHours();
-    let saudacao = "Bom dia";
-    if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
-    else if (hora >= 18) saudacao = "Boa noite";
-
-    let dataVencimento = "N/A";
-    if (clienteParaMensagem.data_vencimento) {
-      try {
-        dataVencimento = format(new Date(clienteParaMensagem.data_vencimento), "dd/MM/yyyy");
-      } catch {
-        dataVencimento = clienteParaMensagem.data_vencimento;
-      }
-    }
-
-    const desconto = sanitizeNumber(clienteParaMensagem.desconto);
-    const total = Math.max(0, valorPlano - desconto);
-
-    let mensagemFinal = template.mensagem || "";
-    
-    const f2 = (n: number) => n.toFixed(2);
-    const normalizeKey = (s: any) => String(s ?? "").toLowerCase().replace(/[\s_-]/g, "");
-
-    const map: Record<string, string> = {
-      saudacao,
-      nome: clienteParaMensagem.nome || "",
-      cliente: clienteParaMensagem.nome || "",
-      nomecliente: clienteParaMensagem.nome || "",
-      plano: planoNome,
-      valor: f2(valorPlano),
-      valorplano: f2(valorPlano),
-      desconto: f2(desconto),
-      total: f2(total),
-      vencimento: dataVencimento,
-      datavencimento: dataVencimento,
-      usuario: clienteParaMensagem.usuario || clienteParaMensagem.email || "",
-      senha: clienteParaMensagem.senha || "",
-    };
-
-    mensagemFinal = mensagemFinal.replace(/\{([^{}]+)\}/g, (full, key) => {
-      const k = normalizeKey(key);
-      return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : full;
-    });
-
-    setMensagemGerada(mensagemFinal);
-  };
-
-  const copiarMensagemGerada = () => {
-    if (!mensagemGerada) {
-      toast({
-        title: "Erro",
-        description: "Gere a mensagem primeiro",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigator.clipboard.writeText(mensagemGerada);
-    toast({
-      title: "Sucesso",
-      description: "Mensagem copiada!",
-    });
   };
 
   useEffect(() => {
@@ -1884,73 +1772,6 @@ export default function ClientesListCreate() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog de Templates e Mensagem */}
-      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gerar mensagem para {clienteParaMensagem?.nome}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="template">Selecione o template</Label>
-              <Select value={templateSelecionado} onValueChange={setTemplateSelecionado}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha um template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allTemplates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              onClick={gerarMensagemComCliente}
-              className="w-full"
-            >
-              Gerar mensagem
-            </Button>
-
-            {mensagemGerada && (
-              <div className="space-y-2">
-                <Label>Mensagem gerada</Label>
-                <Textarea
-                  value={mensagemGerada}
-                  readOnly
-                  rows={10}
-                  className="bg-muted"
-                />
-                <Button 
-                  onClick={copiarMensagemGerada}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar mensagem
-                </Button>
-              </div>
-            )}
-
-            <div className="pt-2 text-sm text-muted-foreground">
-              <p className="font-medium mb-1">Variáveis disponíveis nos templates:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>{"{saudacao}"} - Saudação baseada no horário (Bom dia, Boa tarde, Boa noite)</li>
-                <li>{"{nome}"}, {"{cliente}"} ou {"{nome_cliente}"} - Nome do cliente</li>
-                <li>{"{usuario}"} - Usuário do cliente</li>
-                <li>{"{senha}"} - Senha do cliente</li>
-                <li>{"{plano}"} - Nome do plano</li>
-                <li>{"{valor}"} ou {"{valor_plano}"} - Valor do plano</li>
-                <li>{"{desconto}"} - Desconto aplicado</li>
-                <li>{"{total}"} - Total após desconto (valor - desconto)</li>
-                <li>{"{vencimento}"} ou {"{data_vencimento}"} - Data de vencimento</li>
-              </ul>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal de WhatsApp com templates */}
       <Dialog open={whatsappDialogOpen} onOpenChange={(open) => {
