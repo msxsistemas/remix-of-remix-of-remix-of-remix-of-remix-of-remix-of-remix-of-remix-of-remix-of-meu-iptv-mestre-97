@@ -66,6 +66,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
+import AdminLogin from "./pages/admin/AdminLogin";
 
 const queryClient = new QueryClient();
 import Auth from "./pages/auth/Auth";
@@ -148,7 +149,8 @@ const App = () => (
           </Route>
 
           {/* Admin routes */}
-          <Route element={<ProtectedRoute><AdminProtectedRoute><AdminLayout /></AdminProtectedRoute></ProtectedRoute>}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/planos" element={<AdminPlanos />} />
