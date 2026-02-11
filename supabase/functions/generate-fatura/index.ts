@@ -394,13 +394,13 @@ serve(async (req) => {
               // Step 1: Create or find customer in Ciabra
               let customerId = '';
               try {
-                const customerResp = await fetch('https://api.az.center/customers/applications/customers', {
+                const phone = fatura.cliente_whatsapp ? `+55${fatura.cliente_whatsapp.replace(/\D/g, '')}` : '';
+                const customerResp = await fetch('https://api.az.center/invoices/applications/customers', {
                   method: 'POST',
                   headers: ciabraHeaders,
                   body: JSON.stringify({
-                    name: fatura.cliente_nome || 'Cliente',
-                    phone: fatura.cliente_whatsapp || '',
-                    externalId: `cliente-${fatura.cliente_whatsapp || fatura.id.substring(0, 8)}`,
+                    fullName: fatura.cliente_nome || 'Cliente',
+                    phone: phone,
                   }),
                 });
                 const custText = await customerResp.text();
