@@ -120,7 +120,7 @@ const App = () => (
             <Route path="/servidores/mundogf" element={<ServidorMundogf />} />
             <Route path="/servidores/uniplay" element={<ServidorUniplay />} />
             <Route path="/servidores/playfast" element={<ServidorPlayfast />} />
-            <Route path="/financeiro-extra/checkout" element={<Checkout />} />
+            <Route path="/gateways/checkout" element={<Checkout />} />
             <Route path="/financeiro-extra/assas" element={<Assas />} />
             <Route path="/configuracoes/asaas" element={<Assas />} />
             <Route path="/configuracoes/mercado-pago" element={<MercadoPago />} />
