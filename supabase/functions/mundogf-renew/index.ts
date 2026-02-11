@@ -19,7 +19,8 @@ async function solve2Captcha(siteKey: string, pageUrl: string): Promise<string |
   if (!apiKey) { console.log('⚠️ 2Captcha: API key não configurada'); return null; }
   try {
     console.log('🤖 2Captcha: Enviando reCAPTCHA para resolução...');
-    const submitUrl = `https://2captcha.com/in.php?key=${apiKey}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${encodeURIComponent(pageUrl)}&version=v3&action=login&min_score=0.3&json=1`;
+    // Try to detect if v2 or v3 based on siteKey usage - default to v2 invisible for Laravel panels
+    const submitUrl = `https://2captcha.com/in.php?key=${apiKey}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${encodeURIComponent(pageUrl)}&invisible=1&json=1`;
     const submitResp = await withTimeout(fetch(submitUrl), 15000);
     const submitJson = await submitResp.json();
     if (submitJson.status !== 1) { console.log(`❌ 2Captcha submit falhou: ${JSON.stringify(submitJson)}`); return null; }
@@ -339,7 +340,7 @@ serve(async (req) => {
         // Look for select with options like <option value="1">1 Mês</option>
         const optionMatches = renewPageHtml.match(/<option\s+value=["']([^"']+)["'][^>]*>([^<]+)<\/option>/gi);
         if (optionMatches) {
-          console.log(`📋 Available options: ${optionMatches.join(', ')}`);
+          console.log(`📋 Available options: ${optionMatches.map(m => m.replace(/<[^>]*>/g, '')).join(', ')}`);
           
           // Map duration to month count
           let targetMonths = Number(duration);
@@ -347,19 +348,37 @@ serve(async (req) => {
             targetMonths = Math.max(1, Math.ceil(Number(duration) / 30));
           }
           
-          // Try to find matching option by text content
+          // Extract all options into a list
+          const parsedOptions: { value: string; text: string }[] = [];
           for (const match of optionMatches) {
             const optionMatch = match.match(/<option\s+value=["']([^"']+)["'][^>]*>([^<]+)<\/option>/i);
             if (optionMatch) {
-              const optionValue = optionMatch[1];
-              const optionText = optionMatch[2];
-              
-              // Check if this option matches our target
-              if (optionText.includes(`${targetMonths}`) || optionText.includes('Mês') || optionText.includes('Meses')) {
-                validOption = optionValue;
-                console.log(`✅ Matched option: value="${optionValue}", text="${optionText}"`);
-                break;
-              }
+              parsedOptions.push({ value: optionMatch[1], text: optionMatch[2].trim() });
+            }
+          }
+          
+          console.log(`📋 Parsed options: ${JSON.stringify(parsedOptions)}`);
+          
+          // Priority 1: Exact match like "1 Mês" or "3 Meses"
+          const exactMatch = parsedOptions.find(o => {
+            const textLower = o.text.toLowerCase();
+            if (targetMonths === 1 && (textLower === '1 mês' || textLower === '1 mes')) return true;
+            if (targetMonths > 1 && textLower === `${targetMonths} meses`) return true;
+            return false;
+          });
+          
+          if (exactMatch) {
+            validOption = exactMatch.value;
+            console.log(`✅ Exact match: value="${exactMatch.value}", text="${exactMatch.text}"`);
+          } else {
+            // Priority 2: Contains the month number
+            const partialMatch = parsedOptions.find(o => {
+              const nums = o.text.match(/(\d+)/);
+              return nums && Number(nums[1]) === targetMonths;
+            });
+            if (partialMatch) {
+              validOption = partialMatch.value;
+              console.log(`✅ Partial match: value="${partialMatch.value}", text="${partialMatch.text}"`);
             }
           }
         }
