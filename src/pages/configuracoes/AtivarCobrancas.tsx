@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { useConfiguracoes } from "@/hooks/useDatabase";
 import { toast } from "sonner";
 
 export default function AtivarCobrancas() {
   const [ativo, setAtivo] = useState(false);
+  const [initialValue, setInitialValue] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { buscar, salvarCobrancasStatus } = useConfiguracoes();
 
   useEffect(() => {
@@ -17,9 +20,24 @@ export default function AtivarCobrancas() {
       const cfg = await buscar();
       if (cfg && typeof cfg.cobrancas_ativas === 'boolean') {
         setAtivo(cfg.cobrancas_ativas);
+        setInitialValue(cfg.cobrancas_ativas);
       }
     })();
   }, []);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await salvarCobrancasStatus(ativo);
+      setInitialValue(ativo);
+      toast.success("Configuração salva com sucesso!");
+    } catch (e) {
+      setAtivo(initialValue);
+      toast.error("Não foi possível atualizar o status");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -50,16 +68,13 @@ export default function AtivarCobrancas() {
               <Switch
                 id="ativar"
                 checked={ativo}
-                onCheckedChange={async (v) => {
-                  setAtivo(v);
-                  try {
-                    await salvarCobrancasStatus(v);
-                  } catch (e) {
-                    setAtivo(!v);
-                    toast.error("Não foi possível atualizar o status");
-                  }
-                }}
+                onCheckedChange={setAtivo}
               />
+            </div>
+            <div className="flex justify-center border-t pt-4 mt-4">
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Configurações"}
+              </Button>
             </div>
           </CardContent>
         </Card>
