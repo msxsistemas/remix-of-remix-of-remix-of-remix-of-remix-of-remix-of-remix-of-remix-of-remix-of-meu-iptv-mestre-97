@@ -101,16 +101,17 @@ serve(async (req) => {
       case 'configure': {
         const { apiKey, publicKey, webhookUrl } = body;
 
-        if (!apiKey) {
+        if (!apiKey || !publicKey) {
           return new Response(
-            JSON.stringify({ success: false, error: 'Chave Secreta é obrigatória' }),
+            JSON.stringify({ success: false, error: 'Chave Pública e Chave Secreta são obrigatórias' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           );
         }
 
         try {
-          // Store full key as base64 for later PIX generation
+          // Store both keys as base64 for later auth token generation
           const keyEncoded = btoa(apiKey);
+          const pubKeyEncoded = btoa(publicKey);
 
           const { data: existing } = await supabaseAdmin
             .from('ciabra_config')
@@ -123,6 +124,7 @@ serve(async (req) => {
               .from('ciabra_config')
               .update({
                 api_key_hash: keyEncoded,
+                public_key_hash: pubKeyEncoded,
                 webhook_url: webhookUrl || null,
                 is_configured: true,
                 updated_at: new Date().toISOString()
@@ -134,6 +136,7 @@ serve(async (req) => {
               .insert({
                 user_id: user.id,
                 api_key_hash: keyEncoded,
+                public_key_hash: pubKeyEncoded,
                 webhook_url: webhookUrl || null,
                 is_configured: true
               });
@@ -165,7 +168,7 @@ serve(async (req) => {
         // Get stored API key
         const { data: config } = await supabaseAdmin
           .from('ciabra_config')
-          .select('api_key_hash')
+          .select('api_key_hash, public_key_hash')
           .eq('user_id', user.id)
           .eq('is_configured', true)
           .maybeSingle();
@@ -177,35 +180,48 @@ serve(async (req) => {
           );
         }
 
-        const apiKey = atob(config.api_key_hash);
+        const privateKey = atob(config.api_key_hash);
+        const publicKey = config.public_key_hash ? atob(config.public_key_hash) : '';
+        const basicToken = btoa(`${publicKey}:${privateKey}`);
+        const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
         try {
-          const chargeResp = await fetch(`${CIABRA_BASE_URL}/v1/charges`, {
+          const chargeResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/invoices`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              'Authorization': `Basic ${basicToken}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              amount: Math.round(parseFloat(valor) * 100),
-              payment_method: 'pix',
               description: descricao || `Cobrança - ${cliente_nome || 'Cliente'}`,
+              dueDate: dueDate,
+              installmentCount: 1,
+              invoiceType: "SINGLE",
+              items: [],
+              price: parseFloat(valor),
+              paymentTypes: ["PIX"],
+              webhooks: [
+                { hookType: "PAYMENT_CONFIRMED", url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/ciabra-integration` }
+              ],
+              notifications: []
             }),
           });
 
-          const chargeData = await chargeResp.json();
-          console.log('📋 Ciabra charge response:', JSON.stringify(chargeData));
+          const chargeText = await chargeResp.text();
+          console.log('📋 Ciabra charge response:', chargeText.substring(0, 500));
+          let chargeData: any = {};
+          try { chargeData = JSON.parse(chargeText); } catch { /* non-JSON */ }
 
           if (!chargeResp.ok) {
-            throw new Error(chargeData.message || chargeData.error || 'Erro ao criar cobrança Ciabra');
+            throw new Error(chargeData.message || chargeData.error || `Erro Ciabra (${chargeResp.status})`);
           }
 
           return new Response(
             JSON.stringify({
               success: true,
-              charge_id: String(chargeData.id || chargeData.charge_id || ''),
-              pix_qr_code: chargeData.pix?.qr_code_base64 || chargeData.qr_code_base64 || chargeData.pix_qr_code || null,
-              pix_copia_cola: chargeData.pix?.qr_code || chargeData.pix_code || chargeData.pix_copia_cola || chargeData.br_code || null,
+              charge_id: String(chargeData.id || ''),
+              pix_qr_code: chargeData.payment?.pix?.qrCode || null,
+              pix_copia_cola: chargeData.payment?.pix?.brCode || null,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
