@@ -183,7 +183,7 @@ async function automateUniplayLogin(cdp: CDPSession, username: string, password:
     await cdp.send("Page.navigate", { url: UNIPLAY_LOGIN_URL });
     await new Promise(r => setTimeout(r, 6000)); // Wait for page load
 
-    // Log page state before filling
+    // Log page state
     const pageState = await cdp.send("Runtime.evaluate", {
       expression: `JSON.stringify({
         url: location.href,
@@ -194,63 +194,19 @@ async function automateUniplayLogin(cdp: CDPSession, username: string, password:
     });
     console.log(`📋 Page state: ${pageState.result?.value}`);
 
-    console.log("📝 Preenchendo formulário de login...");
-
-    // Focus and type username using CDP Input domain (works with Angular/Vue/React)
-    const focusedUser = await cdp.send("Runtime.evaluate", {
-      expression: `
-        const el = document.querySelector('input[name="username"], input[type="text"], input[placeholder*="usu"], input[placeholder*="user"], input[placeholder*="User"], #username, input[ng-model*="user"], input[formcontrolname*="user"]');
-        if (el) { el.focus(); el.value = ''; el.dispatchEvent(new Event('focus', {bubbles:true})); }
-        !!el;
-      `,
-      returnByValue: true,
-    });
-    console.log(`👤 Username field found: ${focusedUser.result?.value}`);
-    await cdpTypeText(cdp, username);
-
-    // Tab to password field or focus it directly
-    await new Promise(r => setTimeout(r, 200));
-    const focusedPass = await cdp.send("Runtime.evaluate", {
-      expression: `
-        const el = document.querySelector('input[name="password"], input[type="password"], #password, input[ng-model*="pass"], input[formcontrolname*="pass"]');
-        if (el) { el.focus(); el.value = ''; el.dispatchEvent(new Event('focus', {bubbles:true})); }
-        !!el;
-      `,
-      returnByValue: true,
-    });
-    console.log(`🔑 Password field found: ${focusedPass.result?.value}`);
-    await cdpTypeText(cdp, password);
-
-    await new Promise(r => setTimeout(r, 500));
-
-    // Verify fields were filled
-    const fieldValues = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({
-        user: (document.querySelector('input[type="text"], input[name="username"]') || {}).value || '',
-        pass: (document.querySelector('input[type="password"]') || {}).value ? '***filled***' : '',
-      })`,
-      returnByValue: true,
-    });
-    console.log(`📝 Field values: ${fieldValues.result?.value}`);
-
-    // Solve reCAPTCHA
+    // === STEP 1: Solve reCAPTCHA FIRST ===
     const captchaToken = await solve2CaptchaV2(RECAPTCHA_SITEKEY, UNIPLAY_LOGIN_URL);
     if (captchaToken) {
       console.log("🔐 Injetando token reCAPTCHA...");
       await cdp.send("Runtime.evaluate", {
         expression: `
-          // Set the response textarea
           const textarea = document.querySelector('#g-recaptcha-response, textarea[name="g-recaptcha-response"]');
           if (textarea) { textarea.value = ${JSON.stringify(captchaToken)}; textarea.style.display = 'block'; }
-          
-          // Try to find and call the reCAPTCHA callback
-          let callbackCalled = false;
           try {
             if (typeof ___grecaptcha_cfg !== 'undefined') {
               const clients = ___grecaptcha_cfg.clients || {};
               for (const key of Object.keys(clients)) {
                 const client = clients[key];
-                // Traverse the client object to find callback functions
                 const findCallback = (obj, depth) => {
                   if (!obj || depth > 4) return null;
                   if (typeof obj === 'function') return obj;
@@ -264,26 +220,61 @@ async function automateUniplayLogin(cdp: CDPSession, username: string, password:
                   return null;
                 };
                 const cb = findCallback(client, 0);
-                if (cb) { cb(${JSON.stringify(captchaToken)}); callbackCalled = true; break; }
+                if (cb) { cb(${JSON.stringify(captchaToken)}); break; }
               }
             }
-          } catch(e) { console.log('captcha callback error:', e); }
-          callbackCalled;
+          } catch(e) {}
+          true;
         `,
         returnByValue: true,
       });
       await new Promise(r => setTimeout(r, 1000));
     }
 
-    // Click login button
+    // === STEP 2: Type username ===
+    console.log("📝 Preenchendo formulário de login...");
+    const focusedUser = await cdp.send("Runtime.evaluate", {
+      expression: `
+        const el = document.querySelector('input[placeholder="Usuário"], input[type="text"]');
+        if (el) { el.focus(); el.value = ''; el.dispatchEvent(new Event('focus', {bubbles:true})); }
+        !!el;
+      `,
+      returnByValue: true,
+    });
+    console.log(`👤 Username field found: ${focusedUser.result?.value}`);
+    await cdpTypeText(cdp, username);
+
+    // === STEP 3: Type password ===
+    await new Promise(r => setTimeout(r, 200));
+    const focusedPass = await cdp.send("Runtime.evaluate", {
+      expression: `
+        const el = document.querySelector('input[type="password"]');
+        if (el) { el.focus(); el.value = ''; el.dispatchEvent(new Event('focus', {bubbles:true})); }
+        !!el;
+      `,
+      returnByValue: true,
+    });
+    console.log(`🔑 Password field found: ${focusedPass.result?.value}`);
+    await cdpTypeText(cdp, password);
+
+    await new Promise(r => setTimeout(r, 500));
+
+    // Verify fields
+    const fieldValues = await cdp.send("Runtime.evaluate", {
+      expression: `JSON.stringify({
+        user: (document.querySelector('input[placeholder="Usuário"], input[type="text"]') || {}).value || '',
+        pass: (document.querySelector('input[type="password"]') || {}).value ? '***filled***' : '',
+      })`,
+      returnByValue: true,
+    });
+    console.log(`📝 Field values: ${fieldValues.result?.value}`);
+
+    // === STEP 4: Click login button ===
     console.log("🔘 Clicando botão de login...");
     const clickResult = await cdp.send("Runtime.evaluate", {
       expression: `
-        const btn = document.querySelector('button[type="submit"], button.btn-primary, button.login-btn, .btn-login, input[type="submit"], button:not([type="button"])');
-        if (btn) { 
-          console.log('Clicking button:', btn.textContent?.trim());
-          btn.click(); 
-        }
+        const btn = document.querySelector('button.btn-primary, button[type="submit"], input[type="submit"]');
+        if (btn) btn.click();
         btn ? btn.textContent?.trim() : 'NOT FOUND';
       `,
       returnByValue: true,
