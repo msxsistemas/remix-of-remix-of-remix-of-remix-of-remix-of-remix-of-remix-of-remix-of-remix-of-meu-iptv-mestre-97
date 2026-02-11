@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Settings } from "lucide-react";
 import { useConfiguracoes } from "@/hooks/useDatabase";
 import { toast } from "sonner";
 
@@ -11,15 +12,7 @@ export default function AtivarCobrancas() {
 
   useEffect(() => {
     document.title = "Ativar Cobranças | Gestor Tech Play";
-    const d = document.querySelector('meta[name="description"]') || document.createElement('meta');
-    d.setAttribute('name', 'description');
-    d.setAttribute('content', 'Ative ou desative o sistema de cobranças.');
-    if (!d.parentElement) document.head.appendChild(d);
-    let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
-    link.href = window.location.href;
 
-    // carregar status
     (async () => {
       const cfg = await buscar();
       if (cfg && typeof cfg.cobrancas_ativas === 'boolean') {
@@ -29,31 +22,48 @@ export default function AtivarCobrancas() {
   }, []);
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ativar Cobranças</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Switch
-              id="ativar"
-              checked={ativo}
-              onCheckedChange={async (v) => {
-                setAtivo(v);
-                try {
-                  await salvarCobrancasStatus(v);
-                } catch (e) {
-                  setAtivo(!v);
-                  toast.error("Não foi possível atualizar o status");
-                }
-              }}
-            />
-            <Label htmlFor="ativar">{ativo ? "Cobranças ativas" : "Cobranças desativadas"}</Label>
+    <div>
+      <header className="rounded-lg border mb-6 overflow-hidden shadow" aria-label="Ativar Cobranças">
+        <div className="px-4 py-3 text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5" aria-hidden="true" />
+            <h1 className="text-base font-semibold tracking-tight">Ativar Cobranças</h1>
           </div>
-        </CardContent>
-      </Card>
-    </section>
+          <p className="text-xs/6 opacity-90">Ative ou desative o sistema de cobranças automáticas para seus clientes.</p>
+        </div>
+      </header>
+
+      <main className="space-y-4">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Status do Sistema</CardTitle>
+              <Badge variant={ativo ? "default" : "destructive"} className="font-semibold">
+                {ativo ? "Ativo" : "Desativado"}
+              </Badge>
+            </div>
+            <CardDescription>Controle se o sistema de cobranças está ativo para seus clientes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border px-3 py-2 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Habilitar Cobranças</span>
+              <Switch
+                id="ativar"
+                checked={ativo}
+                onCheckedChange={async (v) => {
+                  setAtivo(v);
+                  try {
+                    await salvarCobrancasStatus(v);
+                  } catch (e) {
+                    setAtivo(!v);
+                    toast.error("Não foi possível atualizar o status");
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
   );
 }
