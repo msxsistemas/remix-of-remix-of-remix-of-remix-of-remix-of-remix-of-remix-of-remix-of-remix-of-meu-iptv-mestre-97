@@ -192,23 +192,22 @@ serve(async (req) => {
                 fatura.paid_at = new Date().toISOString();
                 console.log(`✅ Fatura ${fatura.id} marked as paid via Ciabra status check`);
 
-                // Trigger auto-renewal
-                try {
-                  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-                  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-                  await fetch(`${supabaseUrl}/functions/v1/auto-renew-client`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-                    body: JSON.stringify({
-                      user_id: fatura.user_id,
-                      cliente_whatsapp: fatura.cliente_whatsapp,
-                      gateway: 'ciabra',
-                      gateway_charge_id: fatura.gateway_charge_id,
-                    }),
-                  });
-                  console.log(`🔄 Auto-renewal triggered for ${fatura.cliente_whatsapp}`);
-                } catch (renewErr: any) {
-                  console.error('Auto-renewal trigger error:', renewErr.message);
+                // Trigger auto-renewal in background (non-blocking)
+                const renewPromise = fetch(`${Deno.env.get('SUPABASE_URL')!}/functions/v1/auto-renew-client`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!}` },
+                  body: JSON.stringify({
+                    user_id: fatura.user_id,
+                    cliente_whatsapp: fatura.cliente_whatsapp,
+                    gateway: 'ciabra',
+                    gateway_charge_id: fatura.gateway_charge_id,
+                  }),
+                }).then(() => console.log(`🔄 Auto-renewal triggered for ${fatura.cliente_whatsapp}`))
+                  .catch((e: any) => console.error('Auto-renewal trigger error:', e.message));
+                
+                // Use EdgeRuntime.waitUntil if available, otherwise fire-and-forget
+                if (typeof (globalThis as any).EdgeRuntime?.waitUntil === 'function') {
+                  (globalThis as any).EdgeRuntime.waitUntil(renewPromise);
                 }
               }
             } catch (err: any) {
