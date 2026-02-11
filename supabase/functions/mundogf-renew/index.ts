@@ -235,7 +235,7 @@ serve(async (req) => {
     }
 
     if (action === 'renew_client' || action === 'renew_by_username') {
-      const { clientUserId, username, duration, durationIn } = body;
+      let { clientUserId, username, duration, durationIn, clienteScreens } = body;
       if ((!clientUserId && !username) || !duration || !durationIn) {
         return new Response(JSON.stringify({ success: false, error: 'clientUserId ou username, duration e durationIn são obrigatórios' }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400,
@@ -245,7 +245,7 @@ serve(async (req) => {
       const { data: panel } = await supabase.from('paineis_integracao').select('*').eq('id', panelId).eq('provedor', 'mundogf').single();
       if (!panel) return new Response(JSON.stringify({ success: false, error: 'Painel não encontrado' }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
-      console.log(`🔄 Renovando cliente ${clientUserId || username} no painel ${panel.nome} (${duration} ${durationIn})`);
+      console.log(`🔄 Renovando cliente ${clientUserId || username} no painel ${panel.nome} (${duration} ${durationIn}, Telas: ${clienteScreens || '?'})`);
 
       const login = await loginMundoGF(panel.url, panel.usuario, panel.senha);
       if (!login.success) return new Response(JSON.stringify({ success: false, error: login.error }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
@@ -384,6 +384,12 @@ serve(async (req) => {
         }
       } catch (e) {
         console.log(`⚠️ Could not fetch renewal page: ${e.message}`);
+      }
+
+      // Build maxCons from clienteScreens parameter
+      if (clienteScreens) {
+        maxCons = String(clienteScreens);
+        console.log(`📺 Usando telas do cliente: ${maxCons}`);
       }
 
       // Fallback to calculated option if not found in dropdown
