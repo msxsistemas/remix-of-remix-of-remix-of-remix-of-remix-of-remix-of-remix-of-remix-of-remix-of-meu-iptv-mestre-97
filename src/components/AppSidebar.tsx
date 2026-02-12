@@ -140,6 +140,7 @@ export function AppSidebar() {
     { to: "/whatsapp/fila-mensagens", label: "Fila de Mensagens" },
     { to: "/whatsapp/envios-em-massa", label: "Envios em Massa" },
     { to: "/whatsapp/templates", label: "Templates" },
+    { to: "/whatsapp/configuracao-envio", label: "Configuração de Envio" },
     { to: "/whatsapp/parear", label: "Parear Whatsapp" },
   ];
   const logsSubItems = [
