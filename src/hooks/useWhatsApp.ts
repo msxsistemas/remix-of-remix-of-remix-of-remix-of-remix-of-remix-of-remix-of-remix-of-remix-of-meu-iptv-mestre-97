@@ -211,7 +211,7 @@ export const useWhatsApp = () => {
     }
 
     // Carregar configurações de envio do localStorage
-    const defaultCfg = { tempoMinimo: 5, tempoMaximo: 10, limiteLote: 10, pausaProlongada: 15, limiteDiario: '', variarIntervalo: true };
+    const defaultCfg = { tempoMinimo: 10, tempoMaximo: 10, limiteLote: 10, pausaProlongada: 15, limiteDiario: '', variarIntervalo: true };
     let cfg = defaultCfg;
     try {
       const saved = localStorage.getItem('whatsapp_envio_config');
