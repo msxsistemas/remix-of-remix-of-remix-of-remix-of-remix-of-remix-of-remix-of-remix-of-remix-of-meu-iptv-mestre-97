@@ -27,7 +27,7 @@ interface EnvioConfig {
 }
 
 const DEFAULT_CONFIG: EnvioConfig = {
-  tempoMinimo: 5,
+  tempoMinimo: 10,
   tempoMaximo: 10,
   limiteLote: 10,
   pausaProlongada: 15,
