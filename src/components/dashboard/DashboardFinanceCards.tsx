@@ -28,7 +28,7 @@ export default function DashboardFinanceCards({
   const currentYear = new Date().getFullYear();
   
   const saldoMes = lucros;
-  const saldoAno = valorTotalAno || lucros * 12;
+  const saldoAno = valorTotalAno;
 
   return (
     <section className="grid gap-4 grid-cols-1 lg:grid-cols-2">
