@@ -98,17 +98,121 @@ serve(async (req) => {
       // ─── GLOBAL STATS ───────────────────────────────────
       case 'global_stats': {
         const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-        const totalUsers = users?.length || 0;
-        const { count: totalClientes } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
-        const { count: clientesAtivos } = await supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('ativo', true);
-        const { data: receitas } = await supabase.from('transacoes').select('valor').eq('tipo', 'receita');
-        const totalReceita = receitas?.reduce((sum, t) => sum + Number(t.valor), 0) || 0;
+        const allUsers = users || [];
+        const totalUsers = allUsers.length;
+
+        // All clients
+        const { data: allClientes } = await supabase.from('clientes').select('id, nome, data_vencimento, plano, created_at, user_id, ativo');
+        const clientes = allClientes || [];
+        const totalClientes = clientes.length;
+
+        // Active/expired based on data_vencimento
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        let clientesAtivos = 0;
+        let clientesVencidos = 0;
+        
+        clientes.forEach(c => {
+          if (!c.data_vencimento) { clientesAtivos++; return; }
+          const dv = new Date(c.data_vencimento);
+          if (dv >= now) clientesAtivos++;
+          else clientesVencidos++;
+        });
+
+        // Financial - transacoes
+        const { data: transacoes } = await supabase.from('transacoes').select('valor, tipo, created_at');
+        let totalEntradas = 0;
+        let totalSaidas = 0;
+        (transacoes || []).forEach(t => {
+          const v = Number(t.valor);
+          if (t.tipo === 'entrada') totalEntradas += v;
+          else totalSaidas += v;
+        });
+
+        // Cobranças
         const { count: totalCobrancas } = await supabase.from('cobrancas').select('*', { count: 'exact', head: true });
         const { count: cobrancasPagas } = await supabase.from('cobrancas').select('*', { count: 'exact', head: true }).eq('status', 'pago');
 
+        // Subscriptions
+        const { data: subs } = await supabase.from('user_subscriptions').select('status, expira_em');
+        const subsAtivas = (subs || []).filter(s => s.status === 'active' || s.status === 'ativa').length;
+        const subsPendentes = (subs || []).filter(s => s.status === 'pending' || s.status === 'pendente').length;
+        const subsExpiradas = (subs || []).filter(s => s.status === 'expired' || s.status === 'expirada').length;
+
+        // New users this month/week/today
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const inicioSemana = new Date(hoje); inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+        let novosUsersHoje = 0, novosUsersSemana = 0, novosUsersMes = 0;
+        allUsers.forEach(u => {
+          const d = new Date(u.created_at); d.setHours(0, 0, 0, 0);
+          if (d.getTime() === hoje.getTime()) novosUsersHoje++;
+          if (d >= inicioSemana) novosUsersSemana++;
+          if (d >= inicioMes) novosUsersMes++;
+        });
+
+        // New clients this month/week/today
+        let novosClientesHoje = 0, novosClientesSemana = 0, novosClientesMes = 0;
+        let clientesVencendoHoje = 0, clientesVencendo3Dias = 0;
+        const tresDias = new Date(hoje); tresDias.setDate(tresDias.getDate() + 3);
+        
+        clientes.forEach(c => {
+          const dc = new Date(c.created_at || ''); dc.setHours(0, 0, 0, 0);
+          if (dc.getTime() === hoje.getTime()) novosClientesHoje++;
+          if (dc >= inicioSemana) novosClientesSemana++;
+          if (dc >= inicioMes) novosClientesMes++;
+          
+          if (c.data_vencimento) {
+            const dv = new Date(c.data_vencimento); dv.setHours(0, 0, 0, 0);
+            if (dv.getTime() === hoje.getTime()) clientesVencendoHoje++;
+            if (dv > hoje && dv <= tresDias) clientesVencendo3Dias++;
+          }
+        });
+
+        // Users growth last 7 days
+        const usersGrowth = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+          const count = allUsers.filter(u => {
+            const uc = new Date(u.created_at); uc.setHours(0, 0, 0, 0);
+            return uc.getTime() === d.getTime();
+          }).length;
+          usersGrowth.push({ day: `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`, total: count });
+        }
+
+        // Clients growth last 7 days
+        const clientesGrowth = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+          const count = clientes.filter(c => {
+            const cc = new Date(c.created_at || ''); cc.setHours(0, 0, 0, 0);
+            return cc.getTime() === d.getTime();
+          }).length;
+          clientesGrowth.push({ day: `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`, total: count });
+        }
+
+        // Recent users (last 10)
+        const recentUsers = allUsers
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 10)
+          .map(u => ({
+            id: u.id, email: u.email, created_at: u.created_at,
+            full_name: u.user_metadata?.full_name || '',
+          }));
+
         return json({
           success: true,
-          stats: { totalUsers, totalClientes: totalClientes || 0, clientesAtivos: clientesAtivos || 0, totalReceita, totalCobrancas: totalCobrancas || 0, cobrancasPagas: cobrancasPagas || 0 }
+          stats: {
+            totalUsers, totalClientes, clientesAtivos, clientesVencidos,
+            totalEntradas, totalSaidas, lucro: totalEntradas - totalSaidas,
+            totalCobrancas: totalCobrancas || 0, cobrancasPagas: cobrancasPagas || 0,
+            subsAtivas, subsPendentes, subsExpiradas,
+            novosUsersHoje, novosUsersSemana, novosUsersMes,
+            novosClientesHoje, novosClientesSemana, novosClientesMes,
+            clientesVencendoHoje, clientesVencendo3Dias,
+            usersGrowth, clientesGrowth, recentUsers,
+          }
         });
       }
 
