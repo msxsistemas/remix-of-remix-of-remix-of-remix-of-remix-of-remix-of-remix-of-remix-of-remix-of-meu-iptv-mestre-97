@@ -136,12 +136,12 @@ export function AppSidebar() {
     { to: "/financeiro/nova-transacao", label: "Nova Transação" },
   ];
   const whatsappSubItems = [
+    { to: "/whatsapp/parear", label: "Parear Whatsapp" },
     { to: "/whatsapp/gerenciar-mensagens", label: "Gerenciar Mensagens" },
     { to: "/whatsapp/fila-mensagens", label: "Fila de Mensagens" },
     { to: "/whatsapp/envios-em-massa", label: "Envios em Massa" },
     { to: "/whatsapp/templates", label: "Templates" },
     { to: "/whatsapp/configuracao-envio", label: "Configuração de Envio" },
-    { to: "/whatsapp/parear", label: "Parear Whatsapp" },
   ];
   const logsSubItems = [
     { to: "/logs/painel", label: "Logs do Painel" },
