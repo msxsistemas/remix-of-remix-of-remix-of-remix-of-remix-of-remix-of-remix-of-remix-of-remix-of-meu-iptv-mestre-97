@@ -15,27 +15,40 @@ import {
   Save,
   RotateCcw,
   Clock,
+  AlertTriangle,
 } from "lucide-react";
 
 interface EnvioConfig {
-  tempoMinimo: number;
-  tempoMaximo: number;
-  limiteLote: number;
-  pausaProlongada: number;
+  tempoMinimo: string;
+  tempoMaximo: string;
+  limiteLote: string;
+  pausaProlongada: string;
   limiteDiario: string;
   variarIntervalo: boolean;
 }
 
 const DEFAULT_CONFIG: EnvioConfig = {
-  tempoMinimo: 10,
-  tempoMaximo: 10,
-  limiteLote: 10,
-  pausaProlongada: 15,
+  tempoMinimo: "10",
+  tempoMaximo: "10",
+  limiteLote: "10",
+  pausaProlongada: "15",
   limiteDiario: "",
   variarIntervalo: true,
 };
 
+const MIN_TEMPO = 10;
 const STORAGE_KEY = "whatsapp_envio_config";
+
+// Inline validation warning component
+function ValidationWarning({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-400">
+      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+}
 
 export default function ConfiguracaoEnvio() {
   const [config, setConfig] = useState<EnvioConfig>(DEFAULT_CONFIG);
@@ -44,32 +57,73 @@ export default function ConfiguracaoEnvio() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        setConfig({ ...DEFAULT_CONFIG, ...JSON.parse(saved) });
+        const parsed = JSON.parse(saved);
+        setConfig({
+          ...DEFAULT_CONFIG,
+          ...parsed,
+          tempoMinimo: String(parsed.tempoMinimo ?? DEFAULT_CONFIG.tempoMinimo),
+          tempoMaximo: String(parsed.tempoMaximo ?? DEFAULT_CONFIG.tempoMaximo),
+          limiteLote: String(parsed.limiteLote ?? DEFAULT_CONFIG.limiteLote),
+          pausaProlongada: String(parsed.pausaProlongada ?? DEFAULT_CONFIG.pausaProlongada),
+          limiteDiario: String(parsed.limiteDiario ?? ""),
+        });
       } catch {
         // ignore
       }
     }
   }, []);
 
+  const num = (v: string) => Number(v) || 0;
+
+  // Validações inline
+  const tempoMinimoWarn =
+    config.tempoMinimo !== "" && num(config.tempoMinimo) < MIN_TEMPO
+      ? `O valor tem de ser superior ou igual a ${MIN_TEMPO}.`
+      : config.tempoMinimo !== "" && num(config.tempoMinimo) > 120
+        ? "O valor máximo é 120 segundos."
+        : null;
+
+  const tempoMaximoWarn =
+    config.tempoMaximo !== "" && num(config.tempoMaximo) < MIN_TEMPO
+      ? `O valor tem de ser superior ou igual a ${MIN_TEMPO}.`
+      : config.tempoMaximo !== "" && num(config.tempoMaximo) > 120
+        ? "O valor máximo é 120 segundos."
+        : config.tempoMaximo !== "" && config.tempoMinimo !== "" && num(config.tempoMaximo) < num(config.tempoMinimo)
+          ? "Deve ser maior ou igual ao tempo mínimo."
+          : null;
+
+  const limiteLoteWarn =
+    config.limiteLote !== "" && num(config.limiteLote) < 1
+      ? "O valor mínimo é 1."
+      : null;
+
+  const pausaWarn =
+    config.pausaProlongada !== "" && num(config.pausaProlongada) < 1
+      ? "O valor mínimo é 1 segundo."
+      : config.pausaProlongada !== "" && num(config.pausaProlongada) > 120
+        ? "O valor máximo é 120 segundos."
+        : null;
+
   const handleSave = () => {
-    if (config.tempoMinimo < 5 || config.tempoMinimo > 120) {
-      toast.error("Tempo mínimo deve ser entre 5 e 120 segundos");
+    if (tempoMinimoWarn || tempoMaximoWarn || limiteLoteWarn || pausaWarn) {
+      toast.error("Corrija os erros de validação antes de salvar");
       return;
     }
-    if (config.tempoMaximo < config.tempoMinimo || config.tempoMaximo > 120) {
-      toast.error("Tempo máximo deve ser maior que o mínimo e até 120 segundos");
-      return;
-    }
-    if (config.limiteLote < 1) {
-      toast.error("Limite de lote deve ser pelo menos 1");
-      return;
-    }
-    if (config.pausaProlongada < 1 || config.pausaProlongada > 120) {
-      toast.error("Pausa prolongada deve ser entre 1 e 120 segundos");
+    if (config.tempoMinimo === "" || config.tempoMaximo === "" || config.limiteLote === "" || config.pausaProlongada === "") {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    // Save as numbers for compatibility with useWhatsApp
+    const toSave = {
+      tempoMinimo: num(config.tempoMinimo),
+      tempoMaximo: num(config.tempoMaximo),
+      limiteLote: num(config.limiteLote),
+      pausaProlongada: num(config.pausaProlongada),
+      limiteDiario: config.limiteDiario,
+      variarIntervalo: config.variarIntervalo,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     toast.success("Configurações salvas com sucesso!");
   };
 
@@ -79,14 +133,13 @@ export default function ConfiguracaoEnvio() {
     toast.success("Configurações restauradas ao padrão!");
   };
 
-  // Cálculo de tempo estimado para 100 mensagens
   const calcEstimatedTime = () => {
-    const avgInterval = config.variarIntervalo
-      ? (config.tempoMinimo + config.tempoMaximo) / 2
-      : config.tempoMinimo;
-    const batches = Math.ceil(100 / config.limiteLote);
+    const min = num(config.tempoMinimo);
+    const max = num(config.tempoMaximo);
+    const avgInterval = config.variarIntervalo ? (min + max) / 2 : min;
+    const batches = Math.ceil(100 / (num(config.limiteLote) || 1));
     const pauses = batches - 1;
-    const totalSeconds = 100 * avgInterval + pauses * config.pausaProlongada;
+    const totalSeconds = 100 * avgInterval + pauses * num(config.pausaProlongada);
     const minutes = Math.round(totalSeconds / 60);
     return `~${minutes} minutos`;
   };
@@ -114,16 +167,15 @@ export default function ConfiguracaoEnvio() {
               </Label>
               <Input
                 type="number"
-                min={5}
+                min={MIN_TEMPO}
                 max={120}
                 value={config.tempoMinimo}
-                onChange={(e) =>
-                  setConfig((c) => ({ ...c, tempoMinimo: Number(e.target.value) }))
-                }
+                onChange={(e) => setConfig((c) => ({ ...c, tempoMinimo: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
-                Intervalo mínimo entre mensagens (5-120 segundos)
+                Intervalo mínimo entre mensagens ({MIN_TEMPO}-120 segundos)
               </p>
+              <ValidationWarning message={tempoMinimoWarn} />
             </div>
 
             <div className="space-y-2">
@@ -133,16 +185,15 @@ export default function ConfiguracaoEnvio() {
               </Label>
               <Input
                 type="number"
-                min={5}
+                min={MIN_TEMPO}
                 max={120}
                 value={config.tempoMaximo}
-                onChange={(e) =>
-                  setConfig((c) => ({ ...c, tempoMaximo: Number(e.target.value) }))
-                }
+                onChange={(e) => setConfig((c) => ({ ...c, tempoMaximo: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
-                Intervalo máximo entre mensagens (5-120 segundos)
+                Intervalo máximo entre mensagens ({MIN_TEMPO}-120 segundos)
               </p>
+              <ValidationWarning message={tempoMaximoWarn} />
             </div>
           </div>
 
@@ -157,13 +208,12 @@ export default function ConfiguracaoEnvio() {
                 type="number"
                 min={1}
                 value={config.limiteLote}
-                onChange={(e) =>
-                  setConfig((c) => ({ ...c, limiteLote: Number(e.target.value) }))
-                }
+                onChange={(e) => setConfig((c) => ({ ...c, limiteLote: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
                 A cada X mensagens enviadas, o sistema irá pausar
               </p>
+              <ValidationWarning message={limiteLoteWarn} />
             </div>
 
             <div className="space-y-2">
@@ -176,13 +226,12 @@ export default function ConfiguracaoEnvio() {
                 min={1}
                 max={120}
                 value={config.pausaProlongada}
-                onChange={(e) =>
-                  setConfig((c) => ({ ...c, pausaProlongada: Number(e.target.value) }))
-                }
+                onChange={(e) => setConfig((c) => ({ ...c, pausaProlongada: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
                 Tempo de pausa após atingir o limite do lote (máx. 2 minutos)
               </p>
+              <ValidationWarning message={pausaWarn} />
             </div>
           </div>
 
@@ -190,7 +239,7 @@ export default function ConfiguracaoEnvio() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold">
-                <CalendarClock className="h-4 w-4 text-green-500" />
+                <CalendarClock className="h-4 w-4 text-accent" />
                 Limite Diário de Mensagens
               </Label>
               <Input
@@ -198,9 +247,7 @@ export default function ConfiguracaoEnvio() {
                 min={0}
                 placeholder="Sem limite"
                 value={config.limiteDiario}
-                onChange={(e) =>
-                  setConfig((c) => ({ ...c, limiteDiario: e.target.value }))
-                }
+                onChange={(e) => setConfig((c) => ({ ...c, limiteDiario: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
                 Deixe vazio para não limitar (opcional)
@@ -215,9 +262,7 @@ export default function ConfiguracaoEnvio() {
               <div className="flex items-center gap-3 mt-1">
                 <Switch
                   checked={config.variarIntervalo}
-                  onCheckedChange={(v) =>
-                    setConfig((c) => ({ ...c, variarIntervalo: v }))
-                  }
+                  onCheckedChange={(v) => setConfig((c) => ({ ...c, variarIntervalo: v }))}
                 />
                 <span className="text-sm text-muted-foreground">
                   {config.variarIntervalo
@@ -246,20 +291,20 @@ export default function ConfiguracaoEnvio() {
             <div>
               <p className="text-xl font-bold text-primary">
                 {config.variarIntervalo
-                  ? `${config.tempoMinimo}s - ${config.tempoMaximo}s`
-                  : `${config.tempoMinimo}s`}
+                  ? `${config.tempoMinimo || 0}s - ${config.tempoMaximo || 0}s`
+                  : `${config.tempoMinimo || 0}s`}
               </p>
               <p className="text-xs text-muted-foreground">Intervalo entre mensagens</p>
             </div>
             <div>
               <p className="text-xl font-bold text-foreground">
-                {config.limiteLote} msgs
+                {config.limiteLote || 0} msgs
               </p>
               <p className="text-xs text-muted-foreground">Antes da pausa</p>
             </div>
             <div>
               <p className="text-xl font-bold text-destructive">
-                {config.pausaProlongada}s
+                {config.pausaProlongada || 0}s
               </p>
               <p className="text-xs text-muted-foreground">Pausa prolongada</p>
             </div>
