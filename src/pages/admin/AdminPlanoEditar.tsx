@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Package } from "lucide-react";
@@ -75,7 +76,7 @@ export default function AdminPlanoEditar() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Nome</Label><Input value={form.nome} onChange={e => setForm((f: any) => ({ ...f, nome: e.target.value }))} /></div>
-            <div><Label>Valor (R$)</Label><Input type="number" value={form.valor} onChange={e => setForm((f: any) => ({ ...f, valor: Number(e.target.value) }))} /></div>
+            <div><Label>Valor</Label><CurrencyInput value={Number(form.valor)} onValueChange={v => setForm((f: any) => ({ ...f, valor: v }))} /></div>
           </div>
           <div><Label>Descrição</Label><Input value={form.descricao || ""} onChange={e => setForm((f: any) => ({ ...f, descricao: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-4">
@@ -92,14 +93,6 @@ export default function AdminPlanoEditar() {
               </Select>
             </div>
             <div><Label>Ordem</Label><Input type="number" value={form.ordem} onChange={e => setForm((f: any) => ({ ...f, ordem: Number(e.target.value) }))} /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label>Limite Clientes</Label><Input type="number" value={form.limite_clientes} onChange={e => setForm((f: any) => ({ ...f, limite_clientes: Number(e.target.value) }))} /></div>
-            <div><Label>Limite Mensagens</Label><Input type="number" value={form.limite_mensagens} onChange={e => setForm((f: any) => ({ ...f, limite_mensagens: Number(e.target.value) }))} /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label>Limite WhatsApp</Label><Input type="number" value={form.limite_whatsapp_sessions} onChange={e => setForm((f: any) => ({ ...f, limite_whatsapp_sessions: Number(e.target.value) }))} /></div>
-            <div><Label>Limite Painéis</Label><Input type="number" value={form.limite_paineis} onChange={e => setForm((f: any) => ({ ...f, limite_paineis: Number(e.target.value) }))} /></div>
           </div>
           <div>
             <Label>Recursos</Label>
