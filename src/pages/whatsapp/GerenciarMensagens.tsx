@@ -26,7 +26,6 @@ interface MensagensPadroes {
   vence_hoje: string;
   vencido: string;
   confirmacao_pagamento: string;
-  dados_cliente: string;
 }
 
 const emptyMensagens: MensagensPadroes = {
@@ -36,7 +35,6 @@ const emptyMensagens: MensagensPadroes = {
   vence_hoje: "",
   vencido: "",
   confirmacao_pagamento: "",
-  dados_cliente: "",
 };
 
 const defaultMensagens: MensagensPadroes = {
@@ -46,7 +44,6 @@ const defaultMensagens: MensagensPadroes = {
   vence_hoje: "{saudacao}. *{nome_cliente}*{br}{br}⚠ *SEU VENCIMENTO É HOJE!*{br}Pra continuar aproveitando seus canais, realize o pagamento o quanto antes.{br}{br}*DADOS DA FATURA*{br}-------------------------------{br}◆ *Vencimento:* *{vencimento}*{br}◆ {nome_plano}{br}{br}💰 Chave PIX: {pix}",
   vencido: "{saudacao}. *{nome_cliente}*{br}{br}🚨 *Seu plano está vencido!*{br}Regularize o quanto antes para não perder o acesso.{br}{br}*DADOS DA FATURA*{br}-------------------------------{br}◆ *Vencimento:* *{vencimento}*{br}◆ {nome_plano}{br}{br}💰 Chave PIX: {pix}",
   confirmacao_pagamento: "{saudacao}. *{nome_cliente}*{br}{br}✅ *Pagamento confirmado!*{br}{br}Obrigado por manter sua assinatura em dia. Seu acesso está garantido!{br}{br}◆ Plano: {nome_plano}{br}◆ Próximo vencimento: {vencimento}",
-  dados_cliente: "{saudacao}. *{nome_cliente}*{br}{br}📋 *Seus dados de acesso:*{br}{br}👤 Usuário: {usuario}{br}🔑 Senha: {senha}{br}📱 App: {app}{br}📺 Telas: {telas}",
 };
 
 export default function GerenciarMensagens() {
@@ -107,7 +104,7 @@ export default function GerenciarMensagens() {
           vence_hoje: mensagens.vence_hoje,
           vencido: mensagens.vencido,
           confirmacao_pagamento: mensagens.confirmacao_pagamento,
-          dados_cliente: mensagens.dados_cliente,
+          
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -161,7 +158,6 @@ export default function GerenciarMensagens() {
       vence_hoje: "Vence Hoje",
       vencido: "Vencido",
       confirmacao_pagamento: "Confirmação Pagamento",
-      dados_cliente: "Dados do Cliente",
     };
     return titles[selectedTemplate];
   };
@@ -280,15 +276,6 @@ export default function GerenciarMensagens() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-foreground font-medium">Dados do Cliente:</Label>
-              <Textarea
-                value={mensagens.dados_cliente}
-                onChange={(e) => setMensagens(prev => ({ ...prev, dados_cliente: e.target.value }))}
-                onFocus={() => setSelectedTemplate("dados_cliente")}
-                className="min-h-[140px] text-sm"
-              />
-            </div>
           </div>
         </div>
 
