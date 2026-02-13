@@ -93,30 +93,49 @@ export default function AdminAssinaturas() {
   const handleUpdate = async () => {
     if (!editSub) return;
 
+    let finalStatus = editStatus;
     let newExpiraEm: string | null = editSub.expira_em || null;
+    let newInicio = editSub.inicio;
 
-    // Se ativando, calcular nova data de expiração baseada no intervalo do plano
-    if (editStatus === "ativa" && editPlan) {
+    // Se mudou o plano, automaticamente ativa e recalcula datas
+    const planChanged = editPlan && editPlan !== editSub.plan_id;
+    if (planChanged) {
+      finalStatus = "ativa";
+      newInicio = new Date().toISOString();
       const selectedPlan = plans.find(p => p.id === editPlan);
-      const now = new Date();
+      const expDate = new Date();
       if (selectedPlan?.intervalo === "anual") {
-        now.setFullYear(now.getFullYear() + 1);
+        expDate.setFullYear(expDate.getFullYear() + 1);
       } else if (selectedPlan?.intervalo === "trimestral") {
-        now.setMonth(now.getMonth() + 3);
+        expDate.setMonth(expDate.getMonth() + 3);
       } else if (selectedPlan?.intervalo === "semestral") {
-        now.setMonth(now.getMonth() + 6);
+        expDate.setMonth(expDate.getMonth() + 6);
       } else {
-        // mensal por padrão
-        now.setMonth(now.getMonth() + 1);
+        expDate.setMonth(expDate.getMonth() + 1);
       }
-      newExpiraEm = now.toISOString();
+      newExpiraEm = expDate.toISOString();
+    } else if (finalStatus === "ativa" && editSub.status !== "ativa") {
+      // Ativando manualmente sem mudar plano
+      newInicio = new Date().toISOString();
+      const selectedPlan = plans.find(p => p.id === editPlan);
+      const expDate = new Date();
+      if (selectedPlan?.intervalo === "anual") {
+        expDate.setFullYear(expDate.getFullYear() + 1);
+      } else if (selectedPlan?.intervalo === "trimestral") {
+        expDate.setMonth(expDate.getMonth() + 3);
+      } else if (selectedPlan?.intervalo === "semestral") {
+        expDate.setMonth(expDate.getMonth() + 6);
+      } else {
+        expDate.setMonth(expDate.getMonth() + 1);
+      }
+      newExpiraEm = expDate.toISOString();
     }
 
     await supabase.from("user_subscriptions").update({ 
-      status: editStatus, 
+      status: finalStatus, 
       plan_id: editPlan || null,
       expira_em: newExpiraEm,
-      inicio: editStatus === "ativa" ? new Date().toISOString() : editSub.inicio,
+      inicio: newInicio,
     }).eq("id", editSub.id);
     toast({ title: "Assinatura atualizada!" });
     setEditSub(null);
