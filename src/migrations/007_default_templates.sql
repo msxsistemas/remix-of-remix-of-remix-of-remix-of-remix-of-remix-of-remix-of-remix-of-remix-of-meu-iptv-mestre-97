@@ -9,12 +9,6 @@ BEGIN
   -- Insert default templates for the user
   INSERT INTO templates_cobranca (nome, mensagem, incluir_cartao, incluir_chave_pix, chave_pix, user_id)
   VALUES
-    ('Dados de acesso do cliente', 'Olá! Seguem seus dados de acesso:
-
-Usuário: {usuario}
-Senha: {senha}
-
-Qualquer dúvida, estamos à disposição!', false, false, '', target_user_id),
     ('Confirmação de Pagamento', 'Olá {nome}! Confirmamos o recebimento do seu pagamento de R$ {valor}.
 
 Seu plano {plano} está ativo até {data_vencimento}.
