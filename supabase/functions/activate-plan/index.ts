@@ -443,7 +443,33 @@ async function generateCiabraPayment(gateway: any, plan: any, user: any) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
   try {
-    // Criar fatura SEM customerId — payload idêntico ao create-pix que funciona
+    // 1. Criar customer (obrigatório - FK constraint na Ciabra)
+    const customerName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente").trim();
+    const safeName = customerName.length >= 3 ? customerName : customerName.padEnd(3, "_");
+    const userPhone = user.user_metadata?.whatsapp || user.phone || "+5500000000000";
+
+    let customerId = "";
+    try {
+      const customerResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/customers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ fullName: safeName, phone: userPhone }),
+      });
+      const customerText = await customerResp.text();
+      console.log("Ciabra customer response:", customerResp.status, customerText.substring(0, 300));
+      try {
+        const customerData = JSON.parse(customerText);
+        customerId = String(customerData.id || "");
+      } catch { /* */ }
+    } catch (e: any) {
+      console.error("Ciabra customer error:", e.message);
+    }
+
+    if (!customerId) {
+      return { error: "Erro ao criar cliente na Ciabra" };
+    }
+
+    // 2. Criar fatura — payload simples com customerId
     const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const invoiceBody: any = {
       description: `Plano ${plan.nome} - Msx Gestor`,
@@ -453,6 +479,7 @@ async function generateCiabraPayment(gateway: any, plan: any, user: any) {
       items: [],
       price: parseFloat(String(plan.valor)),
       paymentTypes: ["PIX"],
+      customerId,
       webhooks: [
         { hookType: "PAYMENT_CONFIRMED", url: `${supabaseUrl}/functions/v1/ciabra-integration` },
       ],
