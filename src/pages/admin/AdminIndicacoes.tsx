@@ -1,0 +1,144 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { Share2, DollarSign, Settings } from "lucide-react";
+
+interface IndicacoesConfig {
+  ativo: boolean;
+  valor_bonus: number;
+  tipo_bonus: string;
+  descricao: string | null;
+}
+
+export default function AdminIndicacoes() {
+  const [config, setConfig] = useState<IndicacoesConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    document.title = "Indicações | Admin";
+    const fetch_ = async () => {
+      const { data } = await supabase.from("system_indicacoes_config").select("*").eq("id", 1).single();
+      if (data) setConfig(data as IndicacoesConfig);
+      setLoading(false);
+    };
+    fetch_();
+  }, []);
+
+  const handleSave = async () => {
+    if (!config) return;
+    setSaving(true);
+    try {
+      await supabase.from("system_indicacoes_config").update({
+        ativo: config.ativo,
+        valor_bonus: config.valor_bonus,
+        tipo_bonus: config.tipo_bonus,
+        descricao: config.descricao,
+      }).eq("id", 1);
+      toast({ title: "Configurações de indicação salvas!" });
+    } catch {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const set = (key: keyof IndicacoesConfig, value: any) => setConfig(c => c ? { ...c, [key]: value } : c);
+
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
+  if (!config) return <div className="text-center py-8 text-muted-foreground">Erro ao carregar configurações</div>;
+
+  return (
+    <div>
+      <header className="rounded-lg border mb-3 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-card border-b border-border">
+          <div className="flex items-center gap-2">
+            <Share2 className="h-5 w-5 text-foreground/70" />
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Indique e Ganhe</h1>
+          </div>
+          <p className="text-xs/6 text-muted-foreground">Configure o programa de indicações do sistema.</p>
+        </div>
+      </header>
+
+      <main className="space-y-4">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-foreground/70" />
+              <CardTitle className="text-sm">Status do Programa</CardTitle>
+            </div>
+            <CardDescription>Ative ou desative o programa de indicações.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border px-3 py-2 flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium">Programa Ativo</span>
+                <p className="text-xs text-muted-foreground">Permitir que usuários indiquem e ganhem bônus</p>
+              </div>
+              <Switch checked={config.ativo} onCheckedChange={v => set("ativo", v)} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-foreground/70" />
+              <CardTitle className="text-sm">Valores do Bônus</CardTitle>
+            </div>
+            <CardDescription>Configure o valor e tipo do bônus por indicação.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tipo de Bônus</Label>
+                <Select value={config.tipo_bonus} onValueChange={v => set("tipo_bonus", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixo">Valor Fixo (R$)</SelectItem>
+                    <SelectItem value="percentual">Percentual (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>
+                  {config.tipo_bonus === "fixo" ? "Valor do Bônus (R$)" : "Percentual do Bônus (%)"}
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={config.valor_bonus}
+                  onChange={e => set("valor_bonus", Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Descrição do Programa</Label>
+              <Input
+                value={config.descricao || ""}
+                onChange={e => set("descricao", e.target.value)}
+                placeholder="Indique amigos e ganhe bônus..."
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-center pt-2">
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar Configurações"}
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}

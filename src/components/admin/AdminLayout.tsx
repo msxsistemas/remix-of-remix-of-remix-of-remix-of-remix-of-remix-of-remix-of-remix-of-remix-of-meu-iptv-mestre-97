@@ -15,6 +15,8 @@ import {
   LogOut,
   Menu,
   X,
+  Server,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,6 +79,8 @@ const adminNavItems: NavItem[] = [
       { to: "/admin/templates", label: "Gerenciar" },
     ],
   },
+  { title: "Servidores", url: "/admin/servidores", icon: Server },
+  { title: "Indicações", url: "/admin/indicacoes", icon: Share2 },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
   { title: "Logs", url: "/admin/logs", icon: ScrollText },
 ];

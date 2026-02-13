@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { Server, Lock, ChevronRight, Wrench } from "lucide-react";
+import { Server, ChevronRight, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PROVEDORES } from "@/config/provedores";
 
@@ -31,9 +31,8 @@ export default function ServidoresIndex() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {PROVEDORES.map((provedor) => {
+        {PROVEDORES.filter(p => p.integrado || p.emManutencao).map((provedor) => {
           const route = PROVIDER_ROUTES[provedor.id];
-          const isIntegrado = provedor.integrado;
           const isManutencao = provedor.emManutencao;
 
           if (isManutencao) {
@@ -56,7 +55,7 @@ export default function ServidoresIndex() {
             );
           }
 
-          if (isIntegrado && route) {
+          if (route) {
             return (
               <NavLink
                 key={provedor.id}
@@ -78,23 +77,7 @@ export default function ServidoresIndex() {
             );
           }
 
-          return (
-            <div
-              key={provedor.id}
-              className="rounded-lg p-5 bg-card border border-border opacity-60"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                </div>
-              </div>
-              <h3 className="font-semibold text-foreground">{provedor.nome}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{provedor.descricao}</p>
-              <Badge variant="outline" className="mt-3 text-amber-400 border-amber-400/50 bg-amber-400/10">
-                Em breve
-              </Badge>
-            </div>
-          );
+          return null;
         })}
       </div>
     </main>
