@@ -128,22 +128,23 @@ export default function AdminGatewayConfig() {
     fetch_();
   }, [provider]);
 
-  const handleActivate = async () => {
+  const handleSave = async () => {
     if (!gateway) return;
     setSaving(true);
+    const isFirstActivation = !gateway.ativo;
     try {
       const { id, ...payload } = gateway;
-      payload.ativo = true;
+      if (isFirstActivation) payload.ativo = true;
       if (id) {
         await supabase.from("system_gateways").update(payload).eq("id", id);
       } else {
         const { data } = await supabase.from("system_gateways").insert({ ...payload, provedor: provider! }).select().single();
         if (data) setGateway(data as GatewayData);
       }
-      setGateway(g => g ? { ...g, ativo: true } : g);
-      toast({ title: `${label} ativado com sucesso!` });
+      if (isFirstActivation) setGateway(g => g ? { ...g, ativo: true } : g);
+      toast({ title: isFirstActivation ? `${label} ativado com sucesso!` : `Credenciais do ${label} atualizadas!` });
     } catch {
-      toast({ title: "Erro ao ativar", variant: "destructive" });
+      toast({ title: "Erro ao salvar", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -288,8 +289,8 @@ export default function AdminGatewayConfig() {
                   )}
                 </div>
                 <div className="flex justify-center border-t pt-4 mt-2">
-                  <Button onClick={handleActivate} disabled={saving}>
-                    {saving ? "Verificando..." : `Ativar ${label}`}
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving ? "Salvando..." : gateway.ativo ? `Atualizar Credenciais` : `Ativar ${label}`}
                   </Button>
                 </div>
               </CardContent>
