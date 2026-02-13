@@ -226,13 +226,10 @@ export default function AppLayout() {
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
                   <DropdownMenuItem disabled>
                     <User className="mr-2 h-4 w-4" />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium truncate">{getCompanyName()}</span>
-                      <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
-                    </div>
+                    <span className="text-sm font-medium truncate">{getCompanyName()}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/perfil')}>
