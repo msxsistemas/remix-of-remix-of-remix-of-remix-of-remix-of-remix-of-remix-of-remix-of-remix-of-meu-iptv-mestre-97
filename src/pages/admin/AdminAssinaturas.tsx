@@ -138,9 +138,7 @@ export default function AdminAssinaturas() {
                 <TabsTrigger value="todas" className="text-xs px-3 h-7">Todas</TabsTrigger>
                 <TabsTrigger value="ativa" className="text-xs px-3 h-7">Ativas</TabsTrigger>
                 <TabsTrigger value="trial" className="text-xs px-3 h-7">Trial</TabsTrigger>
-                <TabsTrigger value="pendente" className="text-xs px-3 h-7">Pendentes</TabsTrigger>
                 <TabsTrigger value="expirada" className="text-xs px-3 h-7">Expiradas</TabsTrigger>
-                <TabsTrigger value="cancelada" className="text-xs px-3 h-7">Canceladas</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
