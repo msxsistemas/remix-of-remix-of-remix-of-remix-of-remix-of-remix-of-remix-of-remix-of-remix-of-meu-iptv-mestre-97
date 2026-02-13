@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Ban, CheckCircle, Shield } from "lucide-react";
@@ -128,7 +127,7 @@ export default function AdminUsuarios() {
                      <TableHead>Nome</TableHead>
                      <TableHead>Clientes</TableHead>
                      <TableHead>Status</TableHead>
-                     <TableHead>Papel</TableHead>
+                     
                      <TableHead>Cadastro</TableHead>
                      <TableHead>Último Login</TableHead>
                      <TableHead>Ações</TableHead>
@@ -161,24 +160,6 @@ export default function AdminUsuarios() {
                              <CheckCircle className="h-3 w-3 mr-1" />
                              Ativo
                            </Badge>
-                         )}
-                       </TableCell>
-                       <TableCell>
-                         {isAdmin ? (
-                           <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                             <Shield className="h-3 w-3 mr-1" />
-                             Admin
-                           </Badge>
-                         ) : (
-                           <Select value={u.role} onValueChange={(val) => handleRoleChange(u.id, val)}>
-                             <SelectTrigger className="w-28 h-8">
-                               <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="user">Usuário</SelectItem>
-                               <SelectItem value="admin">Admin</SelectItem>
-                             </SelectContent>
-                           </Select>
                          )}
                        </TableCell>
                        <TableCell className="text-xs text-muted-foreground">
