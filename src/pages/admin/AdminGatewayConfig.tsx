@@ -306,8 +306,9 @@ export default function AdminGatewayConfig() {
                     <div className="grid gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
                         <label className="text-sm font-medium">Chave Pública</label>
-                        <Input
+                    <Input
                           required
+                          type="password"
                           value={gateway.public_key_hash || ""}
                           onChange={(e) => set("public_key_hash", e.target.value)}
                           placeholder="pk_live_..."
@@ -329,6 +330,7 @@ export default function AdminGatewayConfig() {
                   ) : (
                     <Input
                       required
+                      type="password"
                       value={gateway.api_key_hash || ""}
                       onChange={(e) => set("api_key_hash", e.target.value)}
                       placeholder={provedorTokenPlaceholders[provider || ""] || "Cole a chave da API aqui"}
