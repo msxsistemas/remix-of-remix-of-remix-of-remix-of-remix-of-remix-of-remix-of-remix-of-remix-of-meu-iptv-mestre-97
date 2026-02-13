@@ -6,11 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useProfile } from "@/hooks/useProfile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Building2, Mail, Save, Shield, Calendar, CreditCard, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import {
+  User, Building2, Mail, Save, Shield, Calendar, CreditCard,
+  LogOut, Lock, KeyRound, Eye, EyeOff, ShieldCheck,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -19,11 +26,26 @@ export default function Perfil() {
   const { profile, loading, updateProfile } = useProfile(userId);
   const { subscription, daysLeft, isTrial, isActive } = useSubscription(userId);
   const { signOut } = useAuth();
+  const { toast } = useToast();
 
+  // Personal info
   const [nomeCompleto, setNomeCompleto] = useState('');
-  const [nomeEmpresa, setNomeEmpresa] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
+
+  // Company info
+  const [nomeEmpresa, setNomeEmpresa] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [enderecoEmpresa, setEnderecoEmpresa] = useState('');
+  const [savingCompany, setSavingCompany] = useState(false);
+
+  // Password
+  const [_currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -32,16 +54,6 @@ export default function Perfil() {
       setTelefone(profile.telefone || '');
     }
   }, [profile]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    await updateProfile({
-      nome_completo: nomeCompleto,
-      nome_empresa: nomeEmpresa,
-      telefone,
-    });
-    setSaving(false);
-  };
 
   const getInitials = () => {
     if (nomeCompleto) {
@@ -53,9 +65,45 @@ export default function Perfil() {
   };
 
   const getStatusBadge = () => {
-    if (isTrial) return <Badge variant="outline" className="text-amber-400 border-amber-400/30">Trial</Badge>;
-    if (isActive) return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-400/30">Ativo</Badge>;
+    if (isTrial) return <Badge variant="outline" className="border-amber-400/30 text-amber-400">Trial</Badge>;
+    if (isActive) return <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">Ativo</Badge>;
     return <Badge variant="destructive">Expirado</Badge>;
+  };
+
+  const handleSavePersonal = async () => {
+    setSavingPersonal(true);
+    await updateProfile({ nome_completo: nomeCompleto, telefone });
+    setSavingPersonal(false);
+  };
+
+  const handleSaveCompany = async () => {
+    setSavingCompany(true);
+    await updateProfile({ nome_empresa: nomeEmpresa });
+    setSavingCompany(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: 'Senha muito curta', description: 'A nova senha deve ter pelo menos 6 caracteres.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: 'Senhas não coincidem', description: 'A confirmação da senha não corresponde.', variant: 'destructive' });
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: 'Senha atualizada', description: 'Sua senha foi alterada com sucesso.' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message || 'Não foi possível atualizar a senha.', variant: 'destructive' });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   if (loading) {
@@ -71,7 +119,7 @@ export default function Perfil() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold">Meu Perfil</h1>
-        <p className="text-muted-foreground text-sm">Gerencie suas informações pessoais e da empresa.</p>
+        <p className="text-muted-foreground text-sm">Gerencie suas informações pessoais, empresa e segurança.</p>
       </div>
 
       {/* Profile Header Card */}
@@ -95,135 +143,234 @@ export default function Perfil() {
         </CardContent>
       </Card>
 
-      {/* Personal Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Informações Pessoais
-          </CardTitle>
-          <CardDescription>Dados exibidos no seu perfil e no sistema.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo</Label>
-              <Input
-                id="nome"
-                value={nomeCompleto}
-                onChange={(e) => setNomeCompleto(e.target.value)}
-                placeholder="Seu nome completo"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-          </div>
+      {/* Tabs */}
+      <Tabs defaultValue="pessoal" className="space-y-4">
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="pessoal" className="text-xs sm:text-sm">
+            <User className="h-4 w-4 mr-1.5 hidden sm:inline-block" />Pessoal
+          </TabsTrigger>
+          <TabsTrigger value="empresa" className="text-xs sm:text-sm">
+            <Building2 className="h-4 w-4 mr-1.5 hidden sm:inline-block" />Empresa
+          </TabsTrigger>
+          <TabsTrigger value="seguranca" className="text-xs sm:text-sm">
+            <Lock className="h-4 w-4 mr-1.5 hidden sm:inline-block" />Segurança
+          </TabsTrigger>
+          <TabsTrigger value="assinatura" className="text-xs sm:text-sm">
+            <CreditCard className="h-4 w-4 mr-1.5 hidden sm:inline-block" />Plano
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="space-y-2">
-            <Label htmlFor="empresa" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Nome da Empresa
-            </Label>
-            <Input
-              id="empresa"
-              value={nomeEmpresa}
-              onChange={(e) => setNomeEmpresa(e.target.value)}
-              placeholder="Nome da sua empresa"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Email
-            </Label>
-            <Input value={user?.email || ''} disabled className="opacity-60" />
-            <p className="text-xs text-muted-foreground">O email não pode ser alterado.</p>
-          </div>
-
-          <Separator />
-
-          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Subscription Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Assinatura
-          </CardTitle>
-          <CardDescription>Informações sobre seu plano atual.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-1">
-              <p className="text-xs text-muted-foreground">Status</p>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm capitalize">
-                  {subscription?.status || 'Sem plano'}
-                </span>
+        {/* Pessoal Tab */}
+        <TabsContent value="pessoal">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Informações Pessoais
+              </CardTitle>
+              <CardDescription>Dados exibidos no seu perfil e no sistema.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input id="nome" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} placeholder="Seu nome completo" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input id="telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(00) 00000-0000" />
+                </div>
               </div>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-1">
-              <p className="text-xs text-muted-foreground">Início</p>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">
-                  {subscription?.inicio
-                    ? format(new Date(subscription.inicio), "dd/MM/yyyy", { locale: ptBR })
-                    : '—'}
-                </span>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Mail className="h-4 w-4" />Email</Label>
+                <Input value={user?.email || ''} disabled className="opacity-60" />
+                <p className="text-xs text-muted-foreground">O email não pode ser alterado.</p>
               </div>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-1">
-              <p className="text-xs text-muted-foreground">Expira em</p>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">
-                  {subscription?.expira_em
-                    ? `${format(new Date(subscription.expira_em), "dd/MM/yyyy", { locale: ptBR })} (${daysLeft ?? 0} dias)`
-                    : '—'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              <Separator />
+              <Button onClick={handleSavePersonal} disabled={savingPersonal} className="w-full sm:w-auto">
+                <Save className="h-4 w-4 mr-2" />{savingPersonal ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Account Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-            <LogOut className="h-5 w-5" />
-            Conta
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Membro desde{' '}
-            {user?.created_at
-              ? format(new Date(user.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-              : '—'}
-          </p>
-          <Button variant="destructive" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair da conta
-          </Button>
-        </CardContent>
-      </Card>
+        {/* Empresa Tab */}
+        <TabsContent value="empresa">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Informações da Empresa
+              </CardTitle>
+              <CardDescription>Dados da sua empresa exibidos no sistema e cobranças.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="empresa">Nome da Empresa</Label>
+                <Input id="empresa" value={nomeEmpresa} onChange={(e) => setNomeEmpresa(e.target.value)} placeholder="Nome da sua empresa" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ / CPF</Label>
+                <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+                <p className="text-xs text-muted-foreground">Usado em faturas e cobranças.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input id="endereco" value={enderecoEmpresa} onChange={(e) => setEnderecoEmpresa(e.target.value)} placeholder="Endereço comercial" />
+              </div>
+              <Separator />
+              <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full sm:w-auto">
+                <Save className="h-4 w-4 mr-2" />{savingCompany ? 'Salvando...' : 'Salvar Empresa'}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Segurança Tab */}
+        <TabsContent value="seguranca" className="space-y-4">
+          {/* Change Password */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                Alterar Senha
+              </CardTitle>
+              <CardDescription>Mantenha sua conta segura com uma senha forte.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNew ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowNew(!showNew)}>
+                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repita a nova senha"
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowConfirm(!showConfirm)}>
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-destructive">As senhas não coincidem.</p>
+              )}
+              <Separator />
+              <Button onClick={handleChangePassword} disabled={savingPassword || !newPassword || !confirmPassword} className="w-full sm:w-auto">
+                <Lock className="h-4 w-4 mr-2" />{savingPassword ? 'Atualizando...' : 'Atualizar Senha'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 2FA */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Autenticação de Dois Fatores (2FA)
+              </CardTitle>
+              <CardDescription>Adicione uma camada extra de segurança à sua conta.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Verificação por Email</p>
+                  <p className="text-xs text-muted-foreground">Um código será enviado ao seu email ao fazer login.</p>
+                </div>
+                <Switch disabled />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">App Autenticador (TOTP)</p>
+                  <p className="text-xs text-muted-foreground">Use Google Authenticator ou similar.</p>
+                </div>
+                <Switch disabled />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                🚧 Em breve — A autenticação de dois fatores estará disponível em uma atualização futura.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Assinatura Tab */}
+        <TabsContent value="assinatura">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Assinatura
+              </CardTitle>
+              <CardDescription>Informações sobre seu plano atual.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-sm capitalize">{subscription?.status || 'Sem plano'}</span>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                  <p className="text-xs text-muted-foreground">Início</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-sm">
+                      {subscription?.inicio ? format(new Date(subscription.inicio), "dd/MM/yyyy", { locale: ptBR }) : '—'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                  <p className="text-xs text-muted-foreground">Expira em</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-sm">
+                      {subscription?.expira_em
+                        ? `${format(new Date(subscription.expira_em), "dd/MM/yyyy", { locale: ptBR })} (${daysLeft ?? 0} dias)`
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <p className="text-sm text-muted-foreground">
+                Membro desde{' '}
+                {user?.created_at ? format(new Date(user.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : '—'}
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => window.location.href = '/planos-disponiveis'}>
+                  Alterar Plano
+                </Button>
+                <Button variant="destructive" size="sm" onClick={signOut}>
+                  <LogOut className="h-4 w-4 mr-2" />Sair da conta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
