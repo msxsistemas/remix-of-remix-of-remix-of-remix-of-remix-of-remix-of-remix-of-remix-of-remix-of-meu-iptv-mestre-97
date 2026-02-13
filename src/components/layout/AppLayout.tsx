@@ -33,8 +33,8 @@ function SidebarToggleButton() {
   return (
     <button
       onClick={toggleSidebar}
-      className="hidden md:flex fixed top-1/2 -translate-y-1/2 z-50 h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-primary/40 hover:scale-110 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-      style={{ left: isExpanded ? 'calc(var(--sidebar-width) - 14px)' : 'calc(var(--sidebar-width-icon, 4.5rem) - 14px)' }}
+      className="hidden md:flex fixed top-[1.4rem] z-50 h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-primary/40 hover:scale-110 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+      style={{ left: isExpanded ? 'calc(var(--sidebar-width) - 12px)' : 'calc(var(--sidebar-width-icon, 4.5rem) - 12px)' }}
       aria-label="Toggle Sidebar"
     >
       <ChevronsLeft
