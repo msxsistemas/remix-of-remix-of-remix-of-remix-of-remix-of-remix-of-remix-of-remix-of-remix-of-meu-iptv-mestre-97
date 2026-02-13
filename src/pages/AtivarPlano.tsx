@@ -300,39 +300,33 @@ export default function AtivarPlano() {
               </div>
 
               <CardContent className="p-6 space-y-6">
-                {loadingPix && !paymentData.pix_copia_cola ? (
-                  <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="relative">
-                      <div className="w-48 h-48 rounded-2xl bg-muted/50 animate-pulse" />
-                      <Loader2 className="h-10 w-10 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    </div>
-                    <p className="text-sm text-muted-foreground font-medium">Gerando QR Code PIX...</p>
+                <div className="flex flex-col items-center gap-4 py-4" style={{ minHeight: '280px' }}>
+                  <div className="w-[228px] h-[228px] flex items-center justify-center">
+                    {loadingPix && !paymentData.pix_copia_cola ? (
+                      <div className="w-48 h-48 rounded-2xl bg-muted/30 border border-border/50 flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-xs text-muted-foreground font-medium">Gerando QR Code PIX...</p>
+                      </div>
+                    ) : paymentData.pix_qr_code ? (
+                      <div className="bg-white p-5 rounded-2xl shadow-lg ring-1 ring-black/5 animate-fade-in">
+                        <img
+                          src={`data:image/png;base64,${paymentData.pix_qr_code}`}
+                          alt="QR Code PIX"
+                          className="w-[188px] h-[188px]"
+                        />
+                      </div>
+                    ) : paymentData.pix_copia_cola ? (
+                      <div className="bg-white p-5 rounded-2xl shadow-lg ring-1 ring-black/5 animate-fade-in">
+                        <QRCodeSVG value={paymentData.pix_copia_cola} size={188} />
+                      </div>
+                    ) : (
+                      <div className="w-48 h-48 rounded-2xl bg-muted/30 border border-border/50 flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-xs text-muted-foreground font-medium">Aguardando dados do PIX...</p>
+                      </div>
+                    )}
                   </div>
-                ) : paymentData.pix_qr_code ? (
-                  <div className="flex justify-center py-4">
-                    <div className="bg-white p-5 rounded-2xl shadow-lg ring-1 ring-black/5">
-                      <img
-                        src={`data:image/png;base64,${paymentData.pix_qr_code}`}
-                        alt="QR Code PIX"
-                        className="w-52 h-52"
-                      />
-                    </div>
-                  </div>
-                ) : paymentData.pix_copia_cola ? (
-                  <div className="flex justify-center py-4">
-                    <div className="bg-white p-5 rounded-2xl shadow-lg ring-1 ring-black/5">
-                      <QRCodeSVG value={paymentData.pix_copia_cola} size={208} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="relative">
-                      <div className="w-48 h-48 rounded-2xl bg-muted/50 animate-pulse" />
-                      <Loader2 className="h-10 w-10 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    </div>
-                    <p className="text-sm text-muted-foreground font-medium">Aguardando dados do PIX...</p>
-                  </div>
-                )}
+                </div>
 
                 {paymentData.pix_copia_cola && (
                   <div className="space-y-3">
