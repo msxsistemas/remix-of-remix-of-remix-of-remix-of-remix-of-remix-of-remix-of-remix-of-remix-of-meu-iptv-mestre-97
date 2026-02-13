@@ -72,6 +72,7 @@ serve(async (req) => {
           id: u.id, email: u.email, full_name: u.user_metadata?.full_name || '',
           created_at: u.created_at, last_sign_in_at: u.last_sign_in_at,
           role: rolesMap[u.id] || 'user', clientes_count: countMap[u.id] || 0,
+          banned_until: u.banned_until || null,
         }));
         return json({ success: true, users: enrichedUsers });
       }
@@ -79,6 +80,19 @@ serve(async (req) => {
       case 'toggle_user_ban': {
         const { target_user_id, ban } = body;
         if (!target_user_id) throw new Error('target_user_id obrigatório');
+
+        // Protect admin users from being banned
+        const { data: targetRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', target_user_id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (targetRole) {
+          return json({ error: 'Não é possível banir um administrador' }, 403);
+        }
+
         if (ban) {
           await supabase.auth.admin.updateUserById(target_user_id, { ban_duration: '876000h' });
         } else {
@@ -90,6 +104,19 @@ serve(async (req) => {
       case 'set_role': {
         const { target_user_id, role } = body;
         if (!target_user_id || !role) throw new Error('target_user_id e role obrigatórios');
+
+        // Protect admin users from having their role changed
+        const { data: existingAdminRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', target_user_id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (existingAdminRole) {
+          return json({ error: 'Não é possível alterar o papel de um administrador' }, 403);
+        }
+
         await supabase.from('user_roles').delete().eq('user_id', target_user_id);
         await supabase.from('user_roles').insert({ user_id: target_user_id, role });
         return json({ success: true });

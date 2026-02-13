@@ -16,6 +16,7 @@ interface AdminUser {
   last_sign_in_at: string | null;
   role: string;
   clientes_count: number;
+  banned_until: string | null;
 }
 
 export default function AdminUsuarios() {
@@ -122,60 +123,88 @@ export default function AdminUsuarios() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Clientes</TableHead>
-                    <TableHead>Papel</TableHead>
-                    <TableHead>Cadastro</TableHead>
-                    <TableHead>Último Login</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium text-sm">{u.email}</TableCell>
-                      <TableCell className="text-sm">{u.full_name || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{u.clientes_count}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {u.role === "admin" ? (
-                          <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Admin
-                          </Badge>
-                        ) : (
-                          <Select value={u.role} onValueChange={(val) => handleRoleChange(u.id, val)}>
-                            <SelectTrigger className="w-28 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">Usuário</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("pt-BR") : "Nunca"}
-                      </TableCell>
-                      <TableCell>
-                        {u.role === "admin" ? (
-                          <span className="text-xs text-muted-foreground italic">Protegido</span>
-                        ) : (
-                          <Button variant="ghost" size="sm" onClick={() => handleToggleBan(u.id, true)} className="text-destructive hover:text-destructive h-8">
-                            <Ban className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                   <TableRow>
+                     <TableHead>E-mail</TableHead>
+                     <TableHead>Nome</TableHead>
+                     <TableHead>Clientes</TableHead>
+                     <TableHead>Status</TableHead>
+                     <TableHead>Papel</TableHead>
+                     <TableHead>Cadastro</TableHead>
+                     <TableHead>Último Login</TableHead>
+                     <TableHead>Ações</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {users.map((u) => {
+                     const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+                     const isAdmin = u.role === "admin";
+                     return (
+                     <TableRow key={u.id}>
+                       <TableCell className="font-medium text-sm">{u.email}</TableCell>
+                       <TableCell className="text-sm">{u.full_name || "—"}</TableCell>
+                       <TableCell>
+                         <Badge variant="secondary">{u.clientes_count}</Badge>
+                       </TableCell>
+                       <TableCell>
+                         {isAdmin ? (
+                           <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-500/30">
+                             <CheckCircle className="h-3 w-3 mr-1" />
+                             Ativo
+                           </Badge>
+                         ) : isBanned ? (
+                           <Badge variant="destructive" className="bg-destructive/20 text-destructive border-destructive/30">
+                             <Ban className="h-3 w-3 mr-1" />
+                             Bloqueado
+                           </Badge>
+                         ) : (
+                           <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-500/30">
+                             <CheckCircle className="h-3 w-3 mr-1" />
+                             Ativo
+                           </Badge>
+                         )}
+                       </TableCell>
+                       <TableCell>
+                         {isAdmin ? (
+                           <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
+                             <Shield className="h-3 w-3 mr-1" />
+                             Admin
+                           </Badge>
+                         ) : (
+                           <Select value={u.role} onValueChange={(val) => handleRoleChange(u.id, val)}>
+                             <SelectTrigger className="w-28 h-8">
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="user">Usuário</SelectItem>
+                               <SelectItem value="admin">Admin</SelectItem>
+                             </SelectContent>
+                           </Select>
+                         )}
+                       </TableCell>
+                       <TableCell className="text-xs text-muted-foreground">
+                         {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                       </TableCell>
+                       <TableCell className="text-xs text-muted-foreground">
+                         {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("pt-BR") : "Nunca"}
+                       </TableCell>
+                       <TableCell>
+                         {isAdmin ? (
+                           <span className="text-xs text-muted-foreground italic">Protegido</span>
+                         ) : isBanned ? (
+                           <Button variant="ghost" size="sm" onClick={() => handleToggleBan(u.id, false)} className="text-green-400 hover:text-green-300 h-8">
+                             <CheckCircle className="h-4 w-4 mr-1" />
+                             <span className="text-xs">Desbloquear</span>
+                           </Button>
+                         ) : (
+                           <Button variant="ghost" size="sm" onClick={() => handleToggleBan(u.id, true)} className="text-destructive hover:text-destructive h-8">
+                             <Ban className="h-4 w-4 mr-1" />
+                             <span className="text-xs">Bloquear</span>
+                           </Button>
+                         )}
+                       </TableCell>
+                     </TableRow>
+                   )})}
+                 </TableBody>
               </Table>
             </div>
           )}
