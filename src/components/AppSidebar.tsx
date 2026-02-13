@@ -249,7 +249,7 @@ export function AppSidebar() {
         </div>
         {!isCollapsed && (
           <div className="flex justify-center -mt-4 mb-1">
-            <NavLink to="/renovar-acesso" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+            <NavLink to="/renovar-acesso" className="text-xs text-success hover:text-success/80 font-medium transition-colors">
               Renovar Acesso
             </NavLink>
           </div>

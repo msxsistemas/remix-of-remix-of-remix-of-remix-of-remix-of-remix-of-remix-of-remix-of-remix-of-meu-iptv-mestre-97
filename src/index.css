@@ -239,34 +239,35 @@ All colors MUST be HSL.
 @layer base {
   /* Webkit Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
     background: transparent;
-    border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, hsl(var(--brand)), hsl(var(--brand-2)));
-    border-radius: 10px;
-    border: 1px solid hsl(var(--border));
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, hsl(var(--brand-2)), hsl(var(--brand)));
-    box-shadow: 0 0 10px hsl(var(--brand) / 0.5);
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 
   ::-webkit-scrollbar-corner {
     background: transparent;
   }
 
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+
   /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--brand)) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 }
 
