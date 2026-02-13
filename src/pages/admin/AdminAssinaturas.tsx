@@ -86,13 +86,13 @@ export default function AdminAssinaturas() {
 
   return (
     <div>
-      <header className="rounded-lg border mb-6 overflow-hidden shadow">
-        <div className="px-4 py-3 text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+      <header className="rounded-lg border mb-6 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            <h1 className="text-base font-semibold tracking-tight">Assinaturas</h1>
+            <Receipt className="h-5 w-5 text-foreground/70" />
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Assinaturas</h1>
           </div>
-          <p className="text-xs/6 opacity-90">Gerencie as assinaturas e status dos usuários do sistema.</p>
+          <p className="text-xs/6 text-muted-foreground">Gerencie as assinaturas e status dos usuários do sistema.</p>
         </div>
       </header>
 
