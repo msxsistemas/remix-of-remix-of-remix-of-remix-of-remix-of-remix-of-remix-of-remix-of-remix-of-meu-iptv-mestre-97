@@ -232,12 +232,11 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border" collapsible="icon">
       <SidebarContent className="bg-background">
         {/* Logo Header */}
-        <div className={`flex flex-col items-center transition-all duration-300 ${isCollapsed ? 'py-3' : 'py-4'}`}>
-          <div className={`rounded-full overflow-hidden shadow-lg shadow-destructive/30 transition-all duration-300 ${isCollapsed ? 'w-8 h-8' : 'w-14 h-14'}`}>
-            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-          </div>
-          {!isCollapsed && (
-            <img src={logoGestorMsx} alt="Gestor MSX" className="h-6 mt-2 object-contain" />
+        <div className={`flex justify-center transition-all duration-300 ${isCollapsed ? 'py-3' : 'py-5'}`}>
+          {isCollapsed ? (
+            <span className="text-xs font-bold text-foreground tracking-tight">MSX</span>
+          ) : (
+            <img src={logoGestorMsx} alt="Gestor MSX" className="h-8 object-contain" />
           )}
         </div>
 
