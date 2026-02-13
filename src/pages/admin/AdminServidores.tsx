@@ -16,6 +16,7 @@ interface ServidorDB {
 export default function AdminServidores() {
   const [servidores, setServidores] = useState<ServidorDB[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState<string>("todos");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,6 +57,9 @@ export default function AdminServidores() {
     return <Badge className="bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/10 text-[11px]">Ativo</Badge>;
   };
 
+  const filtrados = filtro === "todos" ? servidores : servidores.filter(s => s.status === filtro);
+  const contagem = { todos: servidores.length, ativo: servidores.filter(s => s.status === "ativo").length, manutencao: servidores.filter(s => s.status === "manutencao").length, inativo: servidores.filter(s => s.status === "inativo").length };
+
   if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
 
   return (
@@ -71,8 +75,19 @@ export default function AdminServidores() {
       </header>
 
       <main className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {([["todos", "Todos"], ["ativo", "Ativos"], ["manutencao", "Manutenção"], ["inativo", "Inativos"]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setFiltro(key)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${filtro === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:text-foreground"}`}
+            >
+              {label} ({contagem[key]})
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {servidores.map((srv) => (
+          {filtrados.map((srv) => (
             <Card key={srv.id} className="shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
