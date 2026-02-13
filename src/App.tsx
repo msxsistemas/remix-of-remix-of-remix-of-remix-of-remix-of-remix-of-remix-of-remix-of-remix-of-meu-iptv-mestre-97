@@ -77,6 +77,8 @@ import AdminTemplates from "./pages/admin/AdminTemplates";
 import AdminTemplateNovo from "./pages/admin/AdminTemplateNovo";
 import AdminTemplateEditar from "./pages/admin/AdminTemplateEditar";
 import AdminAssinaturas from "./pages/admin/AdminAssinaturas";
+import AdminServidores from "./pages/admin/AdminServidores";
+import AdminIndicacoes from "./pages/admin/AdminIndicacoes";
 import AdminLogin from "./pages/admin/AdminLogin";
 
 const queryClient = new QueryClient();
@@ -177,6 +179,8 @@ const App = () => (
             <Route path="/admin/templates" element={<AdminTemplates />} />
             <Route path="/admin/templates/novo" element={<AdminTemplateNovo />} />
             <Route path="/admin/templates/editar/:id" element={<AdminTemplateEditar />} />
+            <Route path="/admin/servidores" element={<AdminServidores />} />
+            <Route path="/admin/indicacoes" element={<AdminIndicacoes />} />
             <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             <Route path="/admin/logs" element={<AdminLogs />} />
           </Route>

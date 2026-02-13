@@ -776,6 +776,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_indicacoes_config: {
+        Row: {
+          ativo: boolean
+          descricao: string | null
+          id: number
+          tipo_bonus: string
+          updated_at: string
+          valor_bonus: number
+        }
+        Insert: {
+          ativo?: boolean
+          descricao?: string | null
+          id?: number
+          tipo_bonus?: string
+          updated_at?: string
+          valor_bonus?: number
+        }
+        Update: {
+          ativo?: boolean
+          descricao?: string | null
+          id?: number
+          tipo_bonus?: string
+          updated_at?: string
+          valor_bonus?: number
+        }
+        Relationships: []
+      }
       system_plans: {
         Row: {
           ativo: boolean
