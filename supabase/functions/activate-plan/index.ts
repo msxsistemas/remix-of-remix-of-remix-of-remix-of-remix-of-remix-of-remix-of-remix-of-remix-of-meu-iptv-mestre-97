@@ -443,85 +443,76 @@ async function generateCiabraPayment(gateway: any, plan: any, user: any) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
   try {
-    const supabaseWebhookUrl = `${supabaseUrl}/functions/v1/ciabra-integration`;
+    // Step 1: Create customer with document (CPF) like generate-fatura does
+    const customerName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente").trim();
+    const safeName = customerName.length >= 3 ? customerName : customerName.padEnd(3, "_");
+    const userPhone = user.user_metadata?.whatsapp || user.phone || "+5500000000000";
+
+    // Generate a valid CPF
+    const rnd = (n: number) => Math.floor(Math.random() * n);
+    const cpfDigits = Array.from({ length: 9 }, () => rnd(9));
+    for (let j = 0; j < 2; j++) {
+      const len = cpfDigits.length;
+      let sum = 0;
+      for (let i = 0; i < len; i++) sum += cpfDigits[i] * (len + 1 - i);
+      const rest = sum % 11;
+      cpfDigits.push(rest < 2 ? 0 : 11 - rest);
+    }
+    const cpfFormatted = cpfDigits.join("").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+
+    let customerId = "";
+    try {
+      const customerResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/customers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ fullName: safeName, phone: userPhone, document: cpfFormatted }),
+      });
+      const custText = await customerResp.text();
+      console.log("Ciabra customer response:", customerResp.status, custText.substring(0, 300));
+      try { customerId = String(JSON.parse(custText).id || ""); } catch { /* */ }
+    } catch (e: any) {
+      console.error("Ciabra customer error:", e.message);
+    }
+
+    if (!customerId) {
+      return { error: "Erro ao criar cliente na Ciabra" };
+    }
+
+    // Step 2: Create invoice with same structure as generate-fatura (including webhooks, notifications, externalId)
+    const webhookUrl = `${supabaseUrl}/functions/v1/ciabra-integration`;
     const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const priceVal = parseFloat(String(plan.valor));
+    const externalId = `plan-${plan.id.substring(0, 8)}-${Date.now()}`;
 
-    // Tentar primeiro SEM customerId (funciona em algumas apps Ciabra)
-    const baseBody: any = {
+    const invoicePayload: any = {
       description: `Plano ${plan.nome} - Msx Gestor`,
       dueDate,
       installmentCount: 1,
       invoiceType: "SINGLE",
       items: [],
       price: priceVal,
+      externalId,
       paymentTypes: ["PIX"],
-      webhooks: [{ hookType: "PAYMENT_CONFIRMED", url: supabaseWebhookUrl }],
+      customerId,
+      webhooks: [
+        { hookType: "INVOICE_CREATED", url: webhookUrl },
+        { hookType: "PAYMENT_GENERATED", url: webhookUrl },
+        { hookType: "PAYMENT_CONFIRMED", url: webhookUrl },
+      ],
       notifications: [],
     };
 
-    console.log("Ciabra invoice attempt 1 (no customerId):", JSON.stringify(baseBody));
-    let chargeResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/invoices`, {
+    console.log("Ciabra invoice payload:", JSON.stringify(invoicePayload));
+    const chargeResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/invoices`, {
       method: "POST",
       headers,
-      body: JSON.stringify(baseBody),
+      body: JSON.stringify(invoicePayload),
     });
 
-    let chargeText = await chargeResp.text();
+    const chargeText = await chargeResp.text();
     let chargeData: any = {};
     try { chargeData = JSON.parse(chargeText); } catch { /* */ }
-    console.log("Ciabra attempt 1 response:", chargeResp.status, chargeText.substring(0, 500));
-
-    // Se falhar (FK constraint ou outro erro), tentar COM customerId
-    if (!chargeResp.ok) {
-      console.log("Attempt 1 failed, trying with customerId...");
-
-      const customerName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente").trim();
-      const safeName = customerName.length >= 3 ? customerName : customerName.padEnd(3, "_");
-      const userPhone = user.user_metadata?.whatsapp || user.phone || "+5500000000000";
-
-      let customerId = "";
-      try {
-        const customerResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/customers`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ fullName: safeName, phone: userPhone }),
-        });
-        const customerText = await customerResp.text();
-        console.log("Ciabra customer response:", customerResp.status, customerText.substring(0, 300));
-        try { customerId = String(JSON.parse(customerText).id || ""); } catch { /* */ }
-      } catch (e: any) {
-        console.error("Ciabra customer error:", e.message);
-      }
-
-      if (!customerId) {
-        return { error: "Erro ao criar cliente na Ciabra" };
-      }
-
-      // Payload mínimo absoluto com customerId — sem webhooks para evitar [object Object]
-      const bodyWithCustomer: any = {
-        description: `Plano ${plan.nome} - Msx Gestor`,
-        dueDate,
-        installmentCount: 1,
-        invoiceType: "SINGLE",
-        items: [],
-        price: priceVal,
-        paymentTypes: ["PIX"],
-        customerId,
-      };
-
-      console.log("Ciabra invoice attempt 2 (with customerId, no webhooks):", JSON.stringify(bodyWithCustomer));
-      chargeResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/invoices`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(bodyWithCustomer),
-      });
-
-      chargeText = await chargeResp.text();
-      chargeData = {};
-      try { chargeData = JSON.parse(chargeText); } catch { /* */ }
-      console.log("Ciabra attempt 2 response:", chargeResp.status, chargeText.substring(0, 500));
-    }
+    console.log("Ciabra invoice response:", chargeResp.status, chargeText.substring(0, 500));
 
     if (!chargeResp.ok) {
       return { error: chargeData.message || chargeData.error || `Erro Ciabra (${chargeResp.status}): ${chargeText}` };
