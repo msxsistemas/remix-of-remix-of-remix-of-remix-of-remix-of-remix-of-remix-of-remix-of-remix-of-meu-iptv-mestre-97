@@ -272,7 +272,7 @@ export default function AdminDashboard() {
             <div className="rounded-full bg-primary/20 p-1">
               <Crown className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground">Assinaturas SaaS</span>
+            <span className="text-sm text-muted-foreground">Assinaturas</span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -330,9 +330,9 @@ export default function AdminDashboard() {
       {/* 6ª linha — Últimos Usuários */}
       <section>
         <div className="rounded-xl border border-border overflow-hidden">
-          <div className="bg-primary p-4">
-            <h3 className="font-semibold text-primary-foreground">Últimos Usuários Cadastrados</h3>
-            <p className="text-sm text-primary-foreground/80">Os 10 usuários mais recentes da plataforma</p>
+          <div className="bg-card p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Últimos Usuários Cadastrados</h3>
+            <p className="text-sm text-muted-foreground">Os 10 usuários mais recentes da plataforma</p>
           </div>
           <div className="bg-card overflow-x-auto">
             <table className="w-full">
