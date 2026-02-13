@@ -57,13 +57,13 @@ export default function AdminConfiguracoes() {
 
   return (
     <div>
-      <header className="rounded-lg border mb-6 overflow-hidden shadow">
-        <div className="px-4 py-3 text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+      <header className="rounded-lg border mb-6 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            <h1 className="text-base font-semibold tracking-tight">Configurações do Sistema</h1>
+            <Settings className="h-5 w-5 text-foreground/70" />
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Configurações do Sistema</h1>
           </div>
-          <p className="text-xs/6 opacity-90">Configurações globais da plataforma Msx Gestor.</p>
+          <p className="text-xs/6 text-muted-foreground">Configurações globais da plataforma Msx Gestor.</p>
         </div>
       </header>
 

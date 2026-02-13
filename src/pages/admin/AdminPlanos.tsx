@@ -92,17 +92,17 @@ export default function AdminPlanos() {
 
   return (
     <div>
-      <header className="rounded-lg border mb-6 overflow-hidden shadow">
-        <div className="px-4 py-3 text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+      <header className="rounded-lg border mb-6 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                <h1 className="text-base font-semibold tracking-tight">Planos SaaS</h1>
+                <Package className="h-5 w-5 text-foreground/70" />
+                <h1 className="text-base font-semibold tracking-tight text-foreground">Planos SaaS</h1>
               </div>
-              <p className="text-xs/6 opacity-90">Gerencie os planos de assinatura disponíveis no sistema.</p>
+              <p className="text-xs/6 text-muted-foreground">Gerencie os planos de assinatura disponíveis no sistema.</p>
             </div>
-            <Button onClick={openCreate} size="sm" variant="secondary" className="gap-2">
+            <Button onClick={openCreate} size="sm" className="gap-2">
               <Plus className="h-4 w-4" /> Novo Plano
             </Button>
           </div>
