@@ -100,17 +100,33 @@ Deno.serve(async (req) => {
       }
 
       // Store pending subscription activation
-      await adminClient.from("user_subscriptions").upsert(
-        {
+      const { data: existingSub } = await adminClient
+        .from("user_subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingSub) {
+        await adminClient.from("user_subscriptions").update({
+          plan_id: plan.id,
+          status: "pendente",
+          inicio: new Date().toISOString(),
+          expira_em: calculateExpiration(plan.intervalo),
+          gateway_subscription_id: paymentResult.charge_id,
+          updated_at: new Date().toISOString(),
+        }).eq("id", existingSub.id);
+      } else {
+        await adminClient.from("user_subscriptions").insert({
           user_id: user.id,
           plan_id: plan.id,
           status: "pendente",
           inicio: new Date().toISOString(),
           expira_em: calculateExpiration(plan.intervalo),
           gateway_subscription_id: paymentResult.charge_id,
-        },
-        { onConflict: "user_id", ignoreDuplicates: false }
-      );
+        });
+      }
+      
+      console.log(`📋 Subscription saved with gateway_subscription_id: ${paymentResult.charge_id}`);
 
       return new Response(
         JSON.stringify({
@@ -600,7 +616,7 @@ async function checkPaymentStatus(gateway: any, chargeId: string): Promise<boole
         headers: { Authorization: `Basic ${basicToken}` },
       });
       const data = await resp.json();
-      console.log("Ciabra check-payment response:", JSON.stringify(data).substring(0, 500));
+      console.log("Ciabra check-payment full response:", JSON.stringify(data).substring(0, 2000));
       const status = (data.status || data._status || "").toUpperCase();
       if (["PAID", "CONFIRMED", "RECEIVED", "PAYMENT_CONFIRMED"].includes(status)) return true;
       // Check installments - Ciabra uses _status field

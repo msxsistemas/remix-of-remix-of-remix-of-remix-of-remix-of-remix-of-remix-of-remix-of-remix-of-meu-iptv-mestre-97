@@ -51,6 +51,7 @@ serve(async (req) => {
       
       const isPaid = body.event === 'payment.confirmed' || body.event === 'payment.approved' 
         || body.status === 'paid' || body.hookType === 'PAYMENT_CONFIRMED'
+        || body.type === 'INVOICE_PAYMENT_CONFIRMED'
         || (body._status || '').toUpperCase() === 'PAID';
       
       if (isPaid) {
