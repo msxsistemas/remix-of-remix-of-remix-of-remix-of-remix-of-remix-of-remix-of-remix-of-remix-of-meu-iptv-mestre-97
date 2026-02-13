@@ -1,0 +1,116 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Plus, Package } from "lucide-react";
+
+const emptyPlan = {
+  nome: "", descricao: "", valor: 0, intervalo: "mensal",
+  limite_clientes: 50, limite_mensagens: 500, limite_whatsapp_sessions: 1,
+  limite_paineis: 1, recursos: [] as string[], ativo: true, destaque: false, ordem: 0,
+};
+
+export default function AdminPlanoNovo() {
+  const [form, setForm] = useState(emptyPlan);
+  const [recursoInput, setRecursoInput] = useState("");
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const addRecurso = () => {
+    if (recursoInput.trim()) {
+      setForm(f => ({ ...f, recursos: [...f.recursos, recursoInput.trim()] }));
+      setRecursoInput("");
+    }
+  };
+
+  const removeRecurso = (i: number) => setForm(f => ({ ...f, recursos: f.recursos.filter((_, idx) => idx !== i) }));
+
+  const handleSave = async () => {
+    try {
+      await supabase.from("system_plans").insert({ ...form });
+      toast({ title: "Plano criado!" });
+      navigate("/admin/planos");
+    } catch {
+      toast({ title: "Erro ao criar plano", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div>
+      <header className="rounded-lg border mb-3 overflow-hidden shadow-sm">
+        <div className="px-4 py-3 bg-card border-b border-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-foreground/70" />
+                <h1 className="text-base font-semibold tracking-tight text-foreground">Novo Plano</h1>
+              </div>
+              <p className="text-xs/6 text-muted-foreground">Preencha os dados para criar um novo plano SaaS.</p>
+            </div>
+            <Button onClick={() => navigate("/admin/planos")} size="sm" variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <Card className="shadow-sm">
+        <CardHeader><CardTitle className="text-sm">Dados do Plano</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div><Label>Nome</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} /></div>
+            <div><Label>Valor (R$)</Label><Input type="number" value={form.valor} onChange={e => setForm(f => ({ ...f, valor: Number(e.target.value) }))} /></div>
+          </div>
+          <div><Label>Descrição</Label><Input value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Intervalo</Label>
+              <Select value={form.intervalo} onValueChange={v => setForm(f => ({ ...f, intervalo: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mensal">Mensal</SelectItem>
+                  <SelectItem value="trimestral">Trimestral</SelectItem>
+                  <SelectItem value="semestral">Semestral</SelectItem>
+                  <SelectItem value="anual">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Ordem</Label><Input type="number" value={form.ordem} onChange={e => setForm(f => ({ ...f, ordem: Number(e.target.value) }))} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><Label>Limite Clientes</Label><Input type="number" value={form.limite_clientes} onChange={e => setForm(f => ({ ...f, limite_clientes: Number(e.target.value) }))} /></div>
+            <div><Label>Limite Mensagens</Label><Input type="number" value={form.limite_mensagens} onChange={e => setForm(f => ({ ...f, limite_mensagens: Number(e.target.value) }))} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><Label>Limite WhatsApp</Label><Input type="number" value={form.limite_whatsapp_sessions} onChange={e => setForm(f => ({ ...f, limite_whatsapp_sessions: Number(e.target.value) }))} /></div>
+            <div><Label>Limite Painéis</Label><Input type="number" value={form.limite_paineis} onChange={e => setForm(f => ({ ...f, limite_paineis: Number(e.target.value) }))} /></div>
+          </div>
+          <div>
+            <Label>Recursos</Label>
+            <div className="flex gap-2 mt-1">
+              <Input value={recursoInput} onChange={e => setRecursoInput(e.target.value)} placeholder="Ex: Suporte prioritário" onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addRecurso())} />
+              <Button type="button" variant="outline" onClick={addRecurso}><Plus className="h-4 w-4" /></Button>
+            </div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {form.recursos.map((r, i) => (
+                <Badge key={i} variant="secondary" className="gap-1 cursor-pointer" onClick={() => removeRecurso(i)}>{r} ×</Badge>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2"><Switch checked={form.ativo} onCheckedChange={v => setForm(f => ({ ...f, ativo: v }))} /><Label>Ativo</Label></div>
+            <div className="flex items-center gap-2"><Switch checked={form.destaque} onCheckedChange={v => setForm(f => ({ ...f, destaque: v }))} /><Label>Destaque</Label></div>
+          </div>
+          <Button onClick={handleSave} className="w-full">Criar Plano</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

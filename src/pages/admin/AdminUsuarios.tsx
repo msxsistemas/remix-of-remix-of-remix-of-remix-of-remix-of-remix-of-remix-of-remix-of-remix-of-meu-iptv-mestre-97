@@ -95,7 +95,7 @@ export default function AdminUsuarios() {
 
   return (
     <div>
-      <header className="rounded-lg border mb-6 overflow-hidden shadow-sm">
+      <header className="rounded-lg border mb-3 overflow-hidden shadow-sm">
         <div className="px-4 py-3 bg-card border-b border-border">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-foreground/70" />

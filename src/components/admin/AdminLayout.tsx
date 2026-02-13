@@ -54,8 +54,8 @@ const adminNavItems: NavItem[] = [
     icon: CreditCard,
     submenuKey: "planos",
     subItems: [
+      { to: "/admin/planos/novo", label: "Criar Novo" },
       { to: "/admin/planos", label: "Gerenciar" },
-      { to: "/admin/planos?action=novo", label: "Criar Novo" },
     ],
   },
   {
@@ -90,8 +90,8 @@ const adminNavItems: NavItem[] = [
     icon: MessageSquare,
     submenuKey: "templates",
     subItems: [
+      { to: "/admin/templates/novo", label: "Criar Novo" },
       { to: "/admin/templates", label: "Gerenciar" },
-      { to: "/admin/templates?action=novo", label: "Criar Novo" },
     ],
   },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
