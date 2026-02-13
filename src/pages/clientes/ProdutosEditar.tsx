@@ -16,7 +16,7 @@ import { PROVEDORES } from "@/config/provedores";
 const formatCurrencyBRL = (value: string) => {
   const digits = (value ?? "").toString().replace(/\D/g, "");
   const number = Number(digits) / 100;
-  if (!digits || number === 0) return "";
+  if (isNaN(number)) return "R$ 0,00";
   return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 };
 
