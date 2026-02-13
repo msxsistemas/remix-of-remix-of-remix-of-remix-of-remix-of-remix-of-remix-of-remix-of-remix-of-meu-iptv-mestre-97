@@ -67,11 +67,15 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
+import AdminPlanoNovo from "./pages/admin/AdminPlanoNovo";
+import AdminPlanoEditar from "./pages/admin/AdminPlanoEditar";
 import AdminGateways from "./pages/admin/AdminGateways";
 import AdminGatewayConfig from "./pages/admin/AdminGatewayConfig";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminTemplates from "./pages/admin/AdminTemplates";
+import AdminTemplateNovo from "./pages/admin/AdminTemplateNovo";
+import AdminTemplateEditar from "./pages/admin/AdminTemplateEditar";
 import AdminAssinaturas from "./pages/admin/AdminAssinaturas";
 import AdminLogin from "./pages/admin/AdminLogin";
 
@@ -165,10 +169,14 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
             <Route path="/admin/planos" element={<AdminPlanos />} />
+            <Route path="/admin/planos/novo" element={<AdminPlanoNovo />} />
+            <Route path="/admin/planos/editar/:id" element={<AdminPlanoEditar />} />
             <Route path="/admin/assinaturas" element={<AdminAssinaturas />} />
             <Route path="/admin/gateways" element={<AdminGateways />} />
             <Route path="/admin/gateways/:provider" element={<AdminGatewayConfig />} />
             <Route path="/admin/templates" element={<AdminTemplates />} />
+            <Route path="/admin/templates/novo" element={<AdminTemplateNovo />} />
+            <Route path="/admin/templates/editar/:id" element={<AdminTemplateEditar />} />
             <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             <Route path="/admin/logs" element={<AdminLogs />} />
           </Route>
