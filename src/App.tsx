@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
+import Perfil from "./pages/Perfil";
 import ClientesListCreate from "./pages/clientes/ClientesListCreate";
 import ClientesCadastro from "./pages/clientes/ClientesCadastro";
 import ClientesEditar from "./pages/clientes/ClientesEditar";
@@ -106,6 +107,7 @@ const App = () => (
           {/* Protected layout wrapper for main routes */}
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<Index />} />
+            <Route path="/perfil" element={<Perfil />} />
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/financeiro/nova-transacao" element={<FinanceiroNovaTransacao />} />
             <Route path="/financeiro/editar/:id" element={<FinanceiroEditarTransacao />} />
