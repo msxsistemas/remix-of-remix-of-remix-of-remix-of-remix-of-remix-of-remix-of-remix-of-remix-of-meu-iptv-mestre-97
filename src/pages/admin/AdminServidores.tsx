@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Server, Wrench, Ban } from "lucide-react";
+import { Server, Wrench, Ban, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +18,7 @@ export default function AdminServidores() {
   const [servidores, setServidores] = useState<ServidorDB[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,7 +59,10 @@ export default function AdminServidores() {
     return <Badge className="bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/10 text-[11px]">Ativo</Badge>;
   };
 
-  const filtrados = filtro === "todos" ? servidores : servidores.filter(s => s.status === filtro);
+  const statusOrder: Record<string, number> = { ativo: 0, manutencao: 1, inativo: 2 };
+  const sorted = [...servidores].sort((a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3));
+  const buscados = busca ? sorted.filter(s => s.nome.toLowerCase().includes(busca.toLowerCase())) : sorted;
+  const filtrados = filtro === "todos" ? buscados : buscados.filter(s => s.status === filtro);
   const contagem = { todos: servidores.length, ativo: servidores.filter(s => s.status === "ativo").length, manutencao: servidores.filter(s => s.status === "manutencao").length, inativo: servidores.filter(s => s.status === "inativo").length };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
@@ -75,16 +80,22 @@ export default function AdminServidores() {
       </header>
 
       <main className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          {([["todos", "Todos"], ["ativo", "Ativos"], ["manutencao", "Manutenção"], ["inativo", "Inativos"]] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setFiltro(key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${filtro === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:text-foreground"}`}
-            >
-              {label} ({contagem[key]})
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex flex-wrap gap-2">
+            {([["todos", "Todos"], ["ativo", "Ativos"], ["manutencao", "Manutenção"], ["inativo", "Inativos"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setFiltro(key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${filtro === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:text-foreground"}`}
+              >
+                {label} ({contagem[key]})
+              </button>
+            ))}
+          </div>
+          <div className="relative sm:ml-auto sm:w-56">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input placeholder="Buscar servidor..." value={busca} onChange={e => setBusca(e.target.value)} className="h-8 text-xs pl-8" />
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtrados.map((srv) => (
