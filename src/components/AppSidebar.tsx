@@ -34,7 +34,7 @@ import {
 import { useState } from "react";
 import type { LucideProps } from "lucide-react";
 import { useSystemLogo } from "@/hooks/useSystemLogo";
-import logoGestorMsx from "@/assets/logo-gestor-msx.png";
+import logoMsx from "@/assets/logo-msx.png";
 
 // Custom WhatsApp icon
 const WhatsAppIcon = (props: LucideProps) => (
@@ -236,7 +236,7 @@ export function AppSidebar() {
           {isCollapsed ? (
             <span className="text-xs font-bold text-foreground tracking-tight">MSX</span>
           ) : (
-            <img src={logoGestorMsx} alt="Gestor MSX" className="h-8 object-contain" />
+            <img src={logoMsx} alt="Gestor MSX" className="h-8 object-contain" />
           )}
         </div>
 
