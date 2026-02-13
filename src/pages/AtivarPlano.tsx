@@ -300,13 +300,14 @@ export default function AtivarPlano() {
               </div>
 
               <CardContent className="p-6 space-y-6">
-                {loadingPix && !paymentData.pix_copia_cola ? (
+                {!paymentData.pix_copia_cola && !paymentData.pix_qr_code ? (
                   <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="relative">
-                      <div className="w-48 h-48 rounded-2xl bg-muted/50 animate-pulse" />
-                      <Loader2 className="h-10 w-10 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    <div className="relative w-48 h-48 rounded-2xl bg-muted/50 flex items-center justify-center">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground font-medium">Gerando QR Code PIX...</p>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {loadingPix ? 'Gerando QR Code PIX...' : 'Aguardando dados do PIX...'}
+                    </p>
                   </div>
                 ) : paymentData.pix_qr_code ? (
                   <div className="flex justify-center py-4">
@@ -324,15 +325,7 @@ export default function AtivarPlano() {
                       <QRCodeSVG value={paymentData.pix_copia_cola} size={208} />
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="relative">
-                      <div className="w-48 h-48 rounded-2xl bg-muted/50 animate-pulse" />
-                      <Loader2 className="h-10 w-10 animate-spin text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    </div>
-                    <p className="text-sm text-muted-foreground font-medium">Aguardando dados do PIX...</p>
-                  </div>
-                )}
+                ) : null}
 
                 {paymentData.pix_copia_cola && (
                   <div className="space-y-3">
