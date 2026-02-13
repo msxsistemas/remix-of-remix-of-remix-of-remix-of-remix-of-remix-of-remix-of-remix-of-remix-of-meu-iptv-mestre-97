@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Phone, Gift, Loader2, ArrowRight, Sparkles } from 'lucide-react';
-import logoPlay from '@/assets/logo-play.png';
+import { useSystemLogo } from '@/hooks/useSystemLogo';
 
 export default function Auth() {
+  const logoUrl = useSystemLogo();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -235,7 +236,7 @@ export default function Auth() {
           <div className="bg-card border border-border rounded-2xl shadow-xl p-8">
             <div className="text-center mb-8">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden shadow-lg">
-                <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
               </div>
               <h1 className="text-2xl font-bold text-foreground">Redefinir Senha</h1>
               <p className="text-muted-foreground text-sm mt-1">Digite sua nova senha abaixo</p>
@@ -316,7 +317,7 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-secondary via-background to-background items-center justify-center p-12 border-r border-border">
         <div className="max-w-md text-center">
           <div className="w-24 h-24 mx-auto mb-8 rounded-full overflow-hidden shadow-2xl bg-destructive flex items-center justify-center">
-            <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Msx Gestor
@@ -339,7 +340,7 @@ export default function Auth() {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden shadow-lg bg-destructive">
-              <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Msx Gestor</h1>
           </div>

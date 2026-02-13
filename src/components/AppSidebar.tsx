@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { LucideProps } from "lucide-react";
-import logoPlay from "@/assets/logo-play.png";
+import { useSystemLogo } from "@/hooks/useSystemLogo";
 
 // Custom WhatsApp icon
 const WhatsAppIcon = (props: LucideProps) => (
@@ -55,6 +55,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
+  const logoUrl = useSystemLogo();
 
   // Estado dos submenus
   const clientesActive = currentPath === "/clientes" || currentPath.startsWith("/clientes/");
@@ -232,7 +233,7 @@ export function AppSidebar() {
         {/* Logo Header */}
         <div className={`flex justify-center transition-all duration-300 ${isCollapsed ? 'py-3' : 'py-6'}`}>
           <div className={`rounded-full overflow-hidden shadow-lg shadow-destructive/30 transition-all duration-300 ${isCollapsed ? 'w-8 h-8' : 'w-16 h-16'}`}>
-            <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
           </div>
         </div>
 
