@@ -150,7 +150,8 @@ Deno.serve(async (req) => {
       }
 
       const secretKey = gateway.api_key_hash;
-      const basicToken = btoa(`:${secretKey}`);
+      const publicKey = gateway.public_key_hash || "";
+      const basicToken = btoa(`${publicKey}:${secretKey}`);
       const pixHeaders = {
         Authorization: `Basic ${basicToken}`,
         "Content-Type": "application/json",
@@ -429,12 +430,11 @@ async function generateMercadoPagoPayment(gateway: any, plan: any, user: any) {
 
 async function generateCiabraPayment(gateway: any, plan: any, user: any) {
   const secretKey = gateway.api_key_hash;
+  const publicKey = gateway.public_key_hash || "";
   if (!secretKey) return { error: "Gateway Ciabra sem chave secreta configurada" };
 
   const CIABRA_BASE_URL = "https://api.az.center";
-  // Usar apenas a chave secreta na autenticação Basic (sem public key)
-  // Isso é compatível com o create-pix do ciabra-integration que funciona
-  const basicToken = btoa(`:${secretKey}`);
+  const basicToken = btoa(`${publicKey}:${secretKey}`);
   const headers = {
     Authorization: `Basic ${basicToken}`,
     "Content-Type": "application/json",
@@ -443,20 +443,57 @@ async function generateCiabraPayment(gateway: any, plan: any, user: any) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
   try {
-    // Criar fatura SEM customerId (igual ao create-pix do ciabra-integration que funciona)
+    // 1. Criar customer primeiro (obrigatório para esta aplicação Ciabra)
+    const customerName = (user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente").trim();
+    const safeName = customerName.length >= 3 ? customerName : customerName.padEnd(3, "_");
+    const userPhone = user.user_metadata?.whatsapp || user.phone || "+5500000000000";
+
+    let customerId = "";
+    try {
+      const customerResp = await fetch(`${CIABRA_BASE_URL}/invoices/applications/customers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ fullName: safeName, phone: userPhone }),
+      });
+      const customerText = await customerResp.text();
+      console.log("Ciabra customer response:", customerResp.status, customerText.substring(0, 300));
+      try {
+        const customerData = JSON.parse(customerText);
+        customerId = String(customerData.id || "");
+      } catch { /* */ }
+    } catch (e: any) {
+      console.error("Ciabra customer error:", e.message);
+    }
+
+    if (!customerId) {
+      return { error: "Erro ao criar cliente na Ciabra" };
+    }
+
+    // 2. Criar fatura com customerId e payload completo
     const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const invoiceBody = {
+    const invoiceBody: any = {
       description: `Plano ${plan.nome} - Msx Gestor`,
       dueDate,
       installmentCount: 1,
       invoiceType: "SINGLE",
-      items: [],
+      items: [
+        {
+          description: `Plano ${plan.nome}`,
+          quantity: 1,
+          price: parseFloat(String(plan.valor)),
+        },
+      ],
       price: parseFloat(String(plan.valor)),
+      externalId: `plan-${plan.id}-${Date.now()}`,
       paymentTypes: ["PIX"],
+      customerId,
       webhooks: [
         { hookType: "PAYMENT_CONFIRMED", url: `${supabaseUrl}/functions/v1/ciabra-integration` },
       ],
-      notifications: [],
+      notifications: [
+        { type: "INVOICE_GENERATED", channel: "Email" },
+        { type: "SEND_FIRST_INVOICE_BY", channel: "Email" },
+      ],
     };
 
     console.log("Ciabra invoice body:", JSON.stringify(invoiceBody));
@@ -470,7 +507,7 @@ async function generateCiabraPayment(gateway: any, plan: any, user: any) {
     let chargeData: any = {};
     try { chargeData = JSON.parse(chargeText); } catch { /* */ }
 
-    console.log("Ciabra invoice response:", chargeResp.status, chargeText);
+    console.log("Ciabra invoice response:", chargeResp.status, chargeText.substring(0, 500));
 
     if (!chargeResp.ok) {
       return { error: chargeData.message || chargeData.error || `Erro Ciabra (${chargeResp.status}): ${chargeText}` };
@@ -551,7 +588,8 @@ async function checkPaymentStatus(gateway: any, chargeId: string): Promise<boole
 
     if (provedor === "ciabra") {
       const secretKey = gateway.api_key_hash;
-      const basicToken = btoa(`:${secretKey}`);
+      const publicKey = gateway.public_key_hash || "";
+      const basicToken = btoa(`${publicKey}:${secretKey}`);
 
       const resp = await fetch(`https://api.az.center/invoices/applications/invoices/${chargeId}`, {
         headers: { Authorization: `Basic ${basicToken}` },
