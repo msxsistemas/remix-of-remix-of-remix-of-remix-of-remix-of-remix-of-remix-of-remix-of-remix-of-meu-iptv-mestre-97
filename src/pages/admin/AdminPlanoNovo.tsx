@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Package } from "lucide-react";
 
 const emptyPlan = {
   nome: "", descricao: "", valor: 0, intervalo: "mensal",
-  limite_clientes: 50, limite_mensagens: 500, limite_whatsapp_sessions: 1,
-  limite_paineis: 1, recursos: [] as string[], ativo: true, destaque: false, ordem: 0,
+  recursos: [] as string[], ativo: true, destaque: false, ordem: 0,
 };
 
 export default function AdminPlanoNovo() {
@@ -75,7 +75,7 @@ export default function AdminPlanoNovo() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Nome</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Básico, Profissional" /></div>
-            <div><Label>Valor (R$)</Label><Input type="number" min={0} step={0.01} value={form.valor} onChange={e => setForm(f => ({ ...f, valor: Number(e.target.value) }))} /></div>
+            <div><Label>Valor</Label><CurrencyInput value={form.valor} onValueChange={v => setForm(f => ({ ...f, valor: v }))} /></div>
           </div>
           <div><Label>Descrição</Label><Input value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Descreva os benefícios do plano" /></div>
           <div className="grid grid-cols-2 gap-4">
@@ -92,14 +92,6 @@ export default function AdminPlanoNovo() {
               </Select>
             </div>
             <div><Label>Ordem</Label><Input type="number" min={0} value={form.ordem} onChange={e => setForm(f => ({ ...f, ordem: Number(e.target.value) }))} /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label>Limite Clientes</Label><Input type="number" min={0} value={form.limite_clientes} onChange={e => setForm(f => ({ ...f, limite_clientes: Number(e.target.value) }))} /></div>
-            <div><Label>Limite Mensagens</Label><Input type="number" min={0} value={form.limite_mensagens} onChange={e => setForm(f => ({ ...f, limite_mensagens: Number(e.target.value) }))} /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label>Limite WhatsApp</Label><Input type="number" min={0} value={form.limite_whatsapp_sessions} onChange={e => setForm(f => ({ ...f, limite_whatsapp_sessions: Number(e.target.value) }))} /></div>
-            <div><Label>Limite Painéis</Label><Input type="number" min={0} value={form.limite_paineis} onChange={e => setForm(f => ({ ...f, limite_paineis: Number(e.target.value) }))} /></div>
           </div>
           <div>
             <Label>Recursos</Label>

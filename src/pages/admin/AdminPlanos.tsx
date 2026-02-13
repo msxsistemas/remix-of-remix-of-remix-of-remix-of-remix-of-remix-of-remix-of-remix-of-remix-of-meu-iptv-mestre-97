@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Plus, Pencil, Trash2, Star, Package, Users, MessageSquare, Smartphone, Monitor } from "lucide-react";
+import { CreditCard, Plus, Pencil, Trash2, Star, Package } from "lucide-react";
 
 interface SystemPlan {
   id: string;
@@ -14,10 +14,6 @@ interface SystemPlan {
   descricao: string | null;
   valor: number;
   intervalo: string;
-  limite_clientes: number;
-  limite_mensagens: number;
-  limite_whatsapp_sessions: number;
-  limite_paineis: number;
   recursos: string[];
   ativo: boolean;
   destaque: boolean;
@@ -63,6 +59,9 @@ export default function AdminPlanos() {
     fetchPlans();
   };
 
+  const formatCurrency = (val: number) =>
+    `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
   const totalAtivos = plans.filter(p => p.ativo).length;
   const totalInativos = plans.filter(p => !p.ativo).length;
   const totalAssinantes = Object.values(subscriberCounts).reduce((a, b) => a + b, 0);
@@ -86,7 +85,6 @@ export default function AdminPlanos() {
         </div>
       </header>
 
-      {/* Cards resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
         <Card className="shadow-sm">
           <CardContent className="pt-4 pb-3 px-4">
@@ -135,7 +133,6 @@ export default function AdminPlanos() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Intervalo</TableHead>
-                    <TableHead>Limites</TableHead>
                     <TableHead>Recursos</TableHead>
                     <TableHead>Assinantes</TableHead>
                     <TableHead>Status</TableHead>
@@ -152,16 +149,8 @@ export default function AdminPlanos() {
                         </div>
                         {p.descricao && <p className="text-xs text-muted-foreground mt-0.5 max-w-[200px] truncate">{p.descricao}</p>}
                       </TableCell>
-                      <TableCell className="font-semibold">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(p.valor)}</TableCell>
                       <TableCell className="capitalize">{p.intervalo}</TableCell>
-                      <TableCell>
-                        <div className="text-xs space-y-0.5">
-                          <div className="flex items-center gap-1"><Users className="h-3 w-3 text-muted-foreground" />{p.limite_clientes}</div>
-                          <div className="flex items-center gap-1"><MessageSquare className="h-3 w-3 text-muted-foreground" />{p.limite_mensagens}</div>
-                          <div className="flex items-center gap-1"><Smartphone className="h-3 w-3 text-muted-foreground" />{p.limite_whatsapp_sessions}</div>
-                          <div className="flex items-center gap-1"><Monitor className="h-3 w-3 text-muted-foreground" />{p.limite_paineis}</div>
-                        </div>
-                      </TableCell>
                       <TableCell>
                         {p.recursos && p.recursos.length > 0 ? (
                           <div className="flex flex-wrap gap-1 max-w-[180px]">
@@ -169,7 +158,7 @@ export default function AdminPlanos() {
                               <Badge key={i} variant="outline" className="text-[0.625rem] px-1.5 py-0">{r}</Badge>
                             ))}
                             {p.recursos.length > 3 && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">+{p.recursos.length - 3}</Badge>
+                              <Badge variant="secondary" className="text-[0.625rem] px-1.5 py-0">+{p.recursos.length - 3}</Badge>
                             )}
                           </div>
                         ) : (
