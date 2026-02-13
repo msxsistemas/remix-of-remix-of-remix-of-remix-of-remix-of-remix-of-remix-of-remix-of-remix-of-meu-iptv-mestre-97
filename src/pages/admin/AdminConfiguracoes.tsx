@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Palette, UserPlus, Wrench, Headphones } from "lucide-react";
+import { Settings, Palette, UserPlus, Wrench, Headphones, Upload, Loader2, X } from "lucide-react";
 
 interface SystemConfig {
   nome_sistema: string;
@@ -25,6 +25,8 @@ export default function AdminConfiguracoes() {
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,6 +53,50 @@ export default function AdminConfiguracoes() {
   };
 
   const set = (key: keyof SystemConfig, value: any) => setConfig(c => c ? { ...c, [key]: value } : c);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Selecione uma imagem válida", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(fileName);
+
+      set("logo_url", publicUrl);
+
+      // Save immediately
+      await supabase.from("system_config").update({ logo_url: publicUrl }).eq("id", 1);
+      toast({ title: "Logo atualizada com sucesso!" });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Erro ao enviar logo", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    set("logo_url", null);
+    await supabase.from("system_config").update({ logo_url: null }).eq("id", 1);
+    toast({ title: "Logo removida" });
+  };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
   if (!config) return <div className="text-center py-8 text-muted-foreground">Erro ao carregar configurações</div>;
@@ -90,15 +136,55 @@ export default function AdminConfiguracoes() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Logo URL</Label>
-                <Input value={config.logo_url || ""} onChange={e => set("logo_url", e.target.value)} placeholder="https://..." />
+            <div className="space-y-3">
+              <Label>Logo do Sistema</Label>
+              <div className="flex items-center gap-4">
+                {config.logo_url ? (
+                  <div className="relative group">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border shadow-md">
+                      <img src={config.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                    </div>
+                    <button
+                      onClick={handleRemoveLogo}
+                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      type="button"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground">
+                    <Upload className="h-6 w-6" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
+                    ) : (
+                      <><Upload className="mr-2 h-4 w-4" />Enviar Logo</>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">PNG, JPG ou SVG. Recomendado: 200x200px</p>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Termos de Uso URL</Label>
-                <Input value={config.termos_url || ""} onChange={e => set("termos_url", e.target.value)} placeholder="https://..." />
-              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Termos de Uso URL</Label>
+              <Input value={config.termos_url || ""} onChange={e => set("termos_url", e.target.value)} placeholder="https://..." />
             </div>
           </CardContent>
         </Card>
