@@ -140,7 +140,7 @@ export const useEvolutionAPISimple = () => {
 
   // Não faz polling automático de status - sessão só muda via ações do usuário
 
-  const checkStatus = useCallback(async () => {
+  const checkStatus = useCallback(async (showToast = true) => {
     if (!userId) return null;
 
     setConnecting(true);
@@ -159,19 +159,19 @@ export const useEvolutionAPISimple = () => {
           clearInterval(statusIntervalRef.current);
           statusIntervalRef.current = null;
         }
-        toast.success('WhatsApp conectado!');
+        if (showToast) toast.success('WhatsApp conectado!');
       } else if (data.status === 'connecting') {
         setSession({ status: 'connecting' });
-        toast.info('WhatsApp aguardando conexão. Clique em "Conectar" para gerar QR Code.');
+        // Don't show toast during polling to avoid loop
       } else {
         setSession(null);
-        toast.info('WhatsApp desconectado');
+        if (showToast) toast.info('WhatsApp desconectado');
       }
 
       return data.status;
     } catch (error) {
       console.error('Error checking status:', error);
-      toast.error('Erro ao verificar status');
+      if (showToast) toast.error('Erro ao verificar status');
       return null;
     } finally {
       setConnecting(false);
@@ -184,7 +184,7 @@ export const useEvolutionAPISimple = () => {
     }
 
     const interval = setInterval(async () => {
-      const status = await checkStatus();
+      const status = await checkStatus(false);
       if (status === 'connected') {
         clearInterval(interval);
         statusIntervalRef.current = null;

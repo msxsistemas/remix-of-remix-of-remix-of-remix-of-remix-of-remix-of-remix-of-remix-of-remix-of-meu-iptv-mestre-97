@@ -52,7 +52,7 @@ export default function ParearWhatsappNew() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={checkStatus}
+            onClick={() => checkStatus(true)}
             disabled={!hydrated}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${connecting ? 'animate-spin' : ''}`} />
