@@ -8,7 +8,7 @@ import { replaceMessageVariables } from "@/utils/message-variables";
 import { useEvolutionAPISimple } from "@/hooks/useEvolutionAPISimple";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash, Plus, Send, RefreshCw, Power, Bell, Loader2, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { Edit, Trash, Plus, Send, RefreshCw, Power, Bell, Loader2, ChevronLeft, ChevronRight, FileText, Download, Upload } from "lucide-react";
 import { format } from "date-fns";
 import type { Cliente } from "@/types/database";
 import { Input } from "@/components/ui/input";
@@ -1105,20 +1105,144 @@ export default function ClientesListCreate() {
     }
   });
 
+  const handleExportarClientes = () => {
+    const dados = clientesFiltrados.map(c => ({
+      nome: c.nome || '',
+      whatsapp: c.whatsapp || '',
+      email: c.email || '',
+      data_vencimento: c.data_vencimento ? format(new Date(c.data_vencimento), 'dd/MM/yyyy') : '',
+      usuario: c.usuario || '',
+      senha: c.senha || '',
+      produto: getProdutoNome(c.produto || ''),
+      plano: getPlanoNome(c.plano || ''),
+      app: getAplicativoNome(c.app || ''),
+      telas: c.telas || 1,
+      mac: c.mac || '',
+      dispositivo: c.dispositivo || '',
+      fatura: c.fatura || '',
+      indicador: c.indicador || '',
+      desconto: c.desconto || '',
+      observacao: c.observacao || '',
+      status: (c as any).ativo !== false ? 'Ativo' : 'Inativo',
+    }));
+
+    const headers = Object.keys(dados[0] || {});
+    const csv = [
+      headers.join(';'),
+      ...dados.map(row => headers.map(h => `"${String((row as any)[h]).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `clientes_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast({ title: "Exportado!", description: `${dados.length} clientes exportados com sucesso.` });
+  };
+
+  const handleImportarClientes = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) {
+          toast({ title: "Erro", description: "Arquivo vazio ou sem dados", variant: "destructive" });
+          return;
+        }
+
+        const headers = lines[0].split(';').map(h => h.trim().replace(/"/g, ''));
+        const nomeIdx = headers.findIndex(h => h.toLowerCase() === 'nome');
+        const whatsappIdx = headers.findIndex(h => h.toLowerCase() === 'whatsapp');
+
+        if (nomeIdx === -1 || whatsappIdx === -1) {
+          toast({ title: "Erro", description: "Arquivo deve conter colunas 'nome' e 'whatsapp'", variant: "destructive" });
+          return;
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        let importados = 0;
+        let erros = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(';').map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+          const nome = values[nomeIdx];
+          const whatsapp = values[whatsappIdx];
+
+          if (!nome || !whatsapp) { erros++; continue; }
+
+          const emailIdx = headers.findIndex(h => h.toLowerCase() === 'email');
+          const usuarioIdx = headers.findIndex(h => h.toLowerCase() === 'usuario');
+          const senhaIdx = headers.findIndex(h => h.toLowerCase() === 'senha');
+          const observacaoIdx = headers.findIndex(h => h.toLowerCase() === 'observacao');
+
+          const { error } = await supabase.from('clientes').insert({
+            nome,
+            whatsapp,
+            email: emailIdx >= 0 ? values[emailIdx] || '' : '',
+            usuario: usuarioIdx >= 0 ? values[usuarioIdx] || '' : '',
+            senha: senhaIdx >= 0 ? values[senhaIdx] || '' : '',
+            observacao: observacaoIdx >= 0 ? values[observacaoIdx] || '' : '',
+            user_id: user.id,
+          });
+
+          if (error) { erros++; } else { importados++; }
+        }
+
+        toast({
+          title: "Importação concluída",
+          description: `${importados} clientes importados${erros > 0 ? `, ${erros} erros` : ''}.`,
+        });
+
+        carregarClientes();
+      } catch (err) {
+        console.error("Erro ao importar:", err);
+        toast({ title: "Erro", description: "Erro ao processar arquivo", variant: "destructive" });
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+    event.target.value = '';
+  };
+
   return (
     <main className="space-y-4">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 rounded-lg bg-card border border-border">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-card border border-border">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Meus Clientes</h1>
           <p className="text-sm text-muted-foreground">Lista com todos os seus clientes</p>
         </div>
-        <Button 
-          onClick={() => navigate("/clientes/cadastro")}
-          className="bg-primary hover:bg-primary/90"
-        >
-          Adicionar Cliente +
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={handleExportarClientes}>
+            <Download className="h-4 w-4 mr-1" />
+            Exportar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => document.getElementById('import-csv')?.click()}>
+            <Upload className="h-4 w-4 mr-1" />
+            Importar
+          </Button>
+          <input
+            id="import-csv"
+            type="file"
+            accept=".csv,.txt"
+            className="hidden"
+            onChange={handleImportarClientes}
+          />
+          <Button 
+            onClick={() => navigate("/clientes/cadastro")}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Adicionar Cliente +
+          </Button>
+        </div>
       </header>
 
       {/* Filters */}
