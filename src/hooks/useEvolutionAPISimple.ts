@@ -164,7 +164,15 @@ export const useEvolutionAPISimple = () => {
         // Preserve existing qrCode during polling - don't overwrite it
         setSession(prev => prev?.qrCode ? prev : { status: 'connecting' });
       } else {
-        setSession(null);
+        // If we're currently showing a QR code (connecting phase), don't clear it
+        // The Evolution API may return "disconnected" while waiting for scan
+        setSession(prev => {
+          if (prev?.qrCode && statusIntervalRef.current) {
+            // Keep QR code visible during polling
+            return prev;
+          }
+          return null;
+        });
         if (showToast) toast.info('WhatsApp desconectado');
       }
 
