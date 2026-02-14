@@ -53,19 +53,40 @@ export const useMessageQueueProcessor = () => {
     });
 
     if (error) throw new Error(error.message || 'Erro ao enviar mensagem');
-    if (data?.error) throw new Error(data.error);
+    if (data?.error) {
+      const errorStr = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+      // Detect connection lost errors and update session status in DB
+      if (errorStr.toLowerCase().includes('connection closed') || errorStr.toLowerCase().includes('not connected')) {
+        console.warn('[QueueProcessor] WhatsApp desconectado detectado, atualizando status no banco');
+        await supabase
+          .from('whatsapp_sessions')
+          .update({ status: 'disconnected', last_activity: new Date().toISOString() })
+          .eq('user_id', userId || '');
+      }
+      throw new Error(errorStr);
+    }
     return data;
-  }, []);
+  }, [userId]);
 
   const checkIsConnected = useCallback(async (): Promise<boolean> => {
     if (!userId) return false;
     try {
-      const { data } = await supabase
-        .from('whatsapp_sessions')
-        .select('status')
-        .eq('user_id', userId)
-        .maybeSingle();
-      return data?.status === 'connected';
+      // Check real status from Evolution API instead of just DB
+      const { data, error } = await supabase.functions.invoke('evolution-api', {
+        body: { action: 'status' },
+      });
+      
+      if (error || !data || data.status !== 'connected') {
+        // Update DB if API says disconnected but DB says connected
+        if (data && data.status !== 'connected') {
+          await supabase
+            .from('whatsapp_sessions')
+            .update({ status: data.status === 'connecting' ? 'connecting' : 'disconnected' })
+            .eq('user_id', userId);
+        }
+        return false;
+      }
+      return true;
     } catch {
       return false;
     }
