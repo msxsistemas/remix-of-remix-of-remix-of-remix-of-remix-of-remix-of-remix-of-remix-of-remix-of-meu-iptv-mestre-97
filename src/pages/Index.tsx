@@ -75,7 +75,7 @@ export default function Index() {
     <div className="space-y-6">
       
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-        {saudacao}, {primeiroNome || "Tech Play"}!
+        {saudacao}, {primeiroNome || "Gestor Msx"}!
       </h1>
 
       {/* 1ª linha — Cards de clientes (3 cards) */}
