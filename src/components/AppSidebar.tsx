@@ -320,7 +320,7 @@ export function AppSidebar() {
                             <item.icon className="h-5 w-5 flex-shrink-0 transition-transform duration-300" />
                             {!isCollapsed && <span className="text-[14px] font-medium whitespace-nowrap transition-opacity duration-300">{item.label}</span>}
                           </div>
-                          {!isCollapsed && <ChevronDown className="h-4 w-4 opacity-50" />}
+                          
                         </div>
                       </NavLink>
                     </SidebarMenuButton>
