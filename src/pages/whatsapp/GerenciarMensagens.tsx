@@ -27,6 +27,7 @@ interface MensagensPadroes {
   vence_hoje: string;
   vencido: string;
   confirmacao_pagamento: string;
+  aniversario_cliente: string;
 }
 
 const emptyMensagens: MensagensPadroes = {
@@ -36,6 +37,7 @@ const emptyMensagens: MensagensPadroes = {
   vence_hoje: "",
   vencido: "",
   confirmacao_pagamento: "",
+  aniversario_cliente: "",
 };
 
 
@@ -72,6 +74,7 @@ export default function GerenciarMensagens() {
           ...(data.vence_hoje && { vence_hoje: data.vence_hoje }),
           ...(data.vencido && { vencido: data.vencido }),
           ...(data.confirmacao_pagamento && { confirmacao_pagamento: data.confirmacao_pagamento }),
+          ...(data.aniversario_cliente && { aniversario_cliente: data.aniversario_cliente }),
           ...(data.dados_cliente && { dados_cliente: data.dados_cliente }),
         }));
         if (typeof data.enviar_bem_vindo === "boolean") {
@@ -101,6 +104,7 @@ export default function GerenciarMensagens() {
           vence_hoje: mensagens.vence_hoje,
           vencido: mensagens.vencido,
           confirmacao_pagamento: mensagens.confirmacao_pagamento,
+          aniversario_cliente: mensagens.aniversario_cliente,
           enviar_bem_vindo: enviarBemVindo,
           updated_at: new Date().toISOString(),
         }, {
@@ -173,6 +177,7 @@ export default function GerenciarMensagens() {
       vence_hoje: "Vence Hoje",
       vencido: "Vencido",
       confirmacao_pagamento: "Confirmação Pagamento",
+      aniversario_cliente: "Aniversário",
     };
     return titles[selectedTemplate];
   };
@@ -299,6 +304,16 @@ export default function GerenciarMensagens() {
                 value={mensagens.confirmacao_pagamento}
                 onChange={(e) => setMensagens(prev => ({ ...prev, confirmacao_pagamento: e.target.value }))}
                 onFocus={() => setSelectedTemplate("confirmacao_pagamento")}
+                className="min-h-[140px] text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-foreground font-medium">Aniversário:</Label>
+              <Textarea
+                value={mensagens.aniversario_cliente}
+                onChange={(e) => setMensagens(prev => ({ ...prev, aniversario_cliente: e.target.value }))}
+                onFocus={() => setSelectedTemplate("aniversario_cliente")}
                 className="min-h-[140px] text-sm"
               />
             </div>
