@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import TrialExpiredGate from './TrialExpiredGate';
 import { Badge } from '@/components/ui/badge';
 import { Clock } from 'lucide-react';
@@ -14,6 +15,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { isAdmin, loading: adminLoading } = useAdminAuth();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -31,7 +33,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   const { loading: subLoading, isTrialExpired, daysLeft, isTrial } = useSubscription(user?.id ?? null);
 
-  if (authLoading || subLoading) {
+  if (authLoading || subLoading || adminLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -44,6 +46,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Bloquear acesso de admins ao painel de usuário comum
+  if (isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (isTrialExpired) {
