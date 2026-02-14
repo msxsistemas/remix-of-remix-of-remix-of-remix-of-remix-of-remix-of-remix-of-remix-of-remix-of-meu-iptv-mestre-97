@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { usePlanos } from "@/hooks/useDatabase";
@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Power } from "lucide-react";
+import { Pencil, Trash2, Power, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Plano } from "@/types/database";
+
+const PER_PAGE = 10;
 
 const formatCurrencyBRL = (value: string) => {
   const digits = (value ?? "").toString().replace(/\D/g, "");
@@ -29,6 +31,7 @@ export default function ClientesPlanos() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [page, setPage] = useState(1);
   const [formData, setFormData] = useState({
     nome: "",
     valor: "",
@@ -172,13 +175,22 @@ export default function ClientesPlanos() {
     setDesativarTarget(null);
   };
 
-  const filteredPlanos = planos.filter((p) => {
-    const matchesSearch = p.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "todos" || 
-      (statusFilter === "ativo" && (p as any).ativo !== false) || 
-      (statusFilter === "inativo" && (p as any).ativo === false);
-    return matchesSearch && matchesStatus;
-  });
+  const filteredPlanos = useMemo(() => {
+    return planos.filter((p) => {
+      const matchesSearch = p.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "todos" || 
+        (statusFilter === "ativo" && (p as any).ativo !== false) || 
+        (statusFilter === "inativo" && (p as any).ativo === false);
+      return matchesSearch && matchesStatus;
+    });
+  }, [planos, searchTerm, statusFilter]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(1); }, [searchTerm, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlanos.length / PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedPlanos = filteredPlanos.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const getPeriodo = (plano: Plano) => {
     const qtd = plano.quantidade || "1";
@@ -239,7 +251,7 @@ export default function ClientesPlanos() {
 
       {/* Record count */}
       <div className="text-right text-sm text-muted-foreground">
-        Mostrando {filteredPlanos.length} de {planos.length} registros.
+        Mostrando {((currentPage - 1) * PER_PAGE) + 1}–{Math.min(currentPage * PER_PAGE, filteredPlanos.length)} de {filteredPlanos.length} registros.
       </div>
 
       {/* Table */}
@@ -257,11 +269,11 @@ export default function ClientesPlanos() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPlanos.length ? (
-              filteredPlanos.map((p, index) => (
+            {paginatedPlanos.length ? (
+              paginatedPlanos.map((p, index) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {filteredPlanos.length - index}
+                    {filteredPlanos.length - ((currentPage - 1) * PER_PAGE + index)}
                   </TableCell>
                   <TableCell className="font-medium">{p.nome}</TableCell>
                   <TableCell>
@@ -339,6 +351,28 @@ export default function ClientesPlanos() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            Mostrando {((currentPage - 1) * PER_PAGE) + 1}–{Math.min(currentPage * PER_PAGE, filteredPlanos.length)} de {filteredPlanos.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <Button key={p} variant={p === currentPage ? "default" : "outline"} size="sm" className="h-8 w-8 p-0 text-xs" onClick={() => setPage(p)}>
+                {p}
+              </Button>
+            ))}
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
