@@ -88,7 +88,8 @@ export default function ConfiguracoesNotificacoes() {
     })();
   }, [userId]);
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!userId) return;
     setSaving(true);
     try {
@@ -147,6 +148,7 @@ export default function ConfiguracoesNotificacoes() {
         <p className="text-muted-foreground mt-1">Gerencie horários, limites e ativação de notificações automáticas.</p>
       </div>
 
+        <form onSubmit={handleSave} className="space-y-6">
         {/* Configurações gerais */}
         <Card className="shadow-sm">
           <CardHeader>
@@ -156,11 +158,11 @@ export default function ConfiguracoesNotificacoes() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="hora">Hora para gerar as notificações:</Label>
-                <Input id="hora" type="time" value={config.hora_notificacoes} onChange={(e) => update("hora_notificacoes", e.target.value)} />
+                <Input id="hora" type="time" required value={config.hora_notificacoes} onChange={(e) => update("hora_notificacoes", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dias_fatura">Dias para gerar a fatura antes do vencimento:</Label>
-                <Input id="dias_fatura" type="number" min={0} value={config.dias_gerar_fatura} onChange={(e) => update("dias_gerar_fatura", Number(e.target.value))} />
+                <Input id="dias_fatura" type="number" required min={0} max={30} value={config.dias_gerar_fatura} onChange={(e) => update("dias_gerar_fatura", Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dias_prox">
@@ -169,15 +171,15 @@ export default function ConfiguracoesNotificacoes() {
                     <span className="ml-2 text-xs text-destructive">Coloque 0 para desativar! → Desativado</span>
                   )}
                 </Label>
-                <Input id="dias_prox" type="number" min={0} value={config.dias_proximo_vencer} onChange={(e) => update("dias_proximo_vencer", Number(e.target.value))} />
+                <Input id="dias_prox" type="number" required min={0} max={30} value={config.dias_proximo_vencer} onChange={(e) => update("dias_proximo_vencer", Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="qtd_msg">Quantidade de mensagens a serem enviadas por vez:</Label>
-                <Input id="qtd_msg" type="number" min={1} value={config.quantidade_mensagens} onChange={(e) => update("quantidade_mensagens", Number(e.target.value))} />
+                <Input id="qtd_msg" type="number" required min={1} max={100} value={config.quantidade_mensagens} onChange={(e) => update("quantidade_mensagens", Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dias_apos">Dias para enviar notificação após o vencimento:</Label>
-                <Input id="dias_apos" type="number" min={0} value={config.dias_apos_vencimento} onChange={(e) => update("dias_apos_vencimento", Number(e.target.value))} />
+                <Input id="dias_apos" type="number" required min={0} max={30} value={config.dias_apos_vencimento} onChange={(e) => update("dias_apos_vencimento", Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="whatsapp_pag">WhatsApp para receber notificação de pagamentos online. Ex: 5511999999999</Label>
@@ -211,11 +213,12 @@ export default function ConfiguracoesNotificacoes() {
         </Card>
 
         <div className="flex justify-center gap-3 pt-2">
-          <Button variant="destructive" onClick={() => setConfig(defaultConfig)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button type="button" variant="destructive" onClick={() => setConfig(defaultConfig)}>Cancelar</Button>
+          <Button type="submit" disabled={saving}>
             {saving ? "Salvando..." : "Salvar Configurações"}
           </Button>
         </div>
+        </form>
     </div>
   );
 }
