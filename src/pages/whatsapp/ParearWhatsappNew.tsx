@@ -30,11 +30,16 @@ export default function ParearWhatsappNew() {
         </div>
         <div className="flex items-center gap-2">
           {hydrated && (
-            <Badge variant={isConnected ? "default" : "secondary"} className={isConnected ? "bg-success text-success-foreground" : ""}>
+            <Badge variant={isConnected ? "default" : session?.status === 'connecting' ? "outline" : "secondary"} className={isConnected ? "bg-success text-success-foreground" : session?.status === 'connecting' ? "border-warning text-warning" : ""}>
               {isConnected ? (
                 <>
                   <Wifi className="h-3 w-3 mr-1" />
                   Conectado
+                </>
+              ) : session?.status === 'connecting' ? (
+                <>
+                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  Conectando
                 </>
               ) : (
                 <>

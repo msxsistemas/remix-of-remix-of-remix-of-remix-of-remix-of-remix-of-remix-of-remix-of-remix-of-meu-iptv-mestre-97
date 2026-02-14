@@ -161,8 +161,11 @@ export const useEvolutionAPISimple = () => {
         }
         toast.success('WhatsApp conectado!');
       } else if (data.status === 'connecting') {
-        setSession({ status: 'connecting' });
-        toast.info('WhatsApp está conectando...');
+        // Auto-conectar para obter QR code
+        toast.info('Reconectando...');
+        setConnecting(false);
+        await connect();
+        return 'connecting';
       } else {
         setSession(null);
         toast.info('WhatsApp desconectado');
