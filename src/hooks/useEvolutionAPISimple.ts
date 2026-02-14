@@ -138,48 +138,7 @@ export const useEvolutionAPISimple = () => {
     saveSessionToDB();
   }, [userId, session, hydrated]);
 
-  // Monitorar desconexão na Evolution API (sem checar ao entrar na página)
-  useEffect(() => {
-    if (!userId) return;
-
-    // Só monitora quando estiver conectado
-    if (session?.status !== 'connected') {
-      if (statusIntervalRef.current) {
-        clearInterval(statusIntervalRef.current);
-        statusIntervalRef.current = null;
-      }
-      return;
-    }
-
-    if (statusIntervalRef.current) return;
-
-    // Checagem leve em background para detectar desconexão externa
-    failCountRef.current = 0;
-    statusIntervalRef.current = setInterval(async () => {
-      try {
-        const data = await callEvolutionAPI('status');
-        if (data.status === 'connected') {
-          failCountRef.current = 0;
-        } else {
-          failCountRef.current += 1;
-          console.warn(`[WhatsApp] Status não-conectado (${failCountRef.current}/3)`);
-          if (failCountRef.current >= 3) {
-            setSession(null);
-            failCountRef.current = 0;
-          }
-        }
-      } catch {
-        // se falhar por erro de rede, não conta como desconexão
-      }
-    }, 60000);
-
-    return () => {
-      if (statusIntervalRef.current) {
-        clearInterval(statusIntervalRef.current);
-        statusIntervalRef.current = null;
-      }
-    };
-  }, [userId, session?.status, callEvolutionAPI]);
+  // Não faz polling automático de status - sessão só muda via ações do usuário
 
   const checkStatus = useCallback(async () => {
     if (!userId) return null;
