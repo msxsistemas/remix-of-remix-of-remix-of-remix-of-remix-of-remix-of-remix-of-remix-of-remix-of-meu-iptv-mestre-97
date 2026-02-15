@@ -17,8 +17,6 @@ export const useZAPI = () => {
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [configLoading, setConfigLoading] = useState(true);
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -30,28 +28,6 @@ export const useZAPI = () => {
       }
     };
   }, []);
-
-  // Check if Z-API is configured
-  useEffect(() => {
-    if (!userId) return;
-    
-    const checkConfig = async () => {
-      setConfigLoading(true);
-      try {
-        const { data } = await supabase.functions.invoke('zapi-integration', {
-          body: { action: 'checkConfig' },
-        });
-        setIsConfigured(!!data?.configured);
-      } catch (e) {
-        console.error('Erro ao verificar config Z-API:', e);
-        setIsConfigured(false);
-      } finally {
-        setConfigLoading(false);
-      }
-    };
-
-    checkConfig();
-  }, [userId]);
 
   // Load session from DB
   useEffect(() => {
@@ -220,11 +196,6 @@ export const useZAPI = () => {
       return;
     }
 
-    if (!isConfigured) {
-      toast.error('Configure as credenciais Z-API antes de conectar');
-      return;
-    }
-
     setConnecting(true);
     try {
       const data = await callZAPI('connect');
@@ -252,7 +223,7 @@ export const useZAPI = () => {
     } finally {
       setConnecting(false);
     }
-  }, [userId, isConfigured, callZAPI, startStatusCheck]);
+  }, [userId, callZAPI, startStatusCheck]);
 
   const disconnect = useCallback(async () => {
     if (statusIntervalRef.current) {
@@ -269,21 +240,6 @@ export const useZAPI = () => {
       console.error('Error disconnecting:', error);
       setSession(null);
       toast.success('WhatsApp desconectado');
-    }
-  }, [callZAPI]);
-
-  const saveConfig = useCallback(async (config: { instanceId: string; token: string; clientToken: string }) => {
-    try {
-      const data = await callZAPI('saveConfig', config);
-      if (data?.success) {
-        setIsConfigured(true);
-        toast.success('Configuração Z-API salva com sucesso!');
-        return true;
-      }
-      return false;
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar configuração');
-      return false;
     }
   }, [callZAPI]);
 
@@ -317,16 +273,16 @@ export const useZAPI = () => {
   return {
     session,
     config: null,
-    configLoading,
+    configLoading: false,
     loading,
     connecting,
     hydrated,
-    saveConfig,
+    saveConfig: async () => false,
     connect,
     disconnect,
     checkStatus,
     sendMessage,
     isConnected: session?.status === 'connected',
-    isConfigured,
+    isConfigured: true, // Always true - auto-provisioning handles it
   };
 };
