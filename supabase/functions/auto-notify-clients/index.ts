@@ -82,12 +82,14 @@ async function sendNotification(
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
+  // Check if already sent successfully today (skip failed ones so they can be retried)
   const { data: existing } = await supabase
     .from('whatsapp_messages')
     .select('id')
     .eq('user_id', userId)
     .eq('phone', cliente.whatsapp)
     .eq('session_id', `auto_${tipoNotificacao}`)
+    .eq('status', 'sent')
     .gte('created_at', todayStart.toISOString())
     .lte('created_at', todayEnd.toISOString())
     .limit(1);
