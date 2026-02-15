@@ -139,7 +139,7 @@ export default function AppLayout() {
                 <path d="M10 5 H90 V70 Q90 95 50 108 Q10 95 10 70 Z" fill="url(#headerShieldGrad)" rx="8" />
                 <text x="50" y="72" textAnchor="middle" fill="white" fontSize="52" fontWeight="bold" fontFamily="sans-serif">M</text>
               </svg>
-              <span className="text-sm font-bold tracking-wide text-foreground">GESTOR <span className="text-primary">MSX</span></span>
+              <span className="text-sm font-bold tracking-wide text-foreground">GESTOR <span className="text-primary text-base">MSX</span></span>
             </div>
             {/* Spacer */}
             <div className="flex-1" />
