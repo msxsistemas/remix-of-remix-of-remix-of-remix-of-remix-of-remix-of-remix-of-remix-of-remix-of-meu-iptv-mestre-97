@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Loader2, ArrowLeft, CreditCard, QrCode, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCodeSVG from 'react-qr-code';
-import logoPlay from '@/assets/logo-play.png';
 
 interface SystemPlan {
   id: string;
@@ -47,7 +46,7 @@ export default function AtivarPlano() {
   const planId = searchParams.get('plan');
 
   useEffect(() => {
-    document.title = 'Ativar Plano | Msx Gestor';
+    document.title = 'Ativar Plano | Gestor MSX';
     
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
@@ -253,23 +252,13 @@ export default function AtivarPlano() {
   if (!plan) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/renovar-acesso')}>
-            <div className="w-9 h-9 rounded-full overflow-hidden shadow-md">
-              <img src={logoPlay} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-lg font-bold text-foreground">Msx Gestor</span>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('/renovar-acesso')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar aos planos
-          </Button>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/renovar-acesso')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar aos planos
+        </Button>
+      </div>
         {paymentStatus === 'paid' ? (
           <Card className="border-green-500/30">
             <CardContent className="text-center py-12">
@@ -437,7 +426,6 @@ export default function AtivarPlano() {
             </Card>
           </div>
         )}
-      </div>
     </div>
   );
 }
