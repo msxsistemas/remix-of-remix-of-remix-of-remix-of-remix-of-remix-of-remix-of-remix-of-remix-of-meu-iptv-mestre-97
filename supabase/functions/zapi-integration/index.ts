@@ -69,8 +69,7 @@ Deno.serve(async (req) => {
           'Authorization': `Bearer ${INTEGRATION_TOKEN}`,
         },
         body: JSON.stringify({
-          name: `GestorMSX-${user.id.substring(0, 8)}`,
-          sessionName: 'GestorMSX WhatsApp',
+          name: `MSX${user.id.replace(/-/g, '').substring(0, 8)}`,
         }),
       });
 
