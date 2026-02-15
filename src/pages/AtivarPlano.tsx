@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, ArrowLeft, CreditCard, QrCode, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, CreditCard, QrCode, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCodeSVG from 'react-qr-code';
 
@@ -314,31 +314,24 @@ export default function AtivarPlano() {
 
                 {paymentData.pix_copia_cola && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-foreground">PIX Copia e Cola</p>
-                      {copied && (
-                        <span className="text-xs text-green-500 font-medium flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Copiado!
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className="group relative bg-muted/60 hover:bg-muted rounded-xl p-4 cursor-pointer transition-colors border border-border/50 hover:border-primary/30"
-                      onClick={copyPixCode}
-                    >
-                      <code className="text-xs break-all text-muted-foreground leading-relaxed block pr-10 overflow-hidden line-clamp-2">
+                    <div className="bg-muted/60 rounded-xl p-4 border border-border/50">
+                      <code className="text-sm break-all text-muted-foreground leading-relaxed block overflow-hidden line-clamp-2">
                         {paymentData.pix_copia_cola}
                       </code>
-                      <Button
-                        variant={copied ? "default" : "secondary"}
-                        size="icon"
-                        className={`absolute top-3 right-3 h-8 w-8 transition-all ${copied ? 'bg-green-500 hover:bg-green-600 text-white' : 'group-hover:bg-primary group-hover:text-primary-foreground'}`}
-                        onClick={(e) => { e.stopPropagation(); copyPixCode(); }}
-                      >
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
                     </div>
+                    <Button
+                      className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
+                      onClick={copyPixCode}
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-5 w-5" />
+                          Copiado!
+                        </>
+                      ) : (
+                        'PIX Copia e Cola'
+                      )}
+                    </Button>
                   </div>
                 )}
 
