@@ -27,7 +27,7 @@ export default function RenovarAcesso() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Renovar Acesso | Msx Gestor';
+    document.title = 'Renovar Acesso | Gestor MSX';
     fetchPlans();
   }, []);
 
