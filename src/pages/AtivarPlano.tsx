@@ -320,7 +320,7 @@ export default function AtivarPlano() {
                       </code>
                     </div>
                     <Button
-                      className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
+                      className="w-full"
                       onClick={copyPixCode}
                     >
                       {copied ? (
