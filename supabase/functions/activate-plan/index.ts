@@ -262,35 +262,60 @@ Deno.serve(async (req) => {
 
 async function activateSubscription(client: any, userId: string, plan: any) {
   const expiration = calculateExpiration(plan.intervalo);
+  const now = new Date().toISOString();
+  
+  console.log(`🔄 Activating subscription for user ${userId}, plan ${plan.id} (${plan.intervalo}), expira_em: ${expiration}`);
 
   // Check if user has existing subscription
-  const { data: existing } = await client
+  const { data: existing, error: fetchErr } = await client
     .from("user_subscriptions")
-    .select("id")
+    .select("id, expira_em")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  if (fetchErr) {
+    console.error("❌ Error fetching existing subscription:", fetchErr);
+  }
+
   if (existing) {
-    await client
+    const updatePayload = {
+      plan_id: plan.id,
+      status: "ativa",
+      inicio: now,
+      expira_em: expiration,
+      updated_at: now,
+    };
+    console.log(`📝 Updating subscription ${existing.id}, old expira_em: ${existing.expira_em}, new payload:`, JSON.stringify(updatePayload));
+    
+    const { error: updateErr } = await client
       .from("user_subscriptions")
-      .update({
-        plan_id: plan.id,
-        status: "ativa",
-        inicio: new Date().toISOString(),
-        expira_em: expiration,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", existing.id);
+    
+    if (updateErr) {
+      console.error("❌ Error updating subscription:", updateErr);
+      throw new Error(`Erro ao atualizar assinatura: ${updateErr.message}`);
+    }
+    console.log(`✅ Subscription ${existing.id} activated successfully, expira_em: ${expiration}`);
   } else {
-    await client.from("user_subscriptions").insert({
+    const insertPayload = {
       user_id: userId,
       plan_id: plan.id,
       status: "ativa",
-      inicio: new Date().toISOString(),
+      inicio: now,
       expira_em: expiration,
-    });
+    };
+    console.log(`📝 Inserting new subscription:`, JSON.stringify(insertPayload));
+    
+    const { error: insertErr } = await client.from("user_subscriptions").insert(insertPayload);
+    
+    if (insertErr) {
+      console.error("❌ Error inserting subscription:", insertErr);
+      throw new Error(`Erro ao criar assinatura: ${insertErr.message}`);
+    }
+    console.log(`✅ New subscription created for user ${userId}, expira_em: ${expiration}`);
   }
 }
 
