@@ -276,7 +276,7 @@ export default function ProdutosCadastro() {
                   {provedoresDisponiveis.length === 0 ? (
                     <div className="flex items-center gap-2 text-warning text-sm">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>Nenhum painel IPTV configurado. Configure em Servidores.</span>
+                      <span>Nenhum painel configurado. Configure em Servidores.</span>
                     </div>
                   ) : formData.provedorIptv && paineisFiltrados.length > 0 ? (
                     <div className="flex items-center gap-2 text-primary text-sm">
