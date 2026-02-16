@@ -125,7 +125,7 @@ export function AppSidebar() {
     { to: "/configurar", icon: Settings, label: "Configurações", hasConfigurarSubmenu: true },
     { to: "/indicacoes", icon: Share2, label: "Indicações", hasIndicacoesSubmenu: true },
     { to: "/outros", icon: MoreHorizontal, label: "Outros", hasOutrosSubmenu: true },
-    { to: "/logs", icon: ScrollText, label: "Logs", hasLogsSubmenu: true },
+    { to: "/logs", icon: ScrollText, label: "Logs" },
   ];
 
   const clientesSubItems = [
@@ -158,9 +158,6 @@ export function AppSidebar() {
   const configurarSubItems = [
     { to: "/configurar/configuracao-envio", label: "Configuração de Envio" },
     { to: "/configurar/notificacoes", label: "Configurações de Notificações" },
-  ];
-  const logsSubItems = [
-    { to: "/logs", label: "Ver Logs" },
   ];
   const indicacoesSubItems = [
     { to: "/indicacoes/clientes", label: "Indicação de Clientes" },
@@ -314,7 +311,7 @@ export function AppSidebar() {
                 if (item.hasProdutosSubmenu) return renderSubmenuParent(item, "produtos", produtosActive, produtosSubItems);
                 if (item.hasServidoresSubmenu) return renderSubmenuParent(item, "servidores", servidoresActive, servidoresSubItems);
                 if (item.hasFinanceiroSubmenu) return renderSubmenuParent(item, "financeiro", financeiroActive, financeiroSubItems);
-                if (item.hasLogsSubmenu) return renderSubmenuParent(item, "logs", logsActive, logsSubItems);
+                
                 if (item.hasIndicacoesSubmenu) return renderSubmenuParent(item, "indicacoes", indicacoesActive, indicacoesSubItems);
                 if (item.hasOutrosSubmenu) return renderSubmenuParent(item, "outros", outrosActive, outrosSubItems);
                 if (item.hasGatewaysSubmenu) return renderSubmenuParent(item, "gateways", gatewaysActive, gatewaysSubItems);
