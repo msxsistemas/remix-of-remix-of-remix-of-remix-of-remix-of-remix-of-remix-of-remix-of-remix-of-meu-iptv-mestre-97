@@ -182,8 +182,11 @@ export default function ConfiguracoesNotificacoes() {
                 <Input id="dias_apos" type="number" required min={0} max={30} value={config.dias_apos_vencimento} onChange={(e) => update("dias_apos_vencimento", Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp_pag">WhatsApp para receber notificação de pagamentos online. Ex: 5511999999999</Label>
-                <Input id="whatsapp_pag" type="text" value={config.whatsapp_pagamentos} onChange={(e) => update("whatsapp_pagamentos", e.target.value)} />
+                <Label htmlFor="whatsapp_pag">WhatsApp para receber notificação de pagamentos online:</Label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">+55</span>
+                  <Input id="whatsapp_pag" type="text" className="rounded-l-none" placeholder="11999999999" value={config.whatsapp_pagamentos.replace(/^55/, '')} onChange={(e) => update("whatsapp_pagamentos", '55' + e.target.value.replace(/\D/g, ''))} />
+                </div>
               </div>
             </div>
           </CardContent>
