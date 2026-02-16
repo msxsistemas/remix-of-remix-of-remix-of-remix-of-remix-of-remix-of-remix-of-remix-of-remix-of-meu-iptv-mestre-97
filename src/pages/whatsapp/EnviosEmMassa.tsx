@@ -33,8 +33,6 @@ const destinatariosOptions = [
   { value: "clientes_inativos", label: "Clientes Inativos" },
   { value: "clientes_vencidos", label: "Clientes Vencidos" },
   { value: "clientes_vencidos_data", label: "Clientes Vencidos por Data" },
-  { value: "por_tags", label: "Por Tags" },
-  { value: "clientes_desativados", label: "Clientes Desativados" },
   { value: "todos", label: "Para Todos" },
 ];
 
