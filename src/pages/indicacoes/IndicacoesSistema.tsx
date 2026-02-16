@@ -114,8 +114,9 @@ export default function IndicacoesSistema() {
       toast.error("Informe um valor válido");
       return;
     }
-    if (valor > stats.saldoDisponivel) {
-      toast.error("Saldo insuficiente");
+    const valorComTaxa = valor + TAXA_SAQUE;
+    if (valorComTaxa > saldoReal) {
+      toast.error(`Saldo insuficiente. Valor + taxa: R$ ${valorComTaxa.toFixed(2).replace(".", ",")}`);
       return;
     }
     if (!chavePix.trim()) {
@@ -131,17 +132,17 @@ export default function IndicacoesSistema() {
         .update({ chave_pix_indicacao: chavePix.trim() })
         .eq("user_id", userId);
 
-      // Create withdrawal request
+      // Create withdrawal request (valor includes the fee info)
       const { error } = await supabase.from("saques_indicacao").insert({
         user_id: userId,
-        valor,
+        valor: valorComTaxa,
         chave_pix: chavePix.trim(),
         status: "pendente",
       });
 
       if (error) throw error;
 
-      toast.success("Solicitação de saque enviada! Aguarde aprovação.");
+      toast.success(`Saque de R$ ${valor.toFixed(2).replace(".", ",")} solicitado (taxa R$ ${TAXA_SAQUE.toFixed(2).replace(".", ",")})`);
       setSaqueDialogOpen(false);
       fetchSaques(userId);
     } catch (err: any) {
@@ -477,7 +478,7 @@ export default function IndicacoesSistema() {
           <DialogHeader>
             <DialogTitle>Solicitar Resgate</DialogTitle>
             <DialogDescription>
-              Saldo disponível: R$ {saldoReal.toFixed(2).replace(".", ",")}
+              Saldo disponível: R$ {saldoReal.toFixed(2).replace(".", ",")} | Taxa por saque: R$ {TAXA_SAQUE.toFixed(2).replace(".", ",")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -487,11 +488,27 @@ export default function IndicacoesSistema() {
                 type="number"
                 step="0.01"
                 min="0.01"
-                max={saldoReal}
+                max={Math.max(0, saldoReal - TAXA_SAQUE)}
                 placeholder="0,00"
                 value={saqueValor}
                 onChange={e => setSaqueValor(e.target.value)}
               />
+              {saqueValor && parseFloat(saqueValor.replace(",", ".")) > 0 && (
+                <div className="rounded-md bg-muted p-3 text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Valor solicitado:</span>
+                    <span>R$ {parseFloat(saqueValor.replace(",", ".")).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Taxa de saque:</span>
+                    <span className="text-destructive">- R$ {TAXA_SAQUE.toFixed(2).replace(".", ",")}</span>
+                  </div>
+                  <div className="border-t border-border pt-1 flex justify-between font-medium">
+                    <span>Total debitado do saldo:</span>
+                    <span>R$ {(parseFloat(saqueValor.replace(",", ".")) + TAXA_SAQUE).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Chave PIX</Label>
