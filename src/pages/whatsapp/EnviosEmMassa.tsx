@@ -32,7 +32,7 @@ const destinatariosOptions = [
   { value: "clientes_vencidos_servidor", label: "Clientes Vencidos por Servidor" },
   { value: "clientes_inativos", label: "Clientes Inativos" },
   { value: "clientes_vencidos", label: "Clientes Vencidos" },
-  { value: "clientes_vencidos_data", label: "Clientes Vencidos por Data" },
+  
   { value: "todos", label: "Para Todos" },
 ];
 
