@@ -160,8 +160,7 @@ export function AppSidebar() {
     { to: "/configurar/notificacoes", label: "Configurações de Notificações" },
   ];
   const logsSubItems = [
-    { to: "/logs/painel", label: "Logs do Painel" },
-    { to: "/logs/sistema", label: "Logs do Sistema" },
+    { to: "/logs", label: "Ver Logs" },
   ];
   const indicacoesSubItems = [
     { to: "/indicacoes/clientes", label: "Indicação de Clientes" },
