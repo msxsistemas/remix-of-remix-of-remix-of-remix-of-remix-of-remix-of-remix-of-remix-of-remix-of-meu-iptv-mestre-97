@@ -227,6 +227,13 @@ export default function FaturaPublica() {
   const statusLabel = isPaid ? "PAGO" : "EM ABERTO";
   const hasPix = fatura.pix_qr_code || fatura.pix_copia_cola || (fatura.gateway === "pix_manual" && fatura.pix_manual_key);
   const valorFormatted = Number(fatura.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const hasDiscount = !!(fatura.valor_original && fatura.cupom_codigo);
+  const valorOriginalFormatted = hasDiscount
+    ? Number(fatura.valor_original).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null;
+  const descontoFormatted = hasDiscount
+    ? (Number(fatura.valor_original) - Number(fatura.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null;
 
   return (
     <div className="min-h-screen bg-[#e8edf2] py-6 px-4 sm:py-10 print:bg-white print:py-0">
@@ -284,9 +291,17 @@ export default function FaturaPublica() {
                 <tbody>
                   <tr className="border-t border-slate-100">
                     <td className="px-3 py-3 text-slate-700 text-sm">{fatura.plano_nome || "Pagamento"}</td>
-                    <td className="px-3 py-3 text-center text-slate-600">R$ {valorFormatted}</td>
                     <td className="px-3 py-3 text-center text-slate-600">
-                      {couponApplied ? (
+                      {hasDiscount ? (
+                        <span className="line-through text-slate-400">R$ {valorOriginalFormatted}</span>
+                      ) : (
+                        <>R$ {valorFormatted}</>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-center text-slate-600">
+                      {hasDiscount ? (
+                        <span className="text-emerald-600 font-medium">- R$ {descontoFormatted}</span>
+                      ) : couponApplied ? (
                         <span className="text-emerald-600 font-medium">- R$ {couponApplied.desconto}</span>
                       ) : "R$ 0,00"}
                     </td>
@@ -298,7 +313,13 @@ export default function FaturaPublica() {
 
             {/* Summary */}
             <div className="space-y-1 text-sm">
-              <p className="text-slate-700"><strong>Total:</strong> R$ {valorFormatted}</p>
+              <p className="text-slate-700">
+                <strong>Total:</strong>{" "}
+                {hasDiscount && (
+                  <span className="line-through text-slate-400 mr-2">R$ {valorOriginalFormatted}</span>
+                )}
+                <span className={hasDiscount ? "text-emerald-600 font-semibold" : ""}>R$ {valorFormatted}</span>
+              </p>
               <p className="text-slate-700"><strong>Vencimento:</strong> {new Date(fatura.created_at).toLocaleDateString("pt-BR")}</p>
               <p className="text-slate-700">
                 <strong>Fatura:</strong>{" "}
