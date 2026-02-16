@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Ticket, Plus, Trash2, Pencil, Search, Loader2 } from "lucide-react";
 import { useCupons, type CupomInsert } from "@/hooks/useCupons";
@@ -243,13 +244,15 @@ export default function Cupom() {
                         : "Sem validade"}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={cupom.ativo ? "default" : "secondary"}
-                        className="cursor-pointer"
-                        onClick={() => toggleAtivo(cupom)}
-                      >
-                        {cupom.ativo ? "Ativo" : "Inativo"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={cupom.ativo}
+                          onCheckedChange={() => toggleAtivo(cupom)}
+                        />
+                        <Badge variant={cupom.ativo ? "default" : "secondary"} className="text-xs">
+                          {cupom.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
