@@ -1,4 +1,17 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
+
+async function resolveVaultCreds(supabase: SupabaseClient, panel: any) {
+  let u = panel.usuario, s = panel.senha;
+  if (u === 'vault' || s === 'vault') {
+    const [uR, sR] = await Promise.all([
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `usuario_${panel.id}` }),
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `senha_${panel.id}` }),
+    ]);
+    if (uR.data) u = uR.data;
+    if (sR.data) s = sR.data;
+  }
+  return { usuario: u, senha: s };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -595,9 +608,10 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
           });
         }
+        const testCreds = await resolveVaultCreds(supabase, panel);
         testUrl = panel.url;
-        testUser = panel.usuario;
-        testPass = panel.senha;
+        testUser = testCreds.usuario;
+        testPass = testCreds.senha;
       } else {
         testUrl = directUrl;
         testUser = directUser;
@@ -640,11 +654,12 @@ Deno.serve(async (req) => {
 
       console.log(`🔄 KOffice (${panel.provedor}): Renovando "${username}" no painel ${panel.nome}`);
 
+      const renewCreds = await resolveVaultCreds(supabase, panel);
       let result;
       if (panel.provedor === 'koffice-api') {
-        result = await xtreamRenew(panel.url, panel.usuario, panel.senha, username, Number(duration), durationIn);
+        result = await xtreamRenew(panel.url, renewCreds.usuario, renewCreds.senha, username, Number(duration), durationIn);
       } else {
-        result = await kofficeV2Renew(panel.url, panel.usuario, panel.senha, username, Number(duration), durationIn);
+        result = await kofficeV2Renew(panel.url, renewCreds.usuario, renewCreds.senha, username, Number(duration), durationIn);
       }
 
       if (result.success) {

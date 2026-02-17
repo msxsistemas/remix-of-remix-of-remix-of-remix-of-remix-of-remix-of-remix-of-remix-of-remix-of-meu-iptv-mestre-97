@@ -1,4 +1,17 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
+
+async function resolveVaultCreds(supabase: SupabaseClient, panel: any) {
+  let u = panel.usuario, s = panel.senha;
+  if (u === 'vault' || s === 'vault') {
+    const [uR, sR] = await Promise.all([
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `usuario_${panel.id}` }),
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `senha_${panel.id}` }),
+    ]);
+    if (uR.data) u = uR.data;
+    if (sR.data) s = sR.data;
+  }
+  return { usuario: u, senha: s };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -251,7 +264,8 @@ Deno.serve(async (req) => {
       const { data: panel } = await supabase.from('paineis_integracao').select('*').eq('id', panelId).eq('provedor', 'mundogf').single();
       if (!panel) return new Response(JSON.stringify({ success: false, error: 'Painel não encontrado' }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
-      const login = await loginMundoGF(panel.url, panel.usuario, panel.senha);
+      const creds2 = await resolveVaultCreds(supabase, panel);
+      const login = await loginMundoGF(panel.url, creds2.usuario, creds2.senha);
       if (!login.success) return new Response(JSON.stringify({ success: false, error: login.error }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
       const cleanBase = panel.url.replace(/\/$/, '');
@@ -318,7 +332,8 @@ Deno.serve(async (req) => {
 
       console.log(`🔄 Renovando cliente ${clientUserId || username} no painel ${panel.nome} (${duration} ${durationIn}, Telas: ${clienteScreens || '?'})`);
 
-      const login = await loginMundoGF(panel.url, panel.usuario, panel.senha);
+      const creds3 = await resolveVaultCreds(supabase, panel);
+      const login = await loginMundoGF(panel.url, creds3.usuario, creds3.senha);
       if (!login.success) return new Response(JSON.stringify({ success: false, error: login.error }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
 
       const cleanBase = panel.url.replace(/\/$/, '');

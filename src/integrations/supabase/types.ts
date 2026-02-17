@@ -922,7 +922,6 @@ export type Database = {
           termos_url: string | null
           trial_dias: number | null
           updated_at: string
-          zapi_integration_token: string | null
         }
         Insert: {
           cor_primaria?: string | null
@@ -937,7 +936,6 @@ export type Database = {
           termos_url?: string | null
           trial_dias?: number | null
           updated_at?: string
-          zapi_integration_token?: string | null
         }
         Update: {
           cor_primaria?: string | null
@@ -952,7 +950,6 @@ export type Database = {
           termos_url?: string | null
           trial_dias?: number | null
           updated_at?: string
-          zapi_integration_token?: string | null
         }
         Relationships: []
       }
@@ -1420,39 +1417,6 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      zapi_config: {
-        Row: {
-          client_token: string
-          created_at: string
-          id: string
-          instance_id: string
-          is_configured: boolean
-          token: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          client_token: string
-          created_at?: string
-          id?: string
-          instance_id: string
-          is_configured?: boolean
-          token: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          client_token?: string
-          created_at?: string
-          id?: string
-          instance_id?: string
-          is_configured?: boolean
-          token?: string
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
