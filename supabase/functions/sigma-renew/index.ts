@@ -84,8 +84,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Resolve credentials from Vault
+    let panelUser = panel.usuario;
+    let panelPass = panel.senha;
+    if (panelUser === 'vault' || panelPass === 'vault') {
+      const [uRes, sRes] = await Promise.all([
+        supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `usuario_${panel.id}` }),
+        supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `senha_${panel.id}` }),
+      ]);
+      if (uRes.data) panelUser = uRes.data;
+      if (sRes.data) panelPass = sRes.data;
+    }
+
     const cleanBase = panel.url.replace(/\/$/, '');
-    const login = await loginSigma(cleanBase, panel.usuario, panel.senha);
+    const login = await loginSigma(cleanBase, panelUser, panelPass);
     if (!login.success) {
       return new Response(JSON.stringify({ success: false, error: login.error }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,

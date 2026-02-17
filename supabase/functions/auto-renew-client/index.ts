@@ -1,4 +1,17 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
+
+async function resolveVaultCreds(supabase: SupabaseClient, panel: any) {
+  let u = panel.usuario, s = panel.senha;
+  if (u === 'vault' || s === 'vault') {
+    const [uR, sR] = await Promise.all([
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `usuario_${panel.id}` }),
+      supabase.rpc('get_gateway_secret', { p_user_id: panel.user_id, p_gateway: 'painel', p_secret_name: `senha_${panel.id}` }),
+    ]);
+    if (uR.data) u = uR.data;
+    if (sR.data) s = sR.data;
+  }
+  return { usuario: u, senha: s };
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -180,12 +193,13 @@ Deno.serve(async (req) => {
         const functionName = providerFunctionMap[painel.provedor] || 'playfast-renew';
 
         try {
+          const painelCreds = await resolveVaultCreds(supabase, painel);
           let renewBody: any;
 
           if (functionName === 'playfast-renew') {
             renewBody = {
-              token: painel.url.split('/').pop() || painel.usuario,
-              secret: painel.senha,
+              token: painel.url.split('/').pop() || painelCreds.usuario,
+              secret: painelCreds.senha,
               username: cliente.usuario,
               month: renewalMonths || Math.ceil(renewalDays / 30),
               action: 'renew',

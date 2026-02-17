@@ -62,10 +62,40 @@ export default function ClientesIntegracoes() {
     loadPanels();
   }, []);
 
+  const resolveVaultCredentials = async (panelId: string, userId: string, fallbackUsuario: string, fallbackSenha: string) => {
+    if (fallbackUsuario !== 'vault' && fallbackSenha !== 'vault') {
+      return { usuario: fallbackUsuario, senha: fallbackSenha };
+    }
+    try {
+      const [usuarioRes, senhaRes] = await Promise.all([
+        supabase.rpc('get_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `usuario_${panelId}` }),
+        supabase.rpc('get_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `senha_${panelId}` }),
+      ]);
+      return { usuario: usuarioRes.data || fallbackUsuario, senha: senhaRes.data || fallbackSenha };
+    } catch {
+      return { usuario: fallbackUsuario, senha: fallbackSenha };
+    }
+  };
+
+  const storeVaultCredentials = async (panelId: string, userId: string, usuario: string, senha: string) => {
+    await Promise.all([
+      supabase.rpc('store_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `usuario_${panelId}`, p_secret_value: usuario }),
+      supabase.rpc('store_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `senha_${panelId}`, p_secret_value: senha }),
+    ]);
+  };
+
+  const deleteVaultCredentials = async (panelId: string, userId: string) => {
+    await Promise.all([
+      supabase.rpc('delete_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `usuario_${panelId}` }),
+      supabase.rpc('delete_gateway_secret', { p_user_id: userId, p_gateway: 'painel', p_secret_name: `senha_${panelId}` }),
+    ]).catch(() => {});
+  };
+
   const loadPanels = async () => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
+      const userId = session.session.user.id;
 
       const { data, error } = await supabase
         .from('paineis_integracao' as any)
@@ -75,16 +105,20 @@ export default function ClientesIntegracoes() {
       if (error) throw error;
 
       if (data) {
-        setPanels(data.map((p: any) => ({
-          id: String(p.id),
-          nome: p.nome,
-          url: p.url,
-          usuario: p.usuario,
-          senha: p.senha,
-          status: p.status as 'Ativo' | 'Inativo',
-          autoRenovacao: p.auto_renovacao,
-          provedor: p.provedor || 'playfast',
-        })));
+        const resolved = await Promise.all(data.map(async (p: any) => {
+          const creds = await resolveVaultCredentials(p.id, userId, p.usuario, p.senha);
+          return {
+            id: String(p.id),
+            nome: p.nome,
+            url: p.url,
+            usuario: creds.usuario,
+            senha: creds.senha,
+            status: p.status as 'Ativo' | 'Inativo',
+            autoRenovacao: p.auto_renovacao,
+            provedor: p.provedor || 'playfast',
+          };
+        }));
+        setPanels(resolved);
       }
     } catch (error: any) {
       console.error('Erro ao carregar painéis:', error);
@@ -112,14 +146,17 @@ export default function ClientesIntegracoes() {
         return;
       }
 
+      const usuario = formData.usuario.trim();
+      const senha = formData.senha.trim();
+
       const { data, error } = await supabase
         .from('paineis_integracao' as any)
         .insert([{
           user_id: session.session.user.id,
           nome: formData.nomePainel.trim(),
           url: baseUrl,
-          usuario: formData.usuario.trim(),
-          senha: formData.senha.trim(),
+          usuario: 'vault',
+          senha: 'vault',
           status: 'Ativo',
           auto_renovacao: autoRenewal,
           provedor: selectedProvider
@@ -129,18 +166,19 @@ export default function ClientesIntegracoes() {
 
       if (error) throw error;
 
-      if (data) {
-        setPanels((prev) => [...prev, {
-          id: String((data as any).id),
-          nome: (data as any).nome,
-          url: (data as any).url,
-          usuario: (data as any).usuario,
-          senha: (data as any).senha,
-          status: (data as any).status as 'Ativo' | 'Inativo',
-          autoRenovacao: (data as any).auto_renovacao,
-          provedor: selectedProvider
-        }]);
-      }
+      const panelId = String((data as any).id);
+      await storeVaultCredentials(panelId, session.session.user.id, usuario, senha);
+
+      setPanels((prev) => [...prev, {
+        id: panelId,
+        nome: (data as any).nome,
+        url: (data as any).url,
+        usuario,
+        senha,
+        status: (data as any).status as 'Ativo' | 'Inativo',
+        autoRenovacao: (data as any).auto_renovacao,
+        provedor: selectedProvider
+      }]);
 
       setCreateResultModal({ isOpen: true, message: `Painel '${formData.nomePainel}' criado com sucesso!` });
       setFormData({ nomePainel: "", urlPainel: "", usuario: "", senha: "" });
@@ -418,12 +456,19 @@ export default function ClientesIntegracoes() {
     if (!deleteConfirmModal.panel) return;
 
     try {
+      const { data: session } = await supabase.auth.getSession();
+      const userId = session.session?.user?.id;
+
       const { error } = await supabase
         .from('paineis_integracao' as any)
         .delete()
         .eq('id', deleteConfirmModal.panel.id);
 
       if (error) throw error;
+
+      if (userId) {
+        await deleteVaultCredentials(deleteConfirmModal.panel.id, userId);
+      }
 
       setPanels((prev) => prev.filter((p) => p.id !== deleteConfirmModal.panel!.id));
       setDeleteConfirmModal({ isOpen: false, panel: null });
